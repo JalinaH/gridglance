@@ -6,6 +6,7 @@ class Reveal extends StatelessWidget {
   final Duration duration;
 
   const Reveal({
+    super.key,
     required this.child,
     required this.index,
     this.duration = const Duration(milliseconds: 550),

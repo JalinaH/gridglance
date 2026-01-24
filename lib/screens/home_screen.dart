@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/team_logo.dart';
 import 'constructor_standings_screen.dart';
 import 'driver_standings_screen.dart';
 import 'race_detail_screen.dart';
@@ -249,6 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .map(
             (driver) => _buildSummaryRow(
               leading: "#${driver.position}",
+              prefix: TeamLogo(teamName: driver.teamName, size: 22),
               title: "${driver.givenName} ${driver.familyName}",
               subtitle: driver.teamName,
               trailing: "${driver.points} PTS",
@@ -268,6 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .map(
             (team) => _buildSummaryRow(
               leading: "#${team.position}",
+              prefix: TeamLogo(teamName: team.teamName, size: 22),
               title: team.teamName,
               subtitle: "Constructors",
               trailing: "${team.points} PTS",
@@ -337,6 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSummaryRow({
     required String leading,
+    Widget? prefix,
     required String title,
     String? subtitle,
     String? trailing,
@@ -358,6 +362,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          if (prefix != null) ...[
+            prefix,
+            SizedBox(width: 8),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

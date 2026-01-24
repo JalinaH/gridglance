@@ -3,6 +3,7 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
+import 'team_logo.dart';
 
 class GlassCard extends StatelessWidget {
   final Widget child;
@@ -152,7 +153,9 @@ class DriverStandingCard extends StatelessWidget {
               letterSpacing: 0.5,
             ),
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 12),
+          TeamLogo(teamName: driver.teamName, size: 28),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +211,9 @@ class ConstructorStandingCard extends StatelessWidget {
               letterSpacing: 0.5,
             ),
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 12),
+          TeamLogo(teamName: team.teamName, size: 30),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
