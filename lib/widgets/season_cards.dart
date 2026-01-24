@@ -14,6 +14,7 @@ class GlassCard extends StatelessWidget {
   final Color? accentColor;
 
   const GlassCard({
+    super.key,
     required this.child,
     this.borderColor,
     this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -31,8 +32,8 @@ class GlassCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.surface.withOpacity(0.95),
-            AppTheme.surfaceAlt.withOpacity(0.95),
+            AppTheme.surface.withValues(alpha: 0.95),
+            AppTheme.surfaceAlt.withValues(alpha: 0.95),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -41,7 +42,7 @@ class GlassCard extends StatelessWidget {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.35),
+            color: Colors.black.withValues(alpha: 0.35),
             blurRadius: 18,
             offset: Offset(0, 10),
           ),
@@ -63,7 +64,7 @@ class GlassCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       accent,
-                      accent.withOpacity(0.2),
+                      accent.withValues(alpha: 0.2),
                     ],
                   ),
                 ),
@@ -95,7 +96,7 @@ class StatPill extends StatelessWidget {
   final String text;
   final Color? color;
 
-  const StatPill({required this.text, this.color});
+  const StatPill({super.key, required this.text, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +110,7 @@ class StatPill extends StatelessWidget {
         : LinearGradient(
             colors: [
               color!,
-              color!.withOpacity(0.75),
+              color!.withValues(alpha: 0.75),
             ],
           );
     return Container(
@@ -117,7 +118,7 @@ class StatPill extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: pillGradient,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Text(
         text,
@@ -135,7 +136,7 @@ class StatPill extends StatelessWidget {
 class DriverStandingCard extends StatelessWidget {
   final DriverStanding driver;
 
-  const DriverStandingCard({required this.driver});
+  const DriverStandingCard({super.key, required this.driver});
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +192,7 @@ class DriverStandingCard extends StatelessWidget {
 class ConstructorStandingCard extends StatelessWidget {
   final ConstructorStanding team;
 
-  const ConstructorStandingCard({required this.team});
+  const ConstructorStandingCard({super.key, required this.team});
 
   @override
   Widget build(BuildContext context) {
@@ -249,12 +250,17 @@ class RaceCard extends StatelessWidget {
   final bool highlight;
   final VoidCallback? onTap;
 
-  const RaceCard({required this.race, this.highlight = false, this.onTap});
+  const RaceCard({
+    super.key,
+    required this.race,
+    this.highlight = false,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      borderColor: highlight ? AppTheme.f1Red.withOpacity(0.6) : null,
+      borderColor: highlight ? AppTheme.f1Red.withValues(alpha: 0.6) : null,
       accentColor: highlight ? AppTheme.f1Red : AppTheme.f1RedBright,
       onTap: onTap,
       child: Column(

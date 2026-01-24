@@ -7,6 +7,7 @@ class F1Scaffold extends StatelessWidget {
   final Widget? floatingActionButton;
 
   const F1Scaffold({
+    super.key,
     required this.body,
     this.appBar,
     this.floatingActionButton,
@@ -56,7 +57,7 @@ class _F1Background extends StatelessWidget {
           top: -140,
           right: -80,
           child: _GlowOrb(
-            color: AppTheme.f1Red.withOpacity(0.45),
+            color: AppTheme.f1Red.withValues(alpha: 0.45),
             size: 240,
           ),
         ),
@@ -64,7 +65,7 @@ class _F1Background extends StatelessWidget {
           bottom: -180,
           left: -120,
           child: _GlowOrb(
-            color: AppTheme.f1RedBright.withOpacity(0.25),
+            color: AppTheme.f1RedBright.withValues(alpha: 0.25),
             size: 300,
           ),
         ),
@@ -80,9 +81,9 @@ class _F1Background extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.f1Red.withOpacity(0.05),
-                    AppTheme.f1Red.withOpacity(0.25),
-                    AppTheme.f1Red.withOpacity(0.05),
+                    AppTheme.f1Red.withValues(alpha: 0.05),
+                    AppTheme.f1Red.withValues(alpha: 0.25),
+                    AppTheme.f1Red.withValues(alpha: 0.05),
                   ],
                 ),
               ),
@@ -110,7 +111,7 @@ class _GlowOrb extends StatelessWidget {
         gradient: RadialGradient(
           colors: [
             color,
-            color.withOpacity(0),
+            color.withValues(alpha: 0),
           ],
         ),
       ),
