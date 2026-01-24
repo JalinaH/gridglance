@@ -10,7 +10,7 @@ class ApiService {
 
   Future<List<DriverStanding>> getDriverStandings({String season = '2025'}) async {
     final response = await http.get(
-      Uri.parse('${_baseUrl}$season/driverstandings/'),
+      Uri.parse('$_baseUrl$season/driverstandings/'),
     );
 
     if (response.statusCode == 200) {
@@ -34,7 +34,7 @@ class ApiService {
 
   Future<List<ConstructorStanding>> getConstructorStandings({String season = '2025'}) async {
     final response = await http.get(
-      Uri.parse('${_baseUrl}$season/constructorstandings/'),
+      Uri.parse('$_baseUrl$season/constructorstandings/'),
     );
 
     if (response.statusCode == 200) {
@@ -58,7 +58,7 @@ class ApiService {
 
   Future<Race?> getNextRace({String season = '2025'}) async {
     final response = await http.get(
-      Uri.parse('${_baseUrl}$season/next/'),
+      Uri.parse('$_baseUrl$season/next/'),
     );
 
     if (response.statusCode == 200) {
@@ -77,7 +77,7 @@ class ApiService {
 
   Future<List<Race>> getRaceSchedule({String season = '2025'}) async {
     final response = await http.get(
-      Uri.parse('${_baseUrl}$season/'),
+      Uri.parse('$_baseUrl$season/'),
     );
 
     if (response.statusCode == 200) {

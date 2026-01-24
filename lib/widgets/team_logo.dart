@@ -17,7 +17,7 @@ class TeamLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final asset = _logoAssetFor(teamName);
     if (asset == null) {
-      return _fallback();
+      return _fallback(context);
     }
 
     return Image.asset(
@@ -28,7 +28,9 @@ class TeamLogo extends StatelessWidget {
     );
   }
 
-  Widget _fallback() {
+  Widget _fallback(BuildContext context) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     final display = teamName.isNotEmpty
         ? teamName.trim().characters.first.toUpperCase()
         : '?';
@@ -36,15 +38,15 @@ class TeamLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceAlt,
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: colors.border),
       ),
       alignment: Alignment.center,
       child: Text(
         display,
         style: TextStyle(
-          color: Colors.white,
+          color: onSurface,
           fontSize: size * 0.5,
           fontWeight: FontWeight.bold,
         ),

@@ -10,12 +10,14 @@ class RaceScheduleScreen extends StatelessWidget {
   final String season;
 
   const RaceScheduleScreen({
+    super.key,
     required this.races,
     required this.season,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return F1Scaffold(
       appBar: AppBar(
         title: Column(
@@ -24,7 +26,7 @@ class RaceScheduleScreen extends StatelessWidget {
             Text("Race Schedule"),
             Text(
               "Season $season",
-              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
             ),
           ],
         ),
@@ -33,7 +35,7 @@ class RaceScheduleScreen extends StatelessWidget {
           ? Center(
               child: Text(
                 "No race schedule available.",
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: colors.textMuted),
               ),
             )
           : ListView.builder(

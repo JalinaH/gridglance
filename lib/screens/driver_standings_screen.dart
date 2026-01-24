@@ -10,12 +10,14 @@ class DriverStandingsScreen extends StatelessWidget {
   final String season;
 
   const DriverStandingsScreen({
+    super.key,
     required this.standings,
     required this.season,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return F1Scaffold(
       appBar: AppBar(
         title: Column(
@@ -24,7 +26,7 @@ class DriverStandingsScreen extends StatelessWidget {
             Text("Driver Standings"),
             Text(
               "Season $season",
-              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
             ),
           ],
         ),
@@ -33,7 +35,7 @@ class DriverStandingsScreen extends StatelessWidget {
           ? Center(
               child: Text(
                 "No driver standings available.",
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: colors.textMuted),
               ),
             )
           : ListView.builder(

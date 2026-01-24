@@ -10,12 +10,14 @@ class ConstructorStandingsScreen extends StatelessWidget {
   final String season;
 
   const ConstructorStandingsScreen({
+    super.key,
     required this.standings,
     required this.season,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return F1Scaffold(
       appBar: AppBar(
         title: Column(
@@ -24,7 +26,7 @@ class ConstructorStandingsScreen extends StatelessWidget {
             Text("Team Standings"),
             Text(
               "Season $season",
-              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
             ),
           ],
         ),
@@ -33,7 +35,7 @@ class ConstructorStandingsScreen extends StatelessWidget {
           ? Center(
               child: Text(
                 "No team standings available.",
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: colors.textMuted),
               ),
             )
           : ListView.builder(

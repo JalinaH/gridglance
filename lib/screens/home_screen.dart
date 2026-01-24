@@ -16,8 +16,17 @@ import 'race_detail_screen.dart';
 import 'race_schedule_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+
+  const HomeScreen({
+    super.key,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+  });
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -38,12 +47,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return F1Scaffold(
       appBar: AppBar(
         title: Text("GridGlance"),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: AppTheme.f1RedBright),
+            icon: Icon(
+              widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              color: colors.f1RedBright,
+            ),
+            onPressed: widget.onToggleTheme,
+          ),
+          IconButton(
+            icon: Icon(Icons.refresh, color: colors.f1RedBright),
             onPressed: _refresh,
           ),
         ],
@@ -53,13 +70,13 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: CircularProgressIndicator(color: AppTheme.f1Red),
+              child: CircularProgressIndicator(color: colors.f1Red),
             );
           } else if (snapshot.hasError) {
             return Center(
               child: Text(
                 "Error loading data",
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: colors.textMuted),
               ),
             );
           }
@@ -69,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return Center(
               child: Text(
                 "No data available",
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: colors.textMuted),
               ),
             );
           }
@@ -87,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   "Season $_season",
                   style: TextStyle(
-                    color: AppTheme.textMuted,
+                    color: colors.textMuted,
                     fontSize: 12,
                     letterSpacing: 1.6,
                   ),
@@ -203,6 +220,8 @@ class _HomeScreenState extends State<HomeScreen> {
     String? subtitle,
     VoidCallback? onTap,
   }) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return GlassCard(
       onTap: onTap,
       child: Column(
@@ -214,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   title,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: onSurface,
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.6,
@@ -222,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               if (onTap != null)
-                Icon(Icons.chevron_right, color: AppTheme.textMuted),
+                Icon(Icons.chevron_right, color: colors.textMuted),
             ],
           ),
           if (subtitle != null)
@@ -230,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.only(top: 4),
               child: Text(
                 subtitle,
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
               ),
             ),
           SizedBox(height: 10),
@@ -300,6 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNextRaceSummary(Race race) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -307,13 +327,16 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             StatPill(
               text: "Round ${race.round}",
-              color: AppTheme.f1Red,
+              color: AppColors.of(context).f1Red,
             ),
             SizedBox(width: 8),
             Expanded(
               child: Text(
                 race.displayDateTime,
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                style: TextStyle(
+                  color: AppColors.of(context).textMuted,
+                  fontSize: 12,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -323,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Text(
           race.raceName,
           style: TextStyle(
-            color: Colors.white,
+            color: onSurface,
             fontSize: 16,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.4,
@@ -332,7 +355,10 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(height: 4),
         Text(
           "${race.circuitName} - ${race.location}",
-          style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+          style: TextStyle(
+            color: AppColors.of(context).textMuted,
+            fontSize: 12,
+          ),
         ),
       ],
     );
@@ -345,6 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String? subtitle,
     String? trailing,
   }) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -355,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               leading,
               style: TextStyle(
-                color: AppTheme.f1RedBright,
+                color: AppColors.of(context).f1RedBright,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.4,
@@ -373,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   title,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.2,
@@ -383,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: AppTheme.textMuted,
+                      color: AppColors.of(context).textMuted,
                       fontSize: 11,
                     ),
                   ),
@@ -394,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               trailing,
               style: TextStyle(
-                color: Colors.white70,
+                color: AppColors.of(context).textMuted,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.4,
@@ -408,7 +435,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEmptyState(String message) {
     return Text(
       message,
-      style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+      style: TextStyle(
+        color: AppColors.of(context).textMuted,
+        fontSize: 12,
+      ),
     );
   }
 }

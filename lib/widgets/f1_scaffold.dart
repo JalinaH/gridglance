@@ -39,6 +39,12 @@ class F1Scaffold extends StatelessWidget {
 class _F1Background extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final orbAlpha = isDark ? 0.45 : 0.12;
+    final orbSecondaryAlpha = isDark ? 0.25 : 0.08;
+    final stripeStrong = isDark ? 0.25 : 0.08;
+    final stripeLight = isDark ? 0.05 : 0.03;
     return Stack(
       children: [
         Container(
@@ -47,17 +53,32 @@ class _F1Background extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppTheme.background,
-                AppTheme.backgroundAlt,
+                colors.background,
+                colors.backgroundAlt,
               ],
             ),
           ),
         ),
+        if (!isDark)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topRight,
+                  radius: 0.9,
+                  colors: [
+                    colors.surface.withValues(alpha: 0.9),
+                    colors.background.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
         Positioned(
           top: -140,
           right: -80,
           child: _GlowOrb(
-            color: AppTheme.f1Red.withValues(alpha: 0.45),
+            color: colors.f1Red.withValues(alpha: orbAlpha),
             size: 240,
           ),
         ),
@@ -65,7 +86,7 @@ class _F1Background extends StatelessWidget {
           bottom: -180,
           left: -120,
           child: _GlowOrb(
-            color: AppTheme.f1RedBright.withValues(alpha: 0.25),
+            color: colors.f1RedBright.withValues(alpha: orbSecondaryAlpha),
             size: 300,
           ),
         ),
@@ -81,9 +102,9 @@ class _F1Background extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.f1Red.withValues(alpha: 0.05),
-                    AppTheme.f1Red.withValues(alpha: 0.25),
-                    AppTheme.f1Red.withValues(alpha: 0.05),
+                    colors.f1Red.withValues(alpha: stripeLight),
+                    colors.f1Red.withValues(alpha: stripeStrong),
+                    colors.f1Red.withValues(alpha: stripeLight),
                   ],
                 ),
               ),
