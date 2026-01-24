@@ -46,19 +46,64 @@ class RaceDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+          GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Session Schedule",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 10),
+                ..._buildSessionRows(),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  List<Widget> _buildSessionRows() {
+    final sessions = race.sessions
+        .where((session) => session.date.isNotEmpty)
+        .toList();
+    if (sessions.isEmpty) {
+      return [
+        Text(
+          "Session times not available.",
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+      ];
+    }
+
+    return sessions
+        .map(
+          (session) => _buildDetailRow(
+            session.name,
+            session.displayDateTime,
+            labelWidth: 110,
+          ),
+        )
+        .toList();
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    double labelWidth = 70,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 70,
+            width: labelWidth,
             child: Text(
               label,
               style: TextStyle(color: Colors.white70, fontSize: 12),
