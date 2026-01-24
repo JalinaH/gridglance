@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'GridGlance',
-      theme: ThemeData(brightness: Brightness.dark, primarySwatch: Colors.red),
+      theme: AppTheme.dark(),
       home: HomeScreen(),
     );
   }

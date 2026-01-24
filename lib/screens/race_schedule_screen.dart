@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
+import '../theme/app_theme.dart';
+import '../widgets/f1_scaffold.dart';
+import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 
 class RaceScheduleScreen extends StatelessWidget {
@@ -13,8 +16,7 @@ class RaceScheduleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return F1Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,25 +24,24 @@ class RaceScheduleScreen extends StatelessWidget {
             Text("Race Schedule"),
             Text(
               "Season $season",
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: races.isEmpty
           ? Center(
               child: Text(
                 "No race schedule available.",
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: AppTheme.textMuted),
               ),
             )
           : ListView.builder(
-              padding: EdgeInsets.only(top: 12, bottom: 20),
+              padding: EdgeInsets.only(bottom: 24),
+              physics: BouncingScrollPhysics(),
               itemCount: races.length,
               itemBuilder: (context, index) {
-                return RaceCard(race: races[index]);
+                return Reveal(index: index, child: RaceCard(race: races[index]));
               },
             ),
     );

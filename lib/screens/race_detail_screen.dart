@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
+import '../theme/app_theme.dart';
+import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
 
 class RaceDetailScreen extends StatelessWidget {
@@ -13,8 +15,7 @@ class RaceDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return F1Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,15 +23,14 @@ class RaceDetailScreen extends StatelessWidget {
             Text("Next Race"),
             Text(
               "Season $season",
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: ListView(
-        padding: EdgeInsets.only(top: 12, bottom: 20),
+        padding: EdgeInsets.only(bottom: 24),
+        physics: BouncingScrollPhysics(),
         children: [
           RaceCard(race: race, highlight: true),
           GlassCard(
@@ -56,6 +56,7 @@ class RaceDetailScreen extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 SizedBox(height: 10),
@@ -76,7 +77,7 @@ class RaceDetailScreen extends StatelessWidget {
       return [
         Text(
           "Session times not available.",
-          style: TextStyle(color: Colors.grey, fontSize: 12),
+          style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
         ),
       ];
     }
@@ -106,7 +107,7 @@ class RaceDetailScreen extends StatelessWidget {
             width: labelWidth,
             child: Text(
               label,
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
             ),
           ),
           Expanded(

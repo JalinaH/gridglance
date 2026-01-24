@@ -79,9 +79,9 @@ class Race {
       if (practice1 != null) practice1!,
       if (practice2 != null) practice2!,
       if (practice3 != null) practice3!,
+      if (qualifying != null) qualifying!,
       if (sprintQualifying != null) sprintQualifying!,
       if (sprint != null) sprint!,
-      if (qualifying != null) qualifying!,
       raceSession,
     ];
   }

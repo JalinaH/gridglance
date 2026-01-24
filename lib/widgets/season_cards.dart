@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../theme/app_theme.dart';
 
 class GlassCard extends StatelessWidget {
   final Widget child;
@@ -9,6 +10,8 @@ class GlassCard extends StatelessWidget {
   final EdgeInsetsGeometry margin;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
+  final bool showAccent;
+  final Color? accentColor;
 
   const GlassCard({
     required this.child,
@@ -16,19 +19,61 @@ class GlassCard extends StatelessWidget {
     this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.onTap,
+    this.showAccent = true,
+    this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final border = borderColor ?? AppTheme.border;
+    final accent = accentColor ?? AppTheme.f1Red;
     final content = Ink(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor ?? Colors.white.withOpacity(0.2)),
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.surface.withOpacity(0.95),
+            AppTheme.surfaceAlt.withOpacity(0.95),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.35),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: padding,
-        child: child,
+      child: Stack(
+        children: [
+          if (showAccent)
+            Positioned(
+              left: 0,
+              top: 12,
+              bottom: 12,
+              child: Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      accent,
+                      accent.withOpacity(0.2),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: padding,
+            child: child,
+          ),
+        ],
       ),
     );
 
@@ -38,7 +83,7 @@ class GlassCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: content,
         ),
       ),
@@ -54,11 +99,25 @@ class StatPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pillGradient = color == null
+        ? LinearGradient(
+            colors: [
+              AppTheme.surfaceAlt,
+              AppTheme.surface,
+            ],
+          )
+        : LinearGradient(
+            colors: [
+              color!,
+              color!.withOpacity(0.75),
+            ],
+          );
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color ?? Colors.white.withOpacity(0.15),
+        gradient: pillGradient,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Text(
         text,
@@ -66,6 +125,7 @@ class StatPill extends StatelessWidget {
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 12,
+          letterSpacing: 0.6,
         ),
       ),
     );
@@ -85,9 +145,10 @@ class DriverStandingCard extends StatelessWidget {
           Text(
             "#${driver.position}",
             style: TextStyle(
-              color: Colors.redAccent,
+              color: AppTheme.f1RedBright,
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
             ),
           ),
           SizedBox(width: 16),
@@ -105,7 +166,7 @@ class DriverStandingCard extends StatelessWidget {
                 ),
                 Text(
                   driver.teamName,
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
                 ),
               ],
             ),
@@ -115,7 +176,7 @@ class DriverStandingCard extends StatelessWidget {
             children: [
               StatPill(
                 text: "${driver.points} PTS",
-                color: Colors.redAccent.withOpacity(0.8),
+                color: AppTheme.f1Red,
               ),
               SizedBox(height: 6),
               StatPill(text: "${driver.wins} W"),
@@ -140,9 +201,10 @@ class ConstructorStandingCard extends StatelessWidget {
           Text(
             "#${team.position}",
             style: TextStyle(
-              color: Colors.redAccent,
+              color: AppTheme.f1RedBright,
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
             ),
           ),
           SizedBox(width: 16),
@@ -160,7 +222,7 @@ class ConstructorStandingCard extends StatelessWidget {
                 ),
                 Text(
                   "Constructors",
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
                 ),
               ],
             ),
@@ -170,7 +232,7 @@ class ConstructorStandingCard extends StatelessWidget {
             children: [
               StatPill(
                 text: "${team.points} PTS",
-                color: Colors.redAccent.withOpacity(0.8),
+                color: AppTheme.f1Red,
               ),
               SizedBox(height: 6),
               StatPill(text: "${team.wins} W"),
@@ -192,7 +254,8 @@ class RaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      borderColor: highlight ? Colors.redAccent.withOpacity(0.8) : null,
+      borderColor: highlight ? AppTheme.f1Red.withOpacity(0.6) : null,
+      accentColor: highlight ? AppTheme.f1Red : AppTheme.f1RedBright,
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +267,7 @@ class RaceCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   race.displayDateTime,
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -217,12 +280,13 @@ class RaceCard extends StatelessWidget {
               color: Colors.white,
               fontSize: highlight ? 18 : 16,
               fontWeight: FontWeight.bold,
+              letterSpacing: 0.3,
             ),
           ),
           SizedBox(height: 4),
           Text(
             "${race.circuitName} - ${race.location}",
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+            style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
           ),
         ],
       ),

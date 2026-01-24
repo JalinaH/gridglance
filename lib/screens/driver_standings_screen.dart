@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/driver_standing.dart';
+import '../theme/app_theme.dart';
+import '../widgets/f1_scaffold.dart';
+import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 
 class DriverStandingsScreen extends StatelessWidget {
@@ -13,8 +16,7 @@ class DriverStandingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return F1Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,25 +24,27 @@ class DriverStandingsScreen extends StatelessWidget {
             Text("Driver Standings"),
             Text(
               "Season $season",
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: standings.isEmpty
           ? Center(
               child: Text(
                 "No driver standings available.",
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: AppTheme.textMuted),
               ),
             )
           : ListView.builder(
-              padding: EdgeInsets.only(top: 12, bottom: 20),
+              padding: EdgeInsets.only(bottom: 24),
+              physics: BouncingScrollPhysics(),
               itemCount: standings.length,
               itemBuilder: (context, index) {
-                return DriverStandingCard(driver: standings[index]);
+                return Reveal(
+                  index: index,
+                  child: DriverStandingCard(driver: standings[index]),
+                );
               },
             ),
     );

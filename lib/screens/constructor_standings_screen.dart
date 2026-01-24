@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/constructor_standing.dart';
+import '../theme/app_theme.dart';
+import '../widgets/f1_scaffold.dart';
+import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 
 class ConstructorStandingsScreen extends StatelessWidget {
@@ -13,8 +16,7 @@ class ConstructorStandingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return F1Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,25 +24,27 @@ class ConstructorStandingsScreen extends StatelessWidget {
             Text("Team Standings"),
             Text(
               "Season $season",
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: standings.isEmpty
           ? Center(
               child: Text(
                 "No team standings available.",
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: AppTheme.textMuted),
               ),
             )
           : ListView.builder(
-              padding: EdgeInsets.only(top: 12, bottom: 20),
+              padding: EdgeInsets.only(bottom: 24),
+              physics: BouncingScrollPhysics(),
               itemCount: standings.length,
               itemBuilder: (context, index) {
-                return ConstructorStandingCard(team: standings[index]);
+                return Reveal(
+                  index: index,
+                  child: ConstructorStandingCard(team: standings[index]),
+                );
               },
             ),
     );
