@@ -25,6 +25,7 @@ class F1Scaffold extends StatelessWidget {
         children: [
           Positioned.fill(child: _F1Background()),
           SafeArea(
+            bottom: false,
             child: Padding(
               padding: EdgeInsets.only(top: topInset),
               child: body,

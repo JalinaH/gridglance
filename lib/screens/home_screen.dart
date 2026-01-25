@@ -18,11 +18,13 @@ import 'race_schedule_screen.dart';
 class HomeScreen extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
+  final bool showAppBar;
 
   const HomeScreen({
     super.key,
     required this.isDarkMode,
     required this.onToggleTheme,
+    this.showAppBar = true,
   });
 
   @override
@@ -48,6 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final content = _buildBody(colors);
+    if (!widget.showAppBar) {
+      return content;
+    }
     return F1Scaffold(
       appBar: AppBar(
         title: Text("GridGlance"),
@@ -65,132 +71,136 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<SeasonOverview>(
-        future: _overview,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: colors.f1Red),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Error loading data",
-                style: TextStyle(color: colors.textMuted),
-              ),
-            );
-          }
+      body: content,
+    );
+  }
 
-          final overview = snapshot.data;
-          if (overview == null) {
-            return Center(
-              child: Text(
-                "No data available",
-                style: TextStyle(color: colors.textMuted),
-              ),
-            );
-          }
-
-          final topDrivers = overview.driverStandings.take(3).toList();
-          final topTeams = overview.constructorStandings.take(3).toList();
-          final upcomingRaces = _getUpcomingRaces(overview, count: 3);
-
-          return ListView(
-            padding: EdgeInsets.only(bottom: 24),
-            physics: BouncingScrollPhysics(),
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Text(
-                  "Season $_season",
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 12,
-                    letterSpacing: 1.6,
-                  ),
-                ),
-              ),
-              Reveal(
-                index: 0,
-                child: _buildSummaryCard(
-                  title: "Next Race",
-                  subtitle:
-                      overview.nextRace == null ? null : "Tap for full details",
-                  onTap: overview.nextRace == null
-                      ? null
-                      : () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => RaceDetailScreen(
-                                race: overview.nextRace!,
-                                season: _season,
-                              ),
-                            ),
-                          );
-                        },
-                  child: overview.nextRace == null
-                      ? _buildEmptyState("No upcoming race data.")
-                      : _buildNextRaceSummary(overview.nextRace!),
-                ),
-              ),
-              Reveal(
-                index: 1,
-                child: _buildSummaryCard(
-                  title: "Driver Standings",
-                  subtitle: "Top 3 drivers",
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => DriverStandingsScreen(
-                          standings: overview.driverStandings,
-                          season: _season,
-                        ),
-                      ),
-                    );
-                  },
-                  child: _buildDriverSummary(topDrivers),
-                ),
-              ),
-              Reveal(
-                index: 2,
-                child: _buildSummaryCard(
-                  title: "Team Standings",
-                  subtitle: "Top 3 teams",
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ConstructorStandingsScreen(
-                          standings: overview.constructorStandings,
-                          season: _season,
-                        ),
-                      ),
-                    );
-                  },
-                  child: _buildTeamSummary(topTeams),
-                ),
-              ),
-              Reveal(
-                index: 3,
-                child: _buildSummaryCard(
-                  title: "Upcoming Races",
-                  subtitle: "Next 3 races",
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => RaceScheduleScreen(
-                          races: overview.raceSchedule,
-                          season: _season,
-                        ),
-                      ),
-                    );
-                  },
-                  child: _buildRaceSummary(upcomingRaces),
-                ),
-              ),
-            ],
+  Widget _buildBody(AppColors colors) {
+    return FutureBuilder<SeasonOverview>(
+      future: _overview,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(color: colors.f1Red),
           );
-        },
-      ),
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              "Error loading data",
+              style: TextStyle(color: colors.textMuted),
+            ),
+          );
+        }
+
+        final overview = snapshot.data;
+        if (overview == null) {
+          return Center(
+            child: Text(
+              "No data available",
+              style: TextStyle(color: colors.textMuted),
+            ),
+          );
+        }
+
+        final topDrivers = overview.driverStandings.take(3).toList();
+        final topTeams = overview.constructorStandings.take(3).toList();
+        final upcomingRaces = _getUpcomingRaces(overview, count: 3);
+
+        return ListView(
+          padding: EdgeInsets.only(bottom: 24),
+          physics: BouncingScrollPhysics(),
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Text(
+                "Season $_season",
+                style: TextStyle(
+                  color: colors.textMuted,
+                  fontSize: 12,
+                  letterSpacing: 1.6,
+                ),
+              ),
+            ),
+            Reveal(
+              index: 0,
+              child: _buildSummaryCard(
+                title: "Next Race",
+                subtitle:
+                    overview.nextRace == null ? null : "Tap for full details",
+                onTap: overview.nextRace == null
+                    ? null
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => RaceDetailScreen(
+                              race: overview.nextRace!,
+                              season: _season,
+                            ),
+                          ),
+                        );
+                      },
+                child: overview.nextRace == null
+                    ? _buildEmptyState("No upcoming race data.")
+                    : _buildNextRaceSummary(overview.nextRace!),
+              ),
+            ),
+            Reveal(
+              index: 1,
+              child: _buildSummaryCard(
+                title: "Driver Standings",
+                subtitle: "Top 3 drivers",
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => DriverStandingsScreen(
+                        standings: overview.driverStandings,
+                        season: _season,
+                      ),
+                    ),
+                  );
+                },
+                child: _buildDriverSummary(topDrivers),
+              ),
+            ),
+            Reveal(
+              index: 2,
+              child: _buildSummaryCard(
+                title: "Team Standings",
+                subtitle: "Top 3 teams",
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ConstructorStandingsScreen(
+                        standings: overview.constructorStandings,
+                        season: _season,
+                      ),
+                    ),
+                  );
+                },
+                child: _buildTeamSummary(topTeams),
+              ),
+            ),
+            Reveal(
+              index: 3,
+              child: _buildSummaryCard(
+                title: "Upcoming Races",
+                subtitle: "Next 3 races",
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RaceScheduleScreen(
+                        races: overview.raceSchedule,
+                        season: _season,
+                      ),
+                    ),
+                  );
+                },
+                child: _buildRaceSummary(upcomingRaces),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

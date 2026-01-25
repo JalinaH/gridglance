@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -61,7 +61,7 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: _themeMode,
-      home: HomeScreen(
+      home: MainShell(
         isDarkMode: _isDarkMode,
         onToggleTheme: _toggleTheme,
       ),
