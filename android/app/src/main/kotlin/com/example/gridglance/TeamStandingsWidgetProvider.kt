@@ -9,22 +9,22 @@ import android.util.Log
 import android.widget.RemoteViews
 import java.util.Calendar
 
-class DriverStandingsWidgetProvider : AppWidgetProvider() {
+class TeamStandingsWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
     ) {
-        Log.d("DriverStandingsWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
+        Log.d("TeamStandingsWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
         val deviceContext = context.createDeviceProtectedStorageContext()
         val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
-        val title = prefs.getString("driver_widget_title", "Driver Standings") ?: "Driver Standings"
-        val subtitle = prefs.getString("driver_widget_subtitle", "Top 3 drivers") ?: "Top 3 drivers"
-        val season = prefs.getString("driver_widget_season", defaultSeason) ?: defaultSeason
-        val driver1 = prefs.getString("driver_1", "Update from app") ?: "Update from app"
-        val driver2 = prefs.getString("driver_2", "TBD") ?: "TBD"
-        val driver3 = prefs.getString("driver_3", "TBD") ?: "TBD"
+        val title = prefs.getString("team_widget_title", "Team Standings") ?: "Team Standings"
+        val subtitle = prefs.getString("team_widget_subtitle", "Top 3 teams") ?: "Top 3 teams"
+        val season = prefs.getString("team_widget_season", defaultSeason) ?: defaultSeason
+        val team1 = prefs.getString("team_1", "Update from app") ?: "Update from app"
+        val team2 = prefs.getString("team_2", "TBD") ?: "TBD"
+        val team3 = prefs.getString("team_3", "TBD") ?: "TBD"
 
         val intent = Intent(context, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -35,13 +35,13 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
         )
 
         for (appWidgetId in appWidgetIds) {
-            val views = RemoteViews(context.packageName, R.layout.driver_standings_widget)
+            val views = RemoteViews(context.packageName, R.layout.team_standings_widget)
             views.setTextViewText(R.id.widget_title, title)
             views.setTextViewText(R.id.widget_subtitle, subtitle)
             views.setTextViewText(R.id.widget_season, season)
-            views.setTextViewText(R.id.driver_one, driver1)
-            views.setTextViewText(R.id.driver_two, driver2)
-            views.setTextViewText(R.id.driver_three, driver3)
+            views.setTextViewText(R.id.team_one, team1)
+            views.setTextViewText(R.id.team_two, team2)
+            views.setTextViewText(R.id.team_three, team3)
             views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

@@ -11,13 +11,15 @@ class WidgetsScreen extends StatefulWidget {
 }
 
 class _WidgetsScreenState extends State<WidgetsScreen> {
-  bool _adding = false;
-  String? _statusMessage;
+  bool _addingDriver = false;
+  bool _addingTeam = false;
+  String? _driverStatusMessage;
+  String? _teamStatusMessage;
 
   Future<void> _addDriverWidget() async {
     setState(() {
-      _adding = true;
-      _statusMessage = null;
+      _addingDriver = true;
+      _driverStatusMessage = null;
     });
 
     try {
@@ -25,7 +27,8 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       if (!supported) {
         if (mounted) {
           setState(() {
-            _statusMessage = "Widget pinning not supported. Use widget picker.";
+            _driverStatusMessage =
+                "Widget pinning not supported. Use widget picker.";
           });
         }
         return;
@@ -36,19 +39,60 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       );
       if (mounted) {
         setState(() {
-          _statusMessage = "Widget add request sent";
+          _driverStatusMessage = "Widget add request sent";
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _statusMessage = "Failed to request widget";
+          _driverStatusMessage = "Failed to request widget";
         });
       }
     } finally {
       if (mounted) {
         setState(() {
-          _adding = false;
+          _addingDriver = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _addTeamWidget() async {
+    setState(() {
+      _addingTeam = true;
+      _teamStatusMessage = null;
+    });
+
+    try {
+      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
+      if (!supported) {
+        if (mounted) {
+          setState(() {
+            _teamStatusMessage =
+                "Widget pinning not supported. Use widget picker.";
+          });
+        }
+        return;
+      }
+      await HomeWidget.requestPinWidget(
+        qualifiedAndroidName:
+            WidgetUpdateService.androidQualifiedTeamWidgetProvider,
+      );
+      if (mounted) {
+        setState(() {
+          _teamStatusMessage = "Widget add request sent";
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _teamStatusMessage = "Failed to request widget";
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _addingTeam = false;
         });
       }
     }
@@ -74,8 +118,17 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
           context,
           preview: _DriverStandingsPreview(),
           actionLabel: "Add widget",
-          onAction: _adding ? null : _addDriverWidget,
-          statusMessage: _statusMessage,
+          isAdding: _addingDriver,
+          onAction: _addingDriver ? null : _addDriverWidget,
+          statusMessage: _driverStatusMessage,
+        ),
+        _buildWidgetCard(
+          context,
+          preview: _TeamStandingsPreview(),
+          actionLabel: "Add widget",
+          isAdding: _addingTeam,
+          onAction: _addingTeam ? null : _addTeamWidget,
+          statusMessage: _teamStatusMessage,
         ),
       ],
     );
@@ -85,6 +138,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     BuildContext context, {
     required Widget preview,
     required String actionLabel,
+    required bool isAdding,
     required VoidCallback? onAction,
     String? statusMessage,
   }) {
@@ -132,9 +186,9 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: onAction,
-              child: Text(
-                _adding ? "Adding..." : actionLabel,
+            onPressed: onAction,
+            child: Text(
+                isAdding ? "Adding..." : actionLabel,
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
@@ -246,7 +300,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                           border: Border.all(color: colors.border),
                         ),
                         child: Text(
-                          "2024",
+                          DateTime.now().year.toString(),
                           style: TextStyle(
                             color: colors.textMuted,
                             fontSize: 9,
@@ -282,6 +336,154 @@ class _DriverStandingsPreview extends StatelessWidget {
                     position: "3",
                     name: "Driver Three",
                     points: "312 pts",
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TeamStandingsPreview extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final isDark = theme.brightness == Brightness.dark;
+    return AspectRatio(
+      aspectRatio: 18 / 10,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colors.backgroundAlt,
+              colors.surface,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
+              blurRadius: 10,
+              offset: Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -20,
+              top: -24,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      colors.f1RedBright.withValues(alpha: isDark ? 0.28 : 0.15),
+                      colors.f1Red.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: -24,
+              bottom: -36,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.surfaceAlt.withValues(alpha: 0.45),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        height: 3,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [colors.f1Red, colors.f1RedBright],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        "TEAM STANDINGS",
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      Spacer(),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.surfaceAlt.withValues(
+                            alpha: isDark ? 0.9 : 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: colors.border),
+                        ),
+                        child: Text(
+                          DateTime.now().year.toString(),
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Top 3 teams",
+                    style: TextStyle(
+                      color: colors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  _StandingsRow(
+                    position: "1",
+                    name: "Red Bull",
+                    points: "652 pts",
+                    highlight: true,
+                  ),
+                  SizedBox(height: 6),
+                  _StandingsRow(
+                    position: "2",
+                    name: "Ferrari",
+                    points: "478 pts",
+                  ),
+                  SizedBox(height: 6),
+                  _StandingsRow(
+                    position: "3",
+                    name: "McLaren",
+                    points: "412 pts",
                   ),
                 ],
               ),

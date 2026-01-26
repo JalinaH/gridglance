@@ -116,6 +116,10 @@ class _HomeScreenState extends State<HomeScreen> {
               overview.driverStandings,
               season: _season,
             );
+            WidgetUpdateService.updateTeamStandings(
+              overview.constructorStandings,
+              season: _season,
+            );
           });
         }
 
