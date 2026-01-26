@@ -15,6 +15,7 @@ class WidgetUpdateService {
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
   static Timer? _driverRefreshTimer;
   static bool _driverRefreshInFlight = false;
+  static String? _seasonOverride;
 
   static void startDriverStandingsAutoRefresh({
     Duration interval = defaultRefreshInterval,
@@ -37,8 +38,10 @@ class WidgetUpdateService {
     }
     _driverRefreshInFlight = true;
     try {
-      final standings = await ApiService().getDriverStandings();
-      await updateDriverStandings(standings);
+      final season =
+          _seasonOverride ?? DateTime.now().year.toString();
+      final standings = await ApiService().getDriverStandings(season: season);
+      await updateDriverStandings(standings, season: season);
     } catch (_) {
       // Ignore refresh errors to keep periodic updates alive.
     } finally {
@@ -48,14 +51,18 @@ class WidgetUpdateService {
 
   static Future<void> updateDriverStandings(
     List<DriverStanding> standings,
+    {String? season}
   ) async {
-    if (standings.isEmpty) {
-      return;
-    }
-
     final top = standings.take(3).toList();
+    final seasonLabel =
+        season ?? _seasonOverride ?? DateTime.now().year.toString();
+    _seasonOverride = seasonLabel;
     await _saveDps('driver_widget_title', 'Driver Standings');
-    await _saveDps('driver_widget_subtitle', 'Top 3 drivers');
+    await _saveDps(
+      'driver_widget_subtitle',
+      standings.isEmpty ? 'Standings coming soon' : 'Top 3 drivers',
+    );
+    await _saveDps('driver_widget_season', seasonLabel);
     await _saveDps('driver_1', _formatDriver(top, 0));
     await _saveDps('driver_2', _formatDriver(top, 1));
     await _saveDps('driver_3', _formatDriver(top, 2));

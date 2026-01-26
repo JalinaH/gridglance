@@ -49,7 +49,7 @@
             android:paddingRight="6dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
-            android:text="2024"
+            android:text="----"
             android:textColor="#B8C0CC"
             android:textSize="9sp"
             android:textStyle="bold" />

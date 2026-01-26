@@ -114,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             WidgetUpdateService.updateDriverStandings(
               overview.driverStandings,
+              season: _season,
             );
           });
         }

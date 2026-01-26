@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.RemoteViews
+import java.util.Calendar
 
 class DriverStandingsWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
@@ -17,8 +18,10 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
         Log.d("DriverStandingsWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
         val deviceContext = context.createDeviceProtectedStorageContext()
         val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
+        val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
         val title = prefs.getString("driver_widget_title", "Driver Standings") ?: "Driver Standings"
         val subtitle = prefs.getString("driver_widget_subtitle", "Top 3 drivers") ?: "Top 3 drivers"
+        val season = prefs.getString("driver_widget_season", defaultSeason) ?: defaultSeason
         val driver1 = prefs.getString("driver_1", "1. Update from app") ?: "1. Update from app"
         val driver2 = prefs.getString("driver_2", "2. ---") ?: "2. ---"
         val driver3 = prefs.getString("driver_3", "3. ---") ?: "3. ---"
@@ -35,6 +38,7 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.driver_standings_widget)
             views.setTextViewText(R.id.widget_title, title)
             views.setTextViewText(R.id.widget_subtitle, subtitle)
+            views.setTextViewText(R.id.widget_season, season)
             views.setTextViewText(R.id.driver_one, driver1)
             views.setTextViewText(R.id.driver_two, driver2)
             views.setTextViewText(R.id.driver_three, driver3)
