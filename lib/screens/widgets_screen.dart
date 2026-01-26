@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
+import '../data/api_service.dart';
+import '../models/constructor_standing.dart';
+import '../models/driver_standing.dart';
 import '../services/widget_update_service.dart';
 import '../theme/app_theme.dart';
 
@@ -15,6 +18,25 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   bool _addingTeam = false;
   String? _driverStatusMessage;
   String? _teamStatusMessage;
+  late final String _season = DateTime.now().year.toString();
+  late final Future<_WidgetPreviewData> _previewFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewFuture = _loadPreviewData();
+  }
+
+  Future<_WidgetPreviewData> _loadPreviewData() async {
+    final api = ApiService();
+    final drivers = await api.getDriverStandings(season: _season);
+    final teams = await api.getConstructorStandings(season: _season);
+    return _WidgetPreviewData(
+      season: _season,
+      drivers: drivers,
+      teams: teams,
+    );
+  }
 
   Future<void> _addDriverWidget() async {
     setState(() {
@@ -101,37 +123,172 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    return ListView(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
-      children: [
-        Text(
-          "Widgets",
-          style: TextStyle(
-            color: onSurface,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.4,
-          ),
-        ),
-        SizedBox(height: 16),
-        _buildWidgetCard(
-          context,
-          preview: _DriverStandingsPreview(),
-          actionLabel: "Add widget",
-          isAdding: _addingDriver,
-          onAction: _addingDriver ? null : _addDriverWidget,
-          statusMessage: _driverStatusMessage,
-        ),
-        _buildWidgetCard(
-          context,
-          preview: _TeamStandingsPreview(),
-          actionLabel: "Add widget",
-          isAdding: _addingTeam,
-          onAction: _addingTeam ? null : _addTeamWidget,
-          statusMessage: _teamStatusMessage,
-        ),
-      ],
+    return FutureBuilder<_WidgetPreviewData>(
+      future: _previewFuture,
+      builder: (context, snapshot) {
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+        final hasError = snapshot.hasError;
+        final data = snapshot.data;
+        final seasonLabel = data?.season ?? _season;
+        final driverEntries = _buildDriverEntries(
+          data?.drivers,
+          isLoading: isLoading,
+          hasError: hasError,
+        );
+        final teamEntries = _buildTeamEntries(
+          data?.teams,
+          isLoading: isLoading,
+          hasError: hasError,
+        );
+        final driverSubtitle =
+            _driverSubtitle(isLoading, hasError, data?.drivers);
+        final teamSubtitle = _teamSubtitle(isLoading, hasError, data?.teams);
+
+        return ListView(
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
+            Text(
+              "Widgets",
+              style: TextStyle(
+                color: onSurface,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.4,
+              ),
+            ),
+            SizedBox(height: 16),
+            _buildWidgetCard(
+              context,
+              preview: _DriverStandingsPreview(
+                seasonLabel: seasonLabel,
+                subtitle: driverSubtitle,
+                entries: driverEntries,
+              ),
+              actionLabel: "Add widget",
+              isAdding: _addingDriver,
+              onAction: _addingDriver ? null : _addDriverWidget,
+              statusMessage: _driverStatusMessage,
+            ),
+            _buildWidgetCard(
+              context,
+              preview: _TeamStandingsPreview(
+                seasonLabel: seasonLabel,
+                subtitle: teamSubtitle,
+                entries: teamEntries,
+              ),
+              actionLabel: "Add widget",
+              isAdding: _addingTeam,
+              onAction: _addingTeam ? null : _addTeamWidget,
+              statusMessage: _teamStatusMessage,
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  List<_PreviewEntry> _buildDriverEntries(
+    List<DriverStanding>? standings, {
+    required bool isLoading,
+    required bool hasError,
+  }) {
+    if (hasError) {
+      return [
+        _PreviewEntry(name: "Failed to load", points: ""),
+        _PreviewEntry(name: "TBD", points: ""),
+        _PreviewEntry(name: "TBD", points: ""),
+      ];
+    }
+    if (isLoading) {
+      return [
+        _PreviewEntry(name: "Loading...", points: ""),
+        _PreviewEntry(name: "Please wait", points: ""),
+        _PreviewEntry(name: "Please wait", points: ""),
+      ];
+    }
+    final top = (standings ?? []).take(3).toList();
+    return List.generate(
+      3,
+      (index) {
+        if (index >= top.length) {
+          return _PreviewEntry(name: "TBD", points: "");
+        }
+        final driver = top[index];
+        return _PreviewEntry(
+          name: "${driver.givenName} ${driver.familyName}",
+          points: "${driver.points} pts",
+        );
+      },
+    );
+  }
+
+  List<_PreviewEntry> _buildTeamEntries(
+    List<ConstructorStanding>? standings, {
+    required bool isLoading,
+    required bool hasError,
+  }) {
+    if (hasError) {
+      return [
+        _PreviewEntry(name: "Failed to load", points: ""),
+        _PreviewEntry(name: "TBD", points: ""),
+        _PreviewEntry(name: "TBD", points: ""),
+      ];
+    }
+    if (isLoading) {
+      return [
+        _PreviewEntry(name: "Loading...", points: ""),
+        _PreviewEntry(name: "Please wait", points: ""),
+        _PreviewEntry(name: "Please wait", points: ""),
+      ];
+    }
+    final top = (standings ?? []).take(3).toList();
+    return List.generate(
+      3,
+      (index) {
+        if (index >= top.length) {
+          return _PreviewEntry(name: "TBD", points: "");
+        }
+        final team = top[index];
+        return _PreviewEntry(
+          name: team.teamName,
+          points: "${team.points} pts",
+        );
+      },
+    );
+  }
+
+  String _driverSubtitle(
+    bool isLoading,
+    bool hasError,
+    List<DriverStanding>? standings,
+  ) {
+    if (hasError) {
+      return "Unable to load";
+    }
+    if (isLoading) {
+      return "Loading standings";
+    }
+    if (standings == null || standings.isEmpty) {
+      return "Standings coming soon";
+    }
+    return "Top 3 drivers";
+  }
+
+  String _teamSubtitle(
+    bool isLoading,
+    bool hasError,
+    List<ConstructorStanding>? standings,
+  ) {
+    if (hasError) {
+      return "Unable to load";
+    }
+    if (isLoading) {
+      return "Loading standings";
+    }
+    if (standings == null || standings.isEmpty) {
+      return "Standings coming soon";
+    }
+    return "Top 3 teams";
   }
 
   Widget _buildWidgetCard(
@@ -200,6 +357,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
 }
 
 class _DriverStandingsPreview extends StatelessWidget {
+  final String seasonLabel;
+  final String subtitle;
+  final List<_PreviewEntry> entries;
+
+  const _DriverStandingsPreview({
+    required this.seasonLabel,
+    required this.subtitle,
+    required this.entries,
+  });
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -300,7 +467,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                           border: Border.all(color: colors.border),
                         ),
                         child: Text(
-                          DateTime.now().year.toString(),
+                          seasonLabel,
                           style: TextStyle(
                             color: colors.textMuted,
                             fontSize: 9,
@@ -312,7 +479,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "Top 3 drivers",
+                    subtitle,
                     style: TextStyle(
                       color: colors.textMuted,
                       fontSize: 11,
@@ -321,21 +488,21 @@ class _DriverStandingsPreview extends StatelessWidget {
                   SizedBox(height: 10),
                   _StandingsRow(
                     position: "1",
-                    name: "Driver One",
-                    points: "413 pts",
+                    name: entries[0].name,
+                    points: entries[0].points,
                     highlight: true,
                   ),
                   SizedBox(height: 6),
                   _StandingsRow(
                     position: "2",
-                    name: "Driver Two",
-                    points: "370 pts",
+                    name: entries[1].name,
+                    points: entries[1].points,
                   ),
                   SizedBox(height: 6),
                   _StandingsRow(
                     position: "3",
-                    name: "Driver Three",
-                    points: "312 pts",
+                    name: entries[2].name,
+                    points: entries[2].points,
                   ),
                 ],
               ),
@@ -348,6 +515,16 @@ class _DriverStandingsPreview extends StatelessWidget {
 }
 
 class _TeamStandingsPreview extends StatelessWidget {
+  final String seasonLabel;
+  final String subtitle;
+  final List<_PreviewEntry> entries;
+
+  const _TeamStandingsPreview({
+    required this.seasonLabel,
+    required this.subtitle,
+    required this.entries,
+  });
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -448,7 +625,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                           border: Border.all(color: colors.border),
                         ),
                         child: Text(
-                          DateTime.now().year.toString(),
+                          seasonLabel,
                           style: TextStyle(
                             color: colors.textMuted,
                             fontSize: 9,
@@ -460,7 +637,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "Top 3 teams",
+                    subtitle,
                     style: TextStyle(
                       color: colors.textMuted,
                       fontSize: 11,
@@ -469,21 +646,21 @@ class _TeamStandingsPreview extends StatelessWidget {
                   SizedBox(height: 10),
                   _StandingsRow(
                     position: "1",
-                    name: "Red Bull",
-                    points: "652 pts",
+                    name: entries[0].name,
+                    points: entries[0].points,
                     highlight: true,
                   ),
                   SizedBox(height: 6),
                   _StandingsRow(
                     position: "2",
-                    name: "Ferrari",
-                    points: "478 pts",
+                    name: entries[1].name,
+                    points: entries[1].points,
                   ),
                   SizedBox(height: 6),
                   _StandingsRow(
                     position: "3",
-                    name: "McLaren",
-                    points: "412 pts",
+                    name: entries[2].name,
+                    points: entries[2].points,
                   ),
                 ],
               ),
@@ -518,6 +695,7 @@ class _StandingsRow extends StatelessWidget {
     final rowBackground = highlight
         ? colors.surfaceAlt.withValues(alpha: 0.7)
         : Colors.transparent;
+    final showPoints = points.isNotEmpty;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
@@ -562,16 +740,39 @@ class _StandingsRow extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            points,
-            style: TextStyle(
-              color: highlight ? onSurface : colors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+          if (showPoints)
+            Text(
+              points,
+              style: TextStyle(
+                color: highlight ? onSurface : colors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
         ],
       ),
     );
   }
+}
+
+class _WidgetPreviewData {
+  final String season;
+  final List<DriverStanding> drivers;
+  final List<ConstructorStanding> teams;
+
+  const _WidgetPreviewData({
+    required this.season,
+    required this.drivers,
+    required this.teams,
+  });
+}
+
+class _PreviewEntry {
+  final String name;
+  final String points;
+
+  const _PreviewEntry({
+    required this.name,
+    required this.points,
+  });
 }

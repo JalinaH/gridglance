@@ -33,7 +33,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const String _season = '2025';
+  late final String _season = DateTime.now().year.toString();
   late Future<SeasonOverview> _overview;
   bool _didUpdateWidget = false;
 
