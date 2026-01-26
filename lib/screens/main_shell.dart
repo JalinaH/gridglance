@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/f1_scaffold.dart';
+import '../services/widget_update_service.dart';
 import 'about_screen.dart';
 import 'home_screen.dart';
 import 'widgets_screen.dart';
@@ -21,6 +22,18 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetUpdateService.startDriverStandingsAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetUpdateService.stopDriverStandingsAutoRefresh();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,9 +162,8 @@ class _MainShellState extends State<MainShell> {
         },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 10),
             Icon(
               selected ? selectedIcon : icon,
               color: selected ? activeColor : inactiveColor,

@@ -10,6 +10,7 @@ import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/team_logo.dart';
+import '../services/widget_update_service.dart';
 import 'constructor_standings_screen.dart';
 import 'driver_standings_screen.dart';
 import 'race_detail_screen.dart';
@@ -34,6 +35,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const String _season = '2025';
   late Future<SeasonOverview> _overview;
+  bool _didUpdateWidget = false;
 
   @override
   void initState() {
@@ -44,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _refresh() {
     setState(() {
       _overview = ApiService().getSeasonOverview(season: _season);
+      _didUpdateWidget = false;
     });
   }
 
@@ -105,6 +108,15 @@ class _HomeScreenState extends State<HomeScreen> {
         final topDrivers = overview.driverStandings.take(3).toList();
         final topTeams = overview.constructorStandings.take(3).toList();
         final upcomingRaces = _getUpcomingRaces(overview, count: 3);
+
+        if (!_didUpdateWidget) {
+          _didUpdateWidget = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            WidgetUpdateService.updateDriverStandings(
+              overview.driverStandings,
+            );
+          });
+        }
 
         return ListView(
           padding: EdgeInsets.only(bottom: 24),
