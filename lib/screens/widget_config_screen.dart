@@ -158,7 +158,7 @@ class _DriverSelector extends StatelessWidget {
         final drivers = snapshot.data!;
         return ListView.separated(
           itemCount: drivers.length,
-          separatorBuilder: (_, __) => Divider(color: colors.border),
+          separatorBuilder: (_, _) => Divider(color: colors.border),
           itemBuilder: (context, index) {
             final driver = drivers[index];
             return ListTile(
@@ -223,7 +223,7 @@ class _TeamSelector extends StatelessWidget {
         final data = snapshot.data!;
         return ListView.separated(
           itemCount: data.teams.length,
-          separatorBuilder: (_, __) => Divider(color: colors.border),
+          separatorBuilder: (_, _) => Divider(color: colors.border),
           itemBuilder: (context, index) {
             final team = data.teams[index];
             final drivers = data.drivers

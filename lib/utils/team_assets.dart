@@ -45,6 +45,6 @@ Widget teamLogoOrIcon(String teamName, {double size = 20}) {
     width: size,
     height: size,
     fit: BoxFit.contain,
-    errorBuilder: (_, __, ___) => Icon(Icons.directions_car, size: size),
+    errorBuilder: (_, _, _) => Icon(Icons.directions_car, size: size),
   );
 }

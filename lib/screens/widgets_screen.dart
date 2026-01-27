@@ -1312,7 +1312,7 @@ class _SelectionSheet<T> extends StatelessWidget {
                 }
                 return ListView.separated(
                   itemCount: items.length,
-                  separatorBuilder: (_, __) => Divider(color: colors.border),
+                  separatorBuilder: (_, _) => Divider(color: colors.border),
                   itemBuilder: (context, index) => itemBuilder(
                     context,
                     items[index],
