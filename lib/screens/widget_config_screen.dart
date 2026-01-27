@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 
 enum WidgetConfigType { driver, team }
 
-class WidgetConfigScreen extends StatelessWidget {
+class WidgetConfigScreen extends StatefulWidget {
   final WidgetConfigType type;
   final int widgetId;
   final String season;
@@ -20,22 +20,108 @@ class WidgetConfigScreen extends StatelessWidget {
   });
 
   @override
+  State<WidgetConfigScreen> createState() => _WidgetConfigScreenState();
+}
+
+class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
+  bool _transparent = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransparency();
+  }
+
+  Future<void> _loadTransparency() async {
+    final value = widget.type == WidgetConfigType.driver
+        ? await WidgetUpdateService.getFavoriteDriverWidgetTransparent(
+            widget.widgetId,
+          )
+        : await WidgetUpdateService.getFavoriteTeamWidgetTransparent(
+            widget.widgetId,
+          );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _transparent = value;
+      _loading = false;
+    });
+  }
+
+  Future<void> _setTransparency(bool value) async {
+    setState(() {
+      _transparent = value;
+    });
+    if (widget.type == WidgetConfigType.driver) {
+      await WidgetUpdateService.setFavoriteDriverWidgetTransparent(
+        widgetId: widget.widgetId,
+        value: value,
+      );
+    } else {
+      await WidgetUpdateService.setFavoriteTeamWidgetTransparent(
+        widgetId: widget.widgetId,
+        value: value,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final selector = widget.type == WidgetConfigType.driver
+        ? _DriverSelector(
+            widgetId: widget.widgetId,
+            season: widget.season,
+          )
+        : _TeamSelector(
+            widgetId: widget.widgetId,
+            season: widget.season,
+          );
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
-        title: Text(type == WidgetConfigType.driver ? 'Select Driver' : 'Select Team'),
+        title: Text(
+          widget.type == WidgetConfigType.driver
+              ? 'Select Driver'
+              : 'Select Team',
+        ),
       ),
-      body: type == WidgetConfigType.driver
-          ? _DriverSelector(
-              widgetId: widgetId,
-              season: season,
-            )
-          : _TeamSelector(
-              widgetId: widgetId,
-              season: season,
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.border),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Transparent background',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: _transparent,
+                    onChanged: _loading ? null : _setTransparency,
+                    activeThumbColor: colors.f1Red,
+                  ),
+                ],
+              ),
             ),
+          ),
+          Expanded(child: selector),
+        ],
+      ),
     );
   }
 }

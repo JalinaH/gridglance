@@ -22,6 +22,8 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   bool _addingFavoriteTeam = false;
   String? _favoriteDriverStatusMessage;
   String? _favoriteTeamStatusMessage;
+  bool _driverWidgetTransparent = false;
+  bool _teamWidgetTransparent = false;
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
   _WidgetPreviewData? _previewData;
@@ -38,6 +40,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         _previewData = value;
       });
     });
+    _loadTransparency();
   }
 
   Future<_WidgetPreviewData> _loadPreviewData() async {
@@ -77,6 +80,19 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       });
     }
     return data;
+  }
+
+  Future<void> _loadTransparency() async {
+    final driverTransparent =
+        await WidgetUpdateService.getDriverWidgetTransparent();
+    final teamTransparent = await WidgetUpdateService.getTeamWidgetTransparent();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _driverWidgetTransparent = driverTransparent;
+      _teamWidgetTransparent = teamTransparent;
+    });
   }
 
   Future<void> _addDriverWidget() async {
@@ -398,6 +414,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 subtitle: 'Top 3 drivers',
                 entries: driverStandings,
               ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _driverWidgetTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _driverWidgetTransparent = value;
+                  });
+                  await WidgetUpdateService.setDriverWidgetTransparent(value);
+                },
+              ),
               actionLabel: "Add widget",
               isAdding: _addingDriver,
               onAction: _addingDriver ? null : _addDriverWidget,
@@ -410,6 +436,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 title: 'Team Standings',
                 subtitle: 'Top 3 teams',
                 entries: teamStandings,
+              ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _teamWidgetTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _teamWidgetTransparent = value;
+                  });
+                  await WidgetUpdateService.setTeamWidgetTransparent(value);
+                },
               ),
               actionLabel: "Add widget",
               isAdding: _addingTeam,
@@ -652,6 +688,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     required bool isAdding,
     required VoidCallback? onAction,
     String? statusMessage,
+    Widget? option,
   }) {
     final colors = AppColors.of(context);
     return Container(
@@ -675,6 +712,10 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           preview,
+          if (option != null) ...[
+            SizedBox(height: 10),
+            option,
+          ],
           if (statusMessage != null) ...[
             SizedBox(height: 8),
             Text(
@@ -708,6 +749,41 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       ),
     );
   }
+}
+
+Widget _buildTransparencyToggle(
+  BuildContext context, {
+  required bool value,
+  required ValueChanged<bool> onChanged,
+}) {
+  final colors = AppColors.of(context);
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: colors.surfaceAlt,
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: colors.border),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Transparent background',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: colors.f1Red,
+        ),
+      ],
+    ),
+  );
 }
 
 class _DriverStandingsPreview extends StatelessWidget {

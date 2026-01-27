@@ -41,6 +41,7 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             val season = prefs.getString("${prefix}season",
                 prefs.getString("${fallbackPrefix}season", defaultSeason)
             ) ?: defaultSeason
+            val isTransparent = prefs.getString("${prefix}transparent", "false") == "true"
 
             val intent = Intent(context, MainActivity::class.java).apply {
                 action = "com.example.gridglance.WIDGET_CLICK"
@@ -55,6 +56,12 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             )
 
             val views = RemoteViews(context.packageName, R.layout.favorite_team_widget)
+            val background = if (isTransparent) {
+                android.R.color.transparent
+            } else {
+                R.drawable.widget_background
+            }
+            views.setInt(R.id.widget_root, "setBackgroundResource", background)
             views.setTextViewText(R.id.widget_season, season)
             views.setTextViewText(R.id.team_name, name)
             views.setTextViewText(R.id.team_points, points)

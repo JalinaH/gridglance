@@ -23,9 +23,16 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
         val driver1 = prefs.getString("driver_1", "Update from app") ?: "Update from app"
         val driver2 = prefs.getString("driver_2", "TBD") ?: "TBD"
         val driver3 = prefs.getString("driver_3", "TBD") ?: "TBD"
+        val isTransparent = prefs.getString("driver_widget_transparent", "false") == "true"
 
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.driver_standings_widget)
+            val background = if (isTransparent) {
+                android.R.color.transparent
+            } else {
+                R.drawable.widget_background
+            }
+            views.setInt(R.id.widget_root, "setBackgroundResource", background)
             views.setTextViewText(R.id.widget_title, title)
             views.setTextViewText(R.id.widget_subtitle, subtitle)
             views.setTextViewText(R.id.widget_season, season)
