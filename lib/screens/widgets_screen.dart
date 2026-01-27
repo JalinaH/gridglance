@@ -5,6 +5,7 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../services/widget_update_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/team_assets.dart';
 
 class WidgetsScreen extends StatefulWidget {
   const WidgetsScreen({super.key});
@@ -1481,10 +1482,11 @@ class _TeamPreviewRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: colors.border),
               ),
-              child: Icon(
-                Icons.directions_car,
-                color: colors.textMuted,
-                size: 20,
+              child: Center(
+                child: IconTheme(
+                  data: IconThemeData(color: colors.textMuted),
+                  child: teamLogoOrIcon(preview.name, size: 20),
+                ),
               ),
             ),
             SizedBox(width: 10),

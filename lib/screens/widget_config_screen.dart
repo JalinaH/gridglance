@@ -4,6 +4,7 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../services/widget_update_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/team_assets.dart';
 
 enum WidgetConfigType { driver, team }
 
@@ -235,6 +236,7 @@ class _TeamSelector extends StatelessWidget {
                     .map((driver) => _driverLabel(driver))
                     .join('  ');
             return ListTile(
+              leading: teamLogoOrIcon(team.teamName, size: 22),
               title: Text(
                 team.teamName,
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
