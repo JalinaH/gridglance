@@ -18,24 +18,65 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   bool _addingTeam = false;
   String? _driverStatusMessage;
   String? _teamStatusMessage;
+  bool _addingFavoriteDriver = false;
+  bool _addingFavoriteTeam = false;
+  String? _favoriteDriverStatusMessage;
+  String? _favoriteTeamStatusMessage;
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
+  _WidgetPreviewData? _previewData;
 
   @override
   void initState() {
     super.initState();
     _previewFuture = _loadPreviewData();
+    _previewFuture.then((value) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _previewData = value;
+      });
+    });
   }
 
   Future<_WidgetPreviewData> _loadPreviewData() async {
     final api = ApiService();
     final drivers = await api.getDriverStandings(season: _season);
     final teams = await api.getConstructorStandings(season: _season);
+    if (drivers.isEmpty && teams.isEmpty) {
+      final fallbackSeason = (int.parse(_season) - 1).toString();
+      final fallbackDrivers =
+          await api.getDriverStandings(season: fallbackSeason);
+      final fallbackTeams =
+          await api.getConstructorStandings(season: fallbackSeason);
+      if (fallbackDrivers.isNotEmpty || fallbackTeams.isNotEmpty) {
+        return _WidgetPreviewData(
+          season: fallbackSeason,
+          drivers: fallbackDrivers,
+          teams: fallbackTeams,
+        );
+      }
+    }
     return _WidgetPreviewData(
       season: _season,
       drivers: drivers,
       teams: teams,
     );
+  }
+
+  Future<_WidgetPreviewData> _ensurePreviewData() async {
+    final cached = _previewData;
+    if (cached != null && (cached.drivers.isNotEmpty || cached.teams.isNotEmpty)) {
+      return cached;
+    }
+    final data = await _loadPreviewData();
+    if (mounted) {
+      setState(() {
+        _previewData = data;
+      });
+    }
+    return data;
   }
 
   Future<void> _addDriverWidget() async {
@@ -120,6 +161,185 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
   }
 
+  Future<void> _addFavoriteDriverWidget() async {
+    final driver = await _pickFavoriteDriver();
+    if (driver == null) {
+      return;
+    }
+    try {
+      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
+      if (!supported) {
+        if (mounted) {
+          setState(() {
+            _favoriteDriverStatusMessage =
+                "Widget pinning not supported. Use widget picker.";
+          });
+        }
+        return;
+      }
+      setState(() {
+        _addingFavoriteDriver = true;
+        _favoriteDriverStatusMessage = null;
+      });
+      await WidgetUpdateService.setFavoriteDriverDefault(
+        driver: driver,
+        season: _season,
+      );
+      await HomeWidget.requestPinWidget(
+        qualifiedAndroidName:
+            WidgetUpdateService.androidQualifiedFavoriteDriverWidgetProvider,
+      );
+      if (mounted) {
+        setState(() {
+          _favoriteDriverStatusMessage = "Widget add request sent";
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _favoriteDriverStatusMessage = "Failed to request widget";
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _addingFavoriteDriver = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _addFavoriteTeamWidget() async {
+    final selection = await _pickFavoriteTeam();
+    if (selection == null) {
+      return;
+    }
+    try {
+      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
+      if (!supported) {
+        if (mounted) {
+          setState(() {
+            _favoriteTeamStatusMessage =
+                "Widget pinning not supported. Use widget picker.";
+          });
+        }
+        return;
+      }
+      setState(() {
+        _addingFavoriteTeam = true;
+        _favoriteTeamStatusMessage = null;
+      });
+      await WidgetUpdateService.setFavoriteTeamDefault(
+        team: selection.team,
+        drivers: selection.drivers,
+        season: _season,
+      );
+      await HomeWidget.requestPinWidget(
+        qualifiedAndroidName:
+            WidgetUpdateService.androidQualifiedFavoriteTeamWidgetProvider,
+      );
+      if (mounted) {
+        setState(() {
+          _favoriteTeamStatusMessage = "Widget add request sent";
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _favoriteTeamStatusMessage = "Failed to request widget";
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _addingFavoriteTeam = false;
+        });
+      }
+    }
+  }
+
+  Future<DriverStanding?> _pickFavoriteDriver() async {
+    return showModalBottomSheet<DriverStanding>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) {
+        return _SelectionSheet<DriverStanding>(
+          title: 'Select Driver',
+          loadItems: () async {
+            final data = await _ensurePreviewData();
+            return data.drivers;
+          },
+          itemBuilder: (context, driver) => ListTile(
+            title: Text(
+              '${driver.givenName} ${driver.familyName}',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            subtitle: Text(
+              '${driver.teamName} • ${driver.points} pts',
+              style: TextStyle(color: AppColors.of(context).textMuted),
+            ),
+            trailing: Text(
+              'P${driver.position}',
+              style: TextStyle(color: AppColors.of(context).textMuted),
+            ),
+            onTap: () => Navigator.of(context).pop(driver),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<_TeamSelection?> _pickFavoriteTeam() async {
+    return showModalBottomSheet<_TeamSelection>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) {
+        return _SelectionSheet<_TeamSelection>(
+          title: 'Select Team',
+          loadItems: () async {
+            final data = await _ensurePreviewData();
+            final teams = data.teams;
+            final drivers = data.drivers;
+            return teams.map((team) {
+              final teamDrivers = drivers
+                  .where((driver) => driver.constructorId == team.constructorId)
+                  .take(2)
+                  .toList();
+              return _TeamSelection(team: team, drivers: teamDrivers);
+            }).toList();
+          },
+          itemBuilder: (context, selection) {
+            final driversLabel = selection.drivers.isEmpty
+                ? 'Drivers TBD'
+                : List.generate(
+                    selection.drivers.length,
+                    (index) => _shortDriverLabel(selection.drivers, index),
+                  ).join('  ');
+            return ListTile(
+              title: Text(
+                selection.team.teamName,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                '$driversLabel • ${selection.team.points} pts',
+                style: TextStyle(color: AppColors.of(context).textMuted),
+              ),
+              trailing: Text(
+                'P${selection.team.position}',
+                style: TextStyle(color: AppColors.of(context).textMuted),
+              ),
+              onTap: () => Navigator.of(context).pop(selection),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
@@ -130,19 +350,32 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         final hasError = snapshot.hasError;
         final data = snapshot.data;
         final seasonLabel = data?.season ?? _season;
-        final driverEntries = _buildDriverEntries(
+        final favoriteDriverPreview = _driverPreview(
           data?.drivers,
           isLoading: isLoading,
           hasError: hasError,
         );
-        final teamEntries = _buildTeamEntries(
+        final favoriteTeamPreview = _teamPreview(
           data?.teams,
           isLoading: isLoading,
           hasError: hasError,
         );
-        final driverSubtitle =
-            _driverSubtitle(isLoading, hasError, data?.drivers);
-        final teamSubtitle = _teamSubtitle(isLoading, hasError, data?.teams);
+        final favoriteTeamDriverLines = _teamDriverLines(
+          data?.drivers,
+          data?.teams,
+          isLoading: isLoading,
+          hasError: hasError,
+        );
+        final driverStandings = _driverStandingsPreview(
+          data?.drivers,
+          isLoading: isLoading,
+          hasError: hasError,
+        );
+        final teamStandings = _teamStandingsPreview(
+          data?.teams,
+          isLoading: isLoading,
+          hasError: hasError,
+        );
 
         return ListView(
           padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -159,10 +392,11 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
             SizedBox(height: 16),
             _buildWidgetCard(
               context,
-              preview: _DriverStandingsPreview(
+              preview: _StandingsListPreview(
                 seasonLabel: seasonLabel,
-                subtitle: driverSubtitle,
-                entries: driverEntries,
+                title: 'Driver Standings',
+                subtitle: 'Top 3 drivers',
+                entries: driverStandings,
               ),
               actionLabel: "Add widget",
               isAdding: _addingDriver,
@@ -171,15 +405,41 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
             ),
             _buildWidgetCard(
               context,
-              preview: _TeamStandingsPreview(
+              preview: _StandingsListPreview(
                 seasonLabel: seasonLabel,
-                subtitle: teamSubtitle,
-                entries: teamEntries,
+                title: 'Team Standings',
+                subtitle: 'Top 3 teams',
+                entries: teamStandings,
               ),
               actionLabel: "Add widget",
               isAdding: _addingTeam,
               onAction: _addingTeam ? null : _addTeamWidget,
               statusMessage: _teamStatusMessage,
+            ),
+            _buildWidgetCard(
+              context,
+              preview: _DriverStandingsPreview(
+                seasonLabel: seasonLabel,
+                preview: favoriteDriverPreview,
+                title: 'Favorite Driver',
+              ),
+              actionLabel: "Add widget",
+              isAdding: _addingFavoriteDriver,
+              onAction: _addingFavoriteDriver ? null : _addFavoriteDriverWidget,
+              statusMessage: _favoriteDriverStatusMessage,
+            ),
+            _buildWidgetCard(
+              context,
+              preview: _TeamStandingsPreview(
+                seasonLabel: seasonLabel,
+                preview: favoriteTeamPreview,
+                driverLines: favoriteTeamDriverLines,
+                title: 'Favorite Team',
+              ),
+              actionLabel: "Add widget",
+              isAdding: _addingFavoriteTeam,
+              onAction: _addingFavoriteTeam ? null : _addFavoriteTeamWidget,
+              statusMessage: _favoriteTeamStatusMessage,
             ),
           ],
         );
@@ -187,7 +447,79 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     );
   }
 
-  List<_PreviewEntry> _buildDriverEntries(
+  _DriverPreviewData _driverPreview(
+    List<DriverStanding>? standings, {
+    required bool isLoading,
+    required bool hasError,
+  }) {
+    if (hasError) {
+      return _DriverPreviewData(
+        name: "Failed to load",
+        team: "Check connection",
+        position: "--",
+        points: "",
+      );
+    }
+    if (isLoading) {
+      return _DriverPreviewData(
+        name: "Loading...",
+        team: "Please wait",
+        position: "--",
+        points: "",
+      );
+    }
+    final driver = (standings ?? []).isEmpty ? null : standings!.first;
+    if (driver == null) {
+      return _DriverPreviewData(
+        name: "Standings",
+        team: "Coming soon",
+        position: "--",
+        points: "",
+      );
+    }
+    return _DriverPreviewData(
+      name: "${driver.givenName} ${driver.familyName}",
+      team: driver.teamName,
+      position: driver.position,
+      points: "${driver.points} pts",
+    );
+  }
+
+  _TeamPreviewData _teamPreview(
+    List<ConstructorStanding>? standings, {
+    required bool isLoading,
+    required bool hasError,
+  }) {
+    if (hasError) {
+      return _TeamPreviewData(
+        name: "Failed to load",
+        points: "",
+        position: "--",
+      );
+    }
+    if (isLoading) {
+      return _TeamPreviewData(
+        name: "Loading...",
+        points: "",
+        position: "--",
+      );
+    }
+    final team = (standings ?? []).isEmpty ? null : standings!.first;
+    if (team == null) {
+      return _TeamPreviewData(
+        name: "Standings",
+        points: "",
+        position: "--",
+      );
+    }
+    return _TeamPreviewData(
+      name: team.teamName,
+      points: "${team.points} pts",
+      position: team.position,
+    );
+  }
+
+  List<_PreviewEntry> _driverStandingsPreview(
     List<DriverStanding>? standings, {
     required bool isLoading,
     required bool hasError,
@@ -206,7 +538,14 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         _PreviewEntry(name: "Please wait", points: ""),
       ];
     }
-    final top = (standings ?? []).take(3).toList();
+    if (standings == null || standings.isEmpty) {
+      return [
+        _PreviewEntry(name: "Drivers", points: "Coming soon"),
+        _PreviewEntry(name: "TBD", points: ""),
+        _PreviewEntry(name: "TBD", points: ""),
+      ];
+    }
+    final top = standings.take(3).toList();
     return List.generate(
       3,
       (index) {
@@ -222,7 +561,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     );
   }
 
-  List<_PreviewEntry> _buildTeamEntries(
+  List<_PreviewEntry> _teamStandingsPreview(
     List<ConstructorStanding>? standings, {
     required bool isLoading,
     required bool hasError,
@@ -241,7 +580,14 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         _PreviewEntry(name: "Please wait", points: ""),
       ];
     }
-    final top = (standings ?? []).take(3).toList();
+    if (standings == null || standings.isEmpty) {
+      return [
+        _PreviewEntry(name: "Teams", points: "Coming soon"),
+        _PreviewEntry(name: "TBD", points: ""),
+        _PreviewEntry(name: "TBD", points: ""),
+      ];
+    }
+    final top = standings.take(3).toList();
     return List.generate(
       3,
       (index) {
@@ -257,38 +603,46 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     );
   }
 
-  String _driverSubtitle(
-    bool isLoading,
-    bool hasError,
-    List<DriverStanding>? standings,
-  ) {
-    if (hasError) {
-      return "Unable to load";
+  String _teamDriverLines(
+    List<DriverStanding>? drivers,
+    List<ConstructorStanding>? teams, {
+    required bool isLoading,
+    required bool hasError,
+  }) {
+    if (hasError || isLoading) {
+      return "-- ---  -- ---";
     }
-    if (isLoading) {
-      return "Loading standings";
+    final topTeam = (teams ?? []).isEmpty ? null : teams!.first;
+    if (topTeam == null || drivers == null) {
+      return "-- ---  -- ---";
     }
-    if (standings == null || standings.isEmpty) {
-      return "Standings coming soon";
+    final teamDrivers = drivers
+        .where((driver) => driver.constructorId == topTeam.constructorId)
+        .take(2)
+        .toList();
+    if (teamDrivers.isEmpty) {
+      return "-- ---  -- ---";
     }
-    return "Top 3 drivers";
+    final line1 = _shortDriverLabel(teamDrivers, 0);
+    final line2 = _shortDriverLabel(teamDrivers, 1);
+    return "$line1  $line2";
   }
 
-  String _teamSubtitle(
-    bool isLoading,
-    bool hasError,
-    List<ConstructorStanding>? standings,
-  ) {
-    if (hasError) {
-      return "Unable to load";
+  String _shortDriverLabel(List<DriverStanding> drivers, int index) {
+    if (index >= drivers.length) {
+      return "-- ---";
     }
-    if (isLoading) {
-      return "Loading standings";
-    }
-    if (standings == null || standings.isEmpty) {
-      return "Standings coming soon";
-    }
-    return "Top 3 teams";
+    final driver = drivers[index];
+    final number = driver.permanentNumber ?? '--';
+    final code = driver.code?.isNotEmpty == true
+        ? driver.code!
+        : (driver.familyName.isNotEmpty
+            ? driver.familyName.substring(
+                0,
+                driver.familyName.length >= 3 ? 3 : driver.familyName.length,
+              )
+            : '---');
+    return '${number.toUpperCase()} ${code.toUpperCase()}';
   }
 
   Widget _buildWidgetCard(
@@ -358,13 +712,13 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
 
 class _DriverStandingsPreview extends StatelessWidget {
   final String seasonLabel;
-  final String subtitle;
-  final List<_PreviewEntry> entries;
+  final _DriverPreviewData preview;
+  final String title;
 
   const _DriverStandingsPreview({
     required this.seasonLabel,
-    required this.subtitle,
-    required this.entries,
+    required this.preview,
+    required this.title,
   });
 
   @override
@@ -445,7 +799,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                       ),
                       SizedBox(width: 8),
                       Text(
-                        "DRIVER STANDINGS",
+                        title.toUpperCase(),
                         style: TextStyle(
                           color: onSurface,
                           fontSize: 10,
@@ -478,32 +832,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 10),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: colors.textMuted,
-                      fontSize: 11,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  _StandingsRow(
-                    position: "1",
-                    name: entries[0].name,
-                    points: entries[0].points,
-                    highlight: true,
-                  ),
-                  SizedBox(height: 6),
-                  _StandingsRow(
-                    position: "2",
-                    name: entries[1].name,
-                    points: entries[1].points,
-                  ),
-                  SizedBox(height: 6),
-                  _StandingsRow(
-                    position: "3",
-                    name: entries[2].name,
-                    points: entries[2].points,
-                  ),
+                  _DriverPreviewRow(preview: preview),
                 ],
               ),
             ),
@@ -516,11 +845,151 @@ class _DriverStandingsPreview extends StatelessWidget {
 
 class _TeamStandingsPreview extends StatelessWidget {
   final String seasonLabel;
-  final String subtitle;
-  final List<_PreviewEntry> entries;
+  final _TeamPreviewData preview;
+  final String driverLines;
+  final String title;
 
   const _TeamStandingsPreview({
     required this.seasonLabel,
+    required this.preview,
+    required this.driverLines,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final isDark = theme.brightness == Brightness.dark;
+    return AspectRatio(
+      aspectRatio: 18 / 10,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colors.backgroundAlt,
+              colors.surface,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
+              blurRadius: 10,
+              offset: Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -20,
+              top: -24,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      colors.f1RedBright.withValues(alpha: isDark ? 0.28 : 0.15),
+                      colors.f1Red.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: -24,
+              bottom: -36,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.surfaceAlt.withValues(alpha: 0.45),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        height: 3,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [colors.f1Red, colors.f1RedBright],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        title.toUpperCase(),
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      Spacer(),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.surfaceAlt.withValues(
+                            alpha: isDark ? 0.9 : 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: colors.border),
+                        ),
+                        child: Text(
+                          seasonLabel,
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  _TeamPreviewRow(
+                    preview: preview,
+                    driverLines: driverLines,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StandingsListPreview extends StatelessWidget {
+  final String seasonLabel;
+  final String title;
+  final String subtitle;
+  final List<_PreviewEntry> entries;
+
+  const _StandingsListPreview({
+    required this.seasonLabel,
+    required this.title,
     required this.subtitle,
     required this.entries,
   });
@@ -603,7 +1072,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                       ),
                       SizedBox(width: 8),
                       Text(
-                        "TEAM STANDINGS",
+                        title.toUpperCase(),
                         style: TextStyle(
                           color: onSurface,
                           fontSize: 10,
@@ -635,7 +1104,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 8),
                   Text(
                     subtitle,
                     style: TextStyle(
@@ -643,7 +1112,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                       fontSize: 11,
                     ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 8),
                   _StandingsRow(
                     position: "1",
                     name: entries[0].name,
@@ -668,6 +1137,339 @@ class _TeamStandingsPreview extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _WidgetPreviewData {
+  final String season;
+  final List<DriverStanding> drivers;
+  final List<ConstructorStanding> teams;
+
+  const _WidgetPreviewData({
+    required this.season,
+    required this.drivers,
+    required this.teams,
+  });
+}
+
+class _TeamSelection {
+  final ConstructorStanding team;
+  final List<DriverStanding> drivers;
+
+  const _TeamSelection({
+    required this.team,
+    required this.drivers,
+  });
+}
+
+class _SelectionSheet<T> extends StatelessWidget {
+  final String title;
+  final Future<List<T>> Function() loadItems;
+  final Widget Function(BuildContext context, T item) itemBuilder;
+
+  const _SelectionSheet({
+    required this.title,
+    required this.loadItems,
+    required this.itemBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: colors.textMuted),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<T>>(
+              future: loadItems(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(color: colors.f1Red),
+                  );
+                }
+                if (snapshot.hasError || snapshot.data == null) {
+                  return Center(
+                    child: Text(
+                      'Failed to load',
+                      style: TextStyle(color: colors.textMuted),
+                    ),
+                  );
+                }
+                final items = snapshot.data!;
+                if (items.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No data available',
+                      style: TextStyle(color: colors.textMuted),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => Divider(color: colors.border),
+                  itemBuilder: (context, index) => itemBuilder(
+                    context,
+                    items[index],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+class _PreviewEntry {
+  final String name;
+  final String points;
+
+  const _PreviewEntry({
+    required this.name,
+    required this.points,
+  });
+}
+
+class _DriverPreviewData {
+  final String name;
+  final String team;
+  final String position;
+  final String points;
+
+  const _DriverPreviewData({
+    required this.name,
+    required this.team,
+    required this.position,
+    required this.points,
+  });
+}
+
+class _TeamPreviewData {
+  final String name;
+  final String points;
+  final String position;
+
+  const _TeamPreviewData({
+    required this.name,
+    required this.points,
+    required this.position,
+  });
+}
+
+class _DriverPreviewRow extends StatelessWidget {
+  final _DriverPreviewData preview;
+
+  const _DriverPreviewRow({required this.preview});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: colors.surfaceAlt,
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.border),
+              ),
+              child: Icon(
+                Icons.person,
+                color: colors.textMuted,
+                size: 22,
+              ),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    preview.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: onSurface,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    preview.team,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: colors.surfaceAlt.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: colors.border),
+          ),
+          child: Row(
+            children: [
+              Text(
+                'P${preview.position}',
+                style: TextStyle(
+                  color: onSurface,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Spacer(),
+              if (preview.points.isNotEmpty)
+                Text(
+                  preview.points,
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TeamPreviewRow extends StatelessWidget {
+  final _TeamPreviewData preview;
+  final String driverLines;
+
+  const _TeamPreviewRow({
+    required this.preview,
+    required this.driverLines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 64,
+              height: 36,
+              decoration: BoxDecoration(
+                color: colors.surfaceAlt,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: colors.border),
+              ),
+              child: Icon(
+                Icons.directions_car,
+                color: colors.textMuted,
+                size: 20,
+              ),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    preview.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: onSurface,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    preview.points,
+                    style: TextStyle(
+                      color: colors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: colors.surfaceAlt.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: colors.border),
+          ),
+          child: Row(
+            children: [
+              Text(
+                'P${preview.position}',
+                style: TextStyle(
+                  color: onSurface,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Spacer(),
+              Text(
+                driverLines,
+                style: TextStyle(
+                  color: onSurface,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -753,26 +1555,4 @@ class _StandingsRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _WidgetPreviewData {
-  final String season;
-  final List<DriverStanding> drivers;
-  final List<ConstructorStanding> teams;
-
-  const _WidgetPreviewData({
-    required this.season,
-    required this.drivers,
-    required this.teams,
-  });
-}
-
-class _PreviewEntry {
-  final String name;
-  final String points;
-
-  const _PreviewEntry({
-    required this.name,
-    required this.points,
-  });
 }

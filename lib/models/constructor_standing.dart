@@ -3,12 +3,14 @@ class ConstructorStanding {
   final String points;
   final String wins;
   final String teamName;
+  final String constructorId;
 
   ConstructorStanding({
     required this.position,
     required this.points,
     required this.wins,
     required this.teamName,
+    required this.constructorId,
   });
 
   factory ConstructorStanding.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,7 @@ class ConstructorStanding {
       points: json['points'] ?? '0',
       wins: json['wins'] ?? '0',
       teamName: constructor['name'] ?? '',
+      constructorId: constructor['constructorId'] ?? '',
     );
   }
 }

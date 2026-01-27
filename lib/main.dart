@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/main_shell.dart';
+import 'screens/widget_config_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -14,14 +16,33 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   static const String _themeKey = 'theme_mode';
+  static const MethodChannel _widgetIntentChannel =
+      MethodChannel('gridglance/widget_intent');
   ThemeMode _themeMode = ThemeMode.dark;
+  final GlobalKey<NavigatorState> _navigatorKey =
+      GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadThemeMode();
+    _checkForWidgetClick();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkForWidgetClick();
+    }
   }
 
   Future<void> _loadThemeMode() async {
@@ -53,6 +74,29 @@ class _MyAppState extends State<MyApp> {
 
   bool get _isDarkMode => _themeMode == ThemeMode.dark;
 
+  Future<void> _checkForWidgetClick() async {
+    final result = await _widgetIntentChannel
+        .invokeMethod<Map<dynamic, dynamic>?>('consumeWidgetClick');
+    if (result == null) {
+      return;
+    }
+    final type = result['type'] as String?;
+    final widgetId = int.tryParse('${result['widgetId'] ?? ''}');
+    if (type == null || widgetId == null) {
+      return;
+    }
+    final route = MaterialPageRoute(
+      builder: (_) => WidgetConfigScreen(
+        type: type == 'favorite_team'
+            ? WidgetConfigType.team
+            : WidgetConfigType.driver,
+        widgetId: widgetId,
+        season: DateTime.now().year.toString(),
+      ),
+    );
+    _navigatorKey.currentState?.push(route);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -61,6 +105,7 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: _themeMode,
+      navigatorKey: _navigatorKey,
       home: MainShell(
         isDarkMode: _isDarkMode,
         onToggleTheme: _toggleTheme,

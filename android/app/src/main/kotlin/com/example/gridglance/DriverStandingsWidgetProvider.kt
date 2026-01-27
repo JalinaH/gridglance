@@ -1,10 +1,8 @@
 package com.example.gridglance
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
 import android.util.Log
 import android.widget.RemoteViews
 import java.util.Calendar
@@ -26,14 +24,6 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
         val driver2 = prefs.getString("driver_2", "TBD") ?: "TBD"
         val driver3 = prefs.getString("driver_3", "TBD") ?: "TBD"
 
-        val intent = Intent(context, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.driver_standings_widget)
             views.setTextViewText(R.id.widget_title, title)
@@ -42,7 +32,6 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.driver_one, driver1)
             views.setTextViewText(R.id.driver_two, driver2)
             views.setTextViewText(R.id.driver_three, driver3)
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
