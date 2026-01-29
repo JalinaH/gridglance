@@ -25,6 +25,8 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   String? _favoriteTeamStatusMessage;
   bool _driverWidgetTransparent = false;
   bool _teamWidgetTransparent = false;
+  bool _favoriteDriverTransparent = false;
+  bool _favoriteTeamTransparent = false;
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
   _WidgetPreviewData? _previewData;
@@ -87,12 +89,18 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     final driverTransparent =
         await WidgetUpdateService.getDriverWidgetTransparent();
     final teamTransparent = await WidgetUpdateService.getTeamWidgetTransparent();
+    final favoriteDriverTransparent =
+        await WidgetUpdateService.getFavoriteDriverDefaultTransparent();
+    final favoriteTeamTransparent =
+        await WidgetUpdateService.getFavoriteTeamDefaultTransparent();
     if (!mounted) {
       return;
     }
     setState(() {
       _driverWidgetTransparent = driverTransparent;
       _teamWidgetTransparent = teamTransparent;
+      _favoriteDriverTransparent = favoriteDriverTransparent;
+      _favoriteTeamTransparent = favoriteTeamTransparent;
     });
   }
 
@@ -460,6 +468,18 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 preview: favoriteDriverPreview,
                 title: 'Favorite Driver',
               ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _favoriteDriverTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _favoriteDriverTransparent = value;
+                  });
+                  await WidgetUpdateService.setFavoriteDriverDefaultTransparent(
+                    value,
+                  );
+                },
+              ),
               actionLabel: "Add widget",
               isAdding: _addingFavoriteDriver,
               onAction: _addingFavoriteDriver ? null : _addFavoriteDriverWidget,
@@ -472,6 +492,18 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 preview: favoriteTeamPreview,
                 driverLines: favoriteTeamDriverLines,
                 title: 'Favorite Team',
+              ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _favoriteTeamTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _favoriteTeamTransparent = value;
+                  });
+                  await WidgetUpdateService.setFavoriteTeamDefaultTransparent(
+                    value,
+                  );
+                },
               ),
               actionLabel: "Add widget",
               isAdding: _addingFavoriteTeam,

@@ -41,7 +41,10 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             val season = prefs.getString("${prefix}season",
                 prefs.getString("${fallbackPrefix}season", defaultSeason)
             ) ?: defaultSeason
-            val isTransparent = prefs.getString("${prefix}transparent", "false") == "true"
+            val isTransparent = prefs.getString(
+                "${prefix}transparent",
+                prefs.getString("${fallbackPrefix}transparent", "false"),
+            ) == "true"
 
             val intent = Intent(context, MainActivity::class.java).apply {
                 action = "com.example.gridglance.WIDGET_CLICK"

@@ -36,6 +36,10 @@ class WidgetUpdateService {
   static const String _favoriteTeamDefaultKey = 'favorite_team_default';
   static const String _driverWidgetTransparentKey = 'driver_widget_transparent';
   static const String _teamWidgetTransparentKey = 'team_widget_transparent';
+  static const String _favoriteDriverDefaultTransparentKey =
+      '${_favoriteDriverDefaultKey}_transparent';
+  static const String _favoriteTeamDefaultTransparentKey =
+      '${_favoriteTeamDefaultKey}_transparent';
 
   static void startDriverStandingsAutoRefresh({
     Duration interval = defaultRefreshInterval,
@@ -265,6 +269,20 @@ class WidgetUpdateService {
     );
   }
 
+  static Future<void> setFavoriteDriverDefaultTransparent(bool value) async {
+    await _saveDps(_favoriteDriverDefaultTransparentKey, value.toString());
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
+    );
+  }
+
+  static Future<void> setFavoriteTeamDefaultTransparent(bool value) async {
+    await _saveDps(_favoriteTeamDefaultTransparentKey, value.toString());
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
+    );
+  }
+
   static Future<void> configureFavoriteDriverWidget({
     required int widgetId,
     required DriverStanding driver,
@@ -362,6 +380,14 @@ class WidgetUpdateService {
 
   static Future<bool> getFavoriteTeamWidgetTransparent(int widgetId) async {
     return _getBool(_favoriteTeamKey(widgetId, 'transparent'));
+  }
+
+  static Future<bool> getFavoriteDriverDefaultTransparent() async {
+    return _getBool(_favoriteDriverDefaultTransparentKey);
+  }
+
+  static Future<bool> getFavoriteTeamDefaultTransparent() async {
+    return _getBool(_favoriteTeamDefaultTransparentKey);
   }
 
   static Future<void> _saveDps(String id, String value) async {
