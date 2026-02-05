@@ -160,8 +160,8 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         future = _sprintFuture;
         break;
       case SessionType.race:
-      default:
         future = _raceFuture;
+        break;
     }
 
     return FutureBuilder<SessionResults?>(
@@ -205,7 +205,6 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
       case SessionType.sprint:
         return 'Sprint results not available.';
       case SessionType.race:
-      default:
         return 'Race results not available.';
     }
   }
@@ -272,7 +271,6 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         );
       case SessionType.sprint:
       case SessionType.race:
-      default:
         return Row(
           children: [
             _headerCell('Pos', width: 36, colors: colors),
@@ -352,7 +350,6 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         );
       case SessionType.sprint:
       case SessionType.race:
-      default:
         return Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Row(
@@ -443,7 +440,6 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
       case SessionType.sprint:
         return 'Sprint Results';
       case SessionType.race:
-      default:
         return 'Race Results';
     }
   }

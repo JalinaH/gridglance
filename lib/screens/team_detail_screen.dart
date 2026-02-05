@@ -7,6 +7,7 @@ import '../models/race_result.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/f1_scaffold.dart';
+import '../widgets/points_trend_chart.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/team_logo.dart';
 
@@ -107,6 +108,62 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
+                  'Points per race',
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                SizedBox(height: 12),
+                FutureBuilder<List<TeamRaceResult>>(
+                  future: _resultsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: CircularProgressIndicator(color: colors.f1Red),
+                        ),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return Text(
+                        'Failed to load chart data.',
+                        style: TextStyle(color: colors.textMuted),
+                      );
+                    }
+                    final results = _sortedResults(snapshot.data ?? []);
+                    if (results.length < 2) {
+                      return Text(
+                        'Not enough data to chart yet.',
+                        style: TextStyle(color: colors.textMuted),
+                      );
+                    }
+                    final points = results
+                        .map((result) => _totalPoints(result.drivers))
+                        .toList();
+                    final labels =
+                        results.map((result) => 'R${result.round}').toList();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildChartStats(points),
+                        SizedBox(height: 12),
+                        PointsTrendChart(points: points, labels: labels),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   'Recent Form',
                   style: TextStyle(
                     color: onSurface,
@@ -156,12 +213,17 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   List<TeamRaceResult> _recentResults(List<TeamRaceResult> results) {
-    final sorted = List<TeamRaceResult>.from(results)
-      ..sort((a, b) => _roundValue(a.round).compareTo(_roundValue(b.round)));
+    final sorted = _sortedResults(results);
     if (sorted.length <= 5) {
       return sorted;
     }
     return sorted.sublist(max(0, sorted.length - 5));
+  }
+
+  List<TeamRaceResult> _sortedResults(List<TeamRaceResult> results) {
+    final sorted = List<TeamRaceResult>.from(results)
+      ..sort((a, b) => _roundValue(a.round).compareTo(_roundValue(b.round)));
+    return sorted;
   }
 
   int _roundValue(String round) {
@@ -273,5 +335,62 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
       return '${points.toInt()} PTS';
     }
     return '${points.toStringAsFixed(1)} PTS';
+  }
+
+  Widget _buildChartStats(List<double> points) {
+    final colors = AppColors.of(context);
+    final total = points.fold(0.0, (sum, item) => sum + item);
+    final avg = points.isEmpty ? 0.0 : total / points.length;
+    final best = points.reduce(max);
+    return Row(
+      children: [
+        _statChip(colors, 'Races', points.length.toString()),
+        SizedBox(width: 8),
+        _statChip(colors, 'Avg', _formatPoints(avg)),
+        SizedBox(width: 8),
+        _statChip(colors, 'Best', _formatPoints(best)),
+      ],
+    );
+  }
+
+  Widget _statChip(AppColors colors, String label, String value) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
+            ),
+          ),
+          SizedBox(width: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPoints(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toStringAsFixed(1);
   }
 }

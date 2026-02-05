@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
 import '../services/calendar_service.dart';
+import '../services/notification_preferences.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
 
-class RaceDetailScreen extends StatelessWidget {
+class RaceDetailScreen extends StatefulWidget {
   final Race race;
   final String season;
 
@@ -18,10 +20,48 @@ class RaceDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<RaceDetailScreen> createState() => _RaceDetailScreenState();
+}
+
+class _RaceDetailScreenState extends State<RaceDetailScreen> {
+  static const Duration _leadTime = Duration(minutes: 15);
+  final Map<String, bool> _notifyEnabled = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationState();
+  }
+
+  Future<void> _loadNotificationState() async {
+    final sessions = widget.race.sessions;
+    for (final session in sessions) {
+      final enabled = await NotificationPreferences.isSessionEnabled(
+        race: widget.race,
+        session: session,
+        season: widget.season,
+      );
+      _notifyEnabled[_sessionKey(session)] = enabled;
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
+
+  String _sessionKey(RaceSession session) {
+    return NotificationService.sessionKey(
+      race: widget.race,
+      session: session,
+      season: widget.season,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final raceStart = race.startDateTime;
+    final raceStart = widget.race.startDateTime;
     return F1Scaffold(
       appBar: AppBar(
         title: Column(
@@ -29,7 +69,7 @@ class RaceDetailScreen extends StatelessWidget {
           children: [
             Text("Next Race"),
             Text(
-              "Season $season",
+              "Season ${widget.season}",
               style: TextStyle(color: colors.textMuted, fontSize: 12),
             ),
           ],
@@ -39,12 +79,12 @@ class RaceDetailScreen extends StatelessWidget {
         padding: EdgeInsets.only(bottom: 24),
         physics: BouncingScrollPhysics(),
         children: [
-          RaceCard(race: race, highlight: true),
+          RaceCard(race: widget.race, highlight: true),
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDetailRow(context, "Round", race.round),
+                _buildDetailRow(context, "Round", widget.race.round),
                 if (raceStart != null)
                   _buildDetailRow(
                     context,
@@ -52,7 +92,7 @@ class RaceDetailScreen extends StatelessWidget {
                     formatLocalDateTime(context, raceStart),
                   )
                 else
-                  _buildDetailRow(context, "Date", race.date),
+                  _buildDetailRow(context, "Date", widget.race.date),
                 if (raceStart != null)
                   _buildDetailRowWidget(
                     context,
@@ -66,8 +106,8 @@ class RaceDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                _buildDetailRow(context, "Circuit", race.circuitName),
-                _buildDetailRow(context, "Location", race.location),
+                _buildDetailRow(context, "Circuit", widget.race.circuitName),
+                _buildDetailRow(context, "Location", widget.race.location),
               ],
             ),
           ),
@@ -95,7 +135,7 @@ class RaceDetailScreen extends StatelessWidget {
   }
 
   List<Widget> _buildSessionRows(BuildContext context) {
-    final sessions = race.sessions
+    final sessions = widget.race.sessions
         .where((session) => session.date.isNotEmpty)
         .toList();
     if (sessions.isEmpty) {
@@ -169,9 +209,12 @@ class RaceDetailScreen extends StatelessWidget {
 
   Widget _buildSessionRow(BuildContext context, RaceSession session) {
     final start = session.startDateTime;
+    final hasTime = session.time != null && session.time!.isNotEmpty;
     final valueLabel = start == null
         ? session.displayDateTime
         : formatLocalDateTime(context, start);
+    final notifyKey = _sessionKey(session);
+    final notifyEnabled = _notifyEnabled[notifyKey] ?? false;
     return Padding(
       padding: EdgeInsets.only(bottom: 10),
       child: Row(
@@ -198,7 +241,7 @@ class RaceDetailScreen extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
-                ),
+                  ),
                 if (start != null)
                   Padding(
                     padding: EdgeInsets.only(top: 4),
@@ -215,9 +258,29 @@ class RaceDetailScreen extends StatelessWidget {
             ),
           ),
           if (start != null)
-            IconButton(
-              icon: Icon(Icons.calendar_month, color: AppColors.of(context).textMuted),
-              onPressed: () => _addSessionToCalendar(context, session),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasTime)
+                  IconButton(
+                    icon: Icon(
+                      notifyEnabled
+                          ? Icons.notifications_active
+                          : Icons.notifications_none,
+                      color: notifyEnabled
+                          ? AppColors.of(context).f1Red
+                          : AppColors.of(context).textMuted,
+                    ),
+                  onPressed: () => _toggleSessionNotification(session),
+                  ),
+                IconButton(
+                  icon: Icon(
+                    Icons.calendar_month,
+                    color: AppColors.of(context).textMuted,
+                  ),
+                  onPressed: () => _addSessionToCalendar(context, session),
+                ),
+              ],
             ),
         ],
       ),
@@ -229,9 +292,9 @@ class RaceDetailScreen extends StatelessWidget {
     RaceSession session,
   ) async {
     final added = await CalendarService.addSessionToCalendar(
-      race: race,
+      race: widget.race,
       session: session,
-      season: season,
+      season: widget.season,
     );
     if (!context.mounted) {
       return;
@@ -239,6 +302,64 @@ class RaceDetailScreen extends StatelessWidget {
     final message = added
         ? 'Calendar event ready to add.'
         : 'Session time unavailable.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _toggleSessionNotification(RaceSession session) async {
+    final key = _sessionKey(session);
+    final isEnabled = _notifyEnabled[key] ?? false;
+    if (isEnabled) {
+      await NotificationService.cancelSessionNotification(
+        race: widget.race,
+        session: session,
+        season: widget.season,
+      );
+      await NotificationPreferences.setSessionEnabled(
+        race: widget.race,
+        session: session,
+        season: widget.season,
+        value: false,
+      );
+      if (mounted) {
+        setState(() {
+          _notifyEnabled[key] = false;
+        });
+      }
+      _showSnack('Reminder removed.');
+      return;
+    }
+
+    final scheduled = await NotificationService.scheduleSessionNotification(
+      race: widget.race,
+      session: session,
+      season: widget.season,
+      leadTime: _leadTime,
+    );
+    if (!scheduled) {
+      _showSnack('Unable to schedule reminder.');
+      return;
+    }
+
+    await NotificationPreferences.setSessionEnabled(
+      race: widget.race,
+      session: session,
+      season: widget.season,
+      value: true,
+    );
+    if (mounted) {
+      setState(() {
+        _notifyEnabled[key] = true;
+      });
+    }
+    _showSnack('Reminder set ${_leadTime.inMinutes} minutes before.');
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) {
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
