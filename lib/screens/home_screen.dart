@@ -16,6 +16,7 @@ import '../widgets/team_logo.dart';
 import '../services/widget_update_service.dart';
 import 'constructor_standings_screen.dart';
 import 'driver_standings_screen.dart';
+import 'last_race_results_screen.dart';
 import 'race_detail_screen.dart';
 import 'race_schedule_screen.dart';
 
@@ -478,6 +479,24 @@ class _HomeScreenState extends State<HomeScreen> {
             Reveal(
               index: 2,
               child: _buildSummaryCard(
+                title: "Last Race Results",
+                subtitle: "Race, qualifying, sprint",
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => LastRaceResultsScreen(season: _season),
+                    ),
+                  );
+                },
+                child: Text(
+                  "Tap to view the latest results.",
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
+                ),
+              ),
+            ),
+            Reveal(
+              index: 3,
+              child: _buildSummaryCard(
                 title: "Driver Standings",
                 subtitle: "Top 3 drivers",
                 onTap: () {
@@ -494,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Reveal(
-              index: 3,
+              index: 4,
               child: _buildSummaryCard(
                 title: "Team Standings",
                 subtitle: "Top 3 teams",
@@ -512,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Reveal(
-              index: 4,
+              index: 5,
               child: _buildSummaryCard(
                 title: "Upcoming Races",
                 subtitle: "Next 3 races",

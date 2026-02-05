@@ -4,6 +4,7 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../models/race_result.dart';
+import '../models/session_results.dart';
 import '../models/season_overview.dart';
 
 class ApiService {
@@ -151,5 +152,70 @@ class ApiService {
     } else {
       throw Exception('Failed to load constructor results');
     }
+  }
+
+  Future<SessionResults?> getLastRaceResults({required String season}) async {
+    return _getSessionResults(
+      season: season,
+      endpoint: 'last/results/',
+      resultsKey: 'Results',
+      type: SessionType.race,
+    );
+  }
+
+  Future<SessionResults?> getLastQualifyingResults({
+    required String season,
+  }) async {
+    return _getSessionResults(
+      season: season,
+      endpoint: 'last/qualifying/',
+      resultsKey: 'QualifyingResults',
+      type: SessionType.qualifying,
+    );
+  }
+
+  Future<SessionResults?> getLastSprintResults({required String season}) async {
+    return _getSessionResults(
+      season: season,
+      endpoint: 'last/sprint/',
+      resultsKey: 'SprintResults',
+      type: SessionType.sprint,
+    );
+  }
+
+  Future<SessionResults?> _getSessionResults({
+    required String season,
+    required String endpoint,
+    required String resultsKey,
+    required SessionType type,
+  }) async {
+    final response = await http.get(Uri.parse('$_baseUrl$season/$endpoint'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+      final racesJson = raceTable['Races'] as List? ?? [];
+      if (racesJson.isEmpty) {
+        return null;
+      }
+      final raceJson = racesJson.first as Map<String, dynamic>;
+      final resultsJson = raceJson[resultsKey] as List? ?? [];
+      final results = resultsJson
+          .map((json) => ResultEntry.fromJson(
+                json as Map<String, dynamic>,
+                type: type,
+              ))
+          .toList();
+      return SessionResults(
+        race: Race.fromJson(raceJson),
+        results: results,
+        type: type,
+      );
+    }
+    if (response.statusCode == 404) {
+      return null;
+    }
+    throw Exception('Failed to load session results');
   }
 }
