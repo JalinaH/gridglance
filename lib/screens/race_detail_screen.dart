@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
+import '../services/calendar_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/countdown_text.dart';
@@ -213,8 +214,33 @@ class RaceDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+          if (start != null)
+            IconButton(
+              icon: Icon(Icons.calendar_month, color: AppColors.of(context).textMuted),
+              onPressed: () => _addSessionToCalendar(context, session),
+            ),
         ],
       ),
+    );
+  }
+
+  Future<void> _addSessionToCalendar(
+    BuildContext context,
+    RaceSession session,
+  ) async {
+    final added = await CalendarService.addSessionToCalendar(
+      race: race,
+      session: session,
+      season: season,
+    );
+    if (!context.mounted) {
+      return;
+    }
+    final message = added
+        ? 'Calendar event ready to add.'
+        : 'Session time unavailable.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }
