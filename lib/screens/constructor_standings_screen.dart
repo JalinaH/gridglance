@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/constructor_standing.dart';
+import '../screens/team_detail_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/f1_scaffold.dart';
@@ -107,6 +108,16 @@ class _ConstructorStandingsScreenState
                               index: index,
                               child: ConstructorStandingCard(
                                 team: standings[index],
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => TeamDetailScreen(
+                                        team: standings[index],
+                                        season: widget.season,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             );
                           },

@@ -143,14 +143,20 @@ class StatPill extends StatelessWidget {
 
 class DriverStandingCard extends StatelessWidget {
   final DriverStanding driver;
+  final VoidCallback? onTap;
 
-  const DriverStandingCard({super.key, required this.driver});
+  const DriverStandingCard({
+    super.key,
+    required this.driver,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return GlassCard(
+      onTap: onTap,
       child: Row(
         children: [
           Text(
@@ -206,14 +212,20 @@ class DriverStandingCard extends StatelessWidget {
 
 class ConstructorStandingCard extends StatelessWidget {
   final ConstructorStanding team;
+  final VoidCallback? onTap;
 
-  const ConstructorStandingCard({super.key, required this.team});
+  const ConstructorStandingCard({
+    super.key,
+    required this.team,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return GlassCard(
+      onTap: onTap,
       child: Row(
         children: [
           Text(

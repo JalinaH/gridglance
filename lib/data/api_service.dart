@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../models/race_result.dart';
 import '../models/season_overview.dart';
 
 class ApiService {
@@ -108,5 +109,47 @@ class ApiService {
       nextRace: results[2] as Race?,
       raceSchedule: results[3] as List<Race>,
     );
+  }
+
+  Future<List<DriverRaceResult>> getDriverResults({
+    required String season,
+    required String driverId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/drivers/$driverId/results/'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+      final racesJson = raceTable['Races'] as List? ?? [];
+      return racesJson
+          .map((json) => DriverRaceResult.fromRaceJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load driver results');
+    }
+  }
+
+  Future<List<TeamRaceResult>> getConstructorResults({
+    required String season,
+    required String constructorId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/constructors/$constructorId/results/'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+      final racesJson = raceTable['Races'] as List? ?? [];
+      return racesJson
+          .map((json) => TeamRaceResult.fromRaceJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load constructor results');
+    }
   }
 }

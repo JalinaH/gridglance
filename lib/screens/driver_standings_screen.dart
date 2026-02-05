@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/driver_standing.dart';
+import '../screens/driver_detail_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/f1_scaffold.dart';
@@ -108,6 +109,16 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
                               index: index,
                               child: DriverStandingCard(
                                 driver: standings[index],
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => DriverDetailScreen(
+                                        driver: standings[index],
+                                        season: widget.season,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             );
                           },
