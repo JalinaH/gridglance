@@ -5,6 +5,8 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../models/season_overview.dart';
+import '../services/notification_preferences.dart';
+import '../services/notification_service.dart';
 import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
@@ -42,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _didUpdateWidget = false;
   String? _favoriteDriverId;
   String? _favoriteTeamId;
+  bool _didScheduleNotifications = false;
 
   @override
   void initState() {
@@ -377,6 +380,23 @@ class _HomeScreenState extends State<HomeScreen> {
         final upcomingRaces = _getUpcomingRaces(overview, count: 3);
         final favoriteDriver = _findFavoriteDriver(overview.driverStandings);
         final favoriteTeam = _findFavoriteTeam(overview.constructorStandings);
+
+        if (!_didScheduleNotifications && overview.nextRace != null) {
+          _didScheduleNotifications = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final race = overview.nextRace!;
+            final key = '${_season}|${race.round}|${race.raceName}';
+            final scheduled = await NotificationPreferences.getScheduledRace();
+            if (scheduled == key) {
+              return;
+            }
+            await NotificationService.scheduleRaceWeekend(
+              race: race,
+              season: _season,
+            );
+            await NotificationPreferences.setScheduledRace(key);
+          });
+        }
 
         if (!_didUpdateWidget) {
           _didUpdateWidget = true;

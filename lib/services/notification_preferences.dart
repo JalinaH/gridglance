@@ -3,6 +3,18 @@ import '../models/race.dart';
 import 'notification_service.dart';
 
 class NotificationPreferences {
+  static const String _scheduledRaceKey = 'scheduled_race';
+
+  static Future<String?> getScheduledRace() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_scheduledRaceKey);
+  }
+
+  static Future<void> setScheduledRace(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_scheduledRaceKey, value);
+  }
+
   static Future<bool> isSessionEnabled({
     required Race race,
     required RaceSession session,

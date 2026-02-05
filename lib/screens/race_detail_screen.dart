@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
 import '../services/calendar_service.dart';
-import '../services/notification_preferences.dart';
-import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/countdown_text.dart';
@@ -13,50 +11,13 @@ class RaceDetailScreen extends StatefulWidget {
   final Race race;
   final String season;
 
-  const RaceDetailScreen({
-    super.key,
-    required this.race,
-    required this.season,
-  });
+  const RaceDetailScreen({super.key, required this.race, required this.season});
 
   @override
   State<RaceDetailScreen> createState() => _RaceDetailScreenState();
 }
 
 class _RaceDetailScreenState extends State<RaceDetailScreen> {
-  static const Duration _leadTime = Duration(minutes: 15);
-  final Map<String, bool> _notifyEnabled = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadNotificationState();
-  }
-
-  Future<void> _loadNotificationState() async {
-    final sessions = widget.race.sessions;
-    for (final session in sessions) {
-      final enabled = await NotificationPreferences.isSessionEnabled(
-        race: widget.race,
-        session: session,
-        season: widget.season,
-      );
-      _notifyEnabled[_sessionKey(session)] = enabled;
-    }
-    if (!mounted) {
-      return;
-    }
-    setState(() {});
-  }
-
-  String _sessionKey(RaceSession session) {
-    return NotificationService.sessionKey(
-      race: widget.race,
-      session: session,
-      season: widget.season,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -74,6 +35,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             ),
           ],
         ),
+        actions: [],
       ),
       body: ListView(
         padding: EdgeInsets.only(bottom: 24),
@@ -100,10 +62,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     CountdownText(
                       target: raceStart,
                       hideIfPast: false,
-                      style: TextStyle(
-                        color: colors.textMuted,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: colors.textMuted, fontSize: 12),
                     ),
                   ),
                 _buildDetailRow(context, "Circuit", widget.race.circuitName),
@@ -151,9 +110,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     }
 
     return sessions
-        .map(
-          (session) => _buildSessionRow(context, session),
-        )
+        .map((session) => _buildSessionRow(context, session))
         .toList();
   }
 
@@ -199,9 +156,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
               ),
             ),
           ),
-          Expanded(
-            child: value,
-          ),
+          Expanded(child: value),
         ],
       ),
     );
@@ -209,12 +164,9 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
 
   Widget _buildSessionRow(BuildContext context, RaceSession session) {
     final start = session.startDateTime;
-    final hasTime = session.time != null && session.time!.isNotEmpty;
     final valueLabel = start == null
         ? session.displayDateTime
         : formatLocalDateTime(context, start);
-    final notifyKey = _sessionKey(session);
-    final notifyEnabled = _notifyEnabled[notifyKey] ?? false;
     return Padding(
       padding: EdgeInsets.only(bottom: 10),
       child: Row(
@@ -241,7 +193,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
-                  ),
+                ),
                 if (start != null)
                   Padding(
                     padding: EdgeInsets.only(top: 4),
@@ -261,18 +213,6 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (hasTime)
-                  IconButton(
-                    icon: Icon(
-                      notifyEnabled
-                          ? Icons.notifications_active
-                          : Icons.notifications_none,
-                      color: notifyEnabled
-                          ? AppColors.of(context).f1Red
-                          : AppColors.of(context).textMuted,
-                    ),
-                  onPressed: () => _toggleSessionNotification(session),
-                  ),
                 IconButton(
                   icon: Icon(
                     Icons.calendar_month,
@@ -302,66 +242,9 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     final message = added
         ? 'Calendar event ready to add.'
         : 'Session time unavailable.';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _toggleSessionNotification(RaceSession session) async {
-    final key = _sessionKey(session);
-    final isEnabled = _notifyEnabled[key] ?? false;
-    if (isEnabled) {
-      await NotificationService.cancelSessionNotification(
-        race: widget.race,
-        session: session,
-        season: widget.season,
-      );
-      await NotificationPreferences.setSessionEnabled(
-        race: widget.race,
-        session: session,
-        season: widget.season,
-        value: false,
-      );
-      if (mounted) {
-        setState(() {
-          _notifyEnabled[key] = false;
-        });
-      }
-      _showSnack('Reminder removed.');
-      return;
-    }
-
-    final scheduled = await NotificationService.scheduleSessionNotification(
-      race: widget.race,
-      session: session,
-      season: widget.season,
-      leadTime: _leadTime,
-    );
-    if (!scheduled) {
-      _showSnack('Unable to schedule reminder.');
-      return;
-    }
-
-    await NotificationPreferences.setSessionEnabled(
-      race: widget.race,
-      session: session,
-      season: widget.season,
-      value: true,
-    );
-    if (mounted) {
-      setState(() {
-        _notifyEnabled[key] = true;
-      });
-    }
-    _showSnack('Reminder set ${_leadTime.inMinutes} minutes before.');
-  }
-
-  void _showSnack(String message) {
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
 }
