@@ -3,6 +3,7 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
+import '../utils/date_time_format.dart';
 import 'team_logo.dart';
 
 class GlassCard extends StatelessWidget {
@@ -282,6 +283,12 @@ class RaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final start = race.startDateTime;
+    final dateLabel = start == null
+        ? race.date
+        : (race.time == null || race.time!.isEmpty)
+            ? formatLocalDate(context, start)
+            : formatLocalDateTime(context, start);
     return GlassCard(
       borderColor: highlight
           ? colors.f1Red.withValues(alpha: 0.6)
@@ -297,7 +304,7 @@ class RaceCard extends StatelessWidget {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  race.displayDateTime,
+                  dateLabel,
                   style: TextStyle(
                     color: colors.textMuted,
                     fontSize: 12,

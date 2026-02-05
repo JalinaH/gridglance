@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
+import '../utils/date_time_format.dart';
+import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
 
@@ -18,6 +20,7 @@ class RaceDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final raceStart = race.startDateTime;
     return F1Scaffold(
       appBar: AppBar(
         title: Column(
@@ -41,9 +44,27 @@ class RaceDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildDetailRow(context, "Round", race.round),
-                _buildDetailRow(context, "Date", race.date),
-                if (race.time != null && race.time!.isNotEmpty)
-                  _buildDetailRow(context, "Time", race.time!),
+                if (raceStart != null)
+                  _buildDetailRow(
+                    context,
+                    "Local time",
+                    formatLocalDateTime(context, raceStart),
+                  )
+                else
+                  _buildDetailRow(context, "Date", race.date),
+                if (raceStart != null)
+                  _buildDetailRowWidget(
+                    context,
+                    "Countdown",
+                    CountdownText(
+                      target: raceStart,
+                      hideIfPast: false,
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                 _buildDetailRow(context, "Circuit", race.circuitName),
                 _buildDetailRow(context, "Location", race.location),
               ],
@@ -90,12 +111,7 @@ class RaceDetailScreen extends StatelessWidget {
 
     return sessions
         .map(
-          (session) => _buildDetailRow(
-            context,
-            session.name,
-            session.displayDateTime,
-            labelWidth: 110,
-          ),
+          (session) => _buildSessionRow(context, session),
         )
         .toList();
   }
@@ -104,6 +120,27 @@ class RaceDetailScreen extends StatelessWidget {
     BuildContext context,
     String label,
     String value, {
+    double labelWidth = 70,
+  }) {
+    return _buildDetailRowWidget(
+      context,
+      label,
+      Text(
+        value,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      labelWidth: labelWidth,
+    );
+  }
+
+  Widget _buildDetailRowWidget(
+    BuildContext context,
+    String label,
+    Widget value, {
     double labelWidth = 70,
   }) {
     return Padding(
@@ -122,13 +159,58 @@ class RaceDetailScreen extends StatelessWidget {
             ),
           ),
           Expanded(
+            child: value,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSessionRow(BuildContext context, RaceSession session) {
+    final start = session.startDateTime;
+    final valueLabel = start == null
+        ? session.displayDateTime
+        : formatLocalDateTime(context, start);
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
             child: Text(
-              value,
+              session.name,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                color: AppColors.of(context).textMuted,
+                fontSize: 12,
               ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  valueLabel,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (start != null)
+                  Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: CountdownText(
+                      target: start,
+                      hideIfPast: false,
+                      style: TextStyle(
+                        color: AppColors.of(context).textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

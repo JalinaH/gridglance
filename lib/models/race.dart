@@ -68,6 +68,8 @@ class Race {
     return '$date $time';
   }
 
+  DateTime? get startDateTime => _parseDateTime(date, time);
+
   RaceSession get raceSession => RaceSession(
         name: 'Race',
         date: date,
@@ -135,4 +137,17 @@ class RaceSession {
     }
     return '$date $time';
   }
+
+  DateTime? get startDateTime => _parseDateTime(date, time);
+}
+
+DateTime? _parseDateTime(String date, String? time) {
+  if (date.isEmpty) {
+    return null;
+  }
+  if (time == null || time.isEmpty) {
+    return DateTime.tryParse(date);
+  }
+  final normalizedTime = time.startsWith('T') ? time.substring(1) : time;
+  return DateTime.tryParse('${date}T$normalizedTime');
 }

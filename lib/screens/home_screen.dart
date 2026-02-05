@@ -5,7 +5,10 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../models/season_overview.dart';
+import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
+import '../utils/date_time_format.dart';
+import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
@@ -33,14 +36,37 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final String _season = DateTime.now().year.toString();
+  String _season = DateTime.now().year.toString();
   late Future<SeasonOverview> _overview;
   bool _didUpdateWidget = false;
+  String? _favoriteDriverId;
+  String? _favoriteTeamId;
 
   @override
   void initState() {
     super.initState();
     _overview = ApiService().getSeasonOverview(season: _season);
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final storedSeason = await UserPreferences.getSeason();
+    final favoriteDriverId = await UserPreferences.getFavoriteDriverId();
+    final favoriteTeamId = await UserPreferences.getFavoriteTeamId();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _favoriteDriverId = favoriteDriverId;
+      _favoriteTeamId = favoriteTeamId;
+      if (storedSeason != null &&
+          storedSeason.isNotEmpty &&
+          storedSeason != _season) {
+        _season = storedSeason;
+        _overview = ApiService().getSeasonOverview(season: _season);
+        _didUpdateWidget = false;
+      }
+    });
   }
 
   void _refresh() {
@@ -48,6 +74,246 @@ class _HomeScreenState extends State<HomeScreen> {
       _overview = ApiService().getSeasonOverview(season: _season);
       _didUpdateWidget = false;
     });
+  }
+
+  List<String> _seasonOptions() {
+    const firstSeason = 1950;
+    final currentYear = DateTime.now().year;
+    return List.generate(
+      currentYear - firstSeason + 1,
+      (index) => (currentYear - index).toString(),
+    );
+  }
+
+  Future<void> _selectSeason() async {
+    final selection = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) {
+        final colors = AppColors.of(context);
+        final seasons = _seasonOptions();
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: colors.border),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Select Season',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: colors.textMuted),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: seasons.length,
+                  separatorBuilder: (_, _) => Divider(color: colors.border),
+                  itemBuilder: (context, index) {
+                    final season = seasons[index];
+                    return ListTile(
+                      title: Text(
+                        season,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight:
+                              season == _season ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                      trailing: season == _season
+                          ? Icon(Icons.check, color: colors.f1Red)
+                          : null,
+                      onTap: () => Navigator.of(context).pop(season),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selection == null || selection == _season) {
+      return;
+    }
+    await UserPreferences.setSeason(selection);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _season = selection;
+      _overview = ApiService().getSeasonOverview(season: _season);
+      _didUpdateWidget = false;
+    });
+  }
+
+  DriverStanding? _findFavoriteDriver(List<DriverStanding> drivers) {
+    final id = _favoriteDriverId;
+    if (id == null || id.isEmpty) {
+      return null;
+    }
+    for (final driver in drivers) {
+      if (driver.driverId == id) {
+        return driver;
+      }
+    }
+    return null;
+  }
+
+  ConstructorStanding? _findFavoriteTeam(List<ConstructorStanding> teams) {
+    final id = _favoriteTeamId;
+    if (id == null || id.isEmpty) {
+      return null;
+    }
+    for (final team in teams) {
+      if (team.constructorId == id) {
+        return team;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _selectFavoriteDriver(List<DriverStanding> drivers) async {
+    final selection = await showModalBottomSheet<DriverStanding>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) {
+        return _SelectionSheet<DriverStanding>(
+          title: 'Favorite Driver',
+          loadItems: () async => drivers,
+          itemBuilder: (context, driver) => ListTile(
+            title: Text(
+              '${driver.givenName} ${driver.familyName}',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            subtitle: Text(
+              '${driver.teamName} • ${driver.points} pts',
+              style: TextStyle(color: AppColors.of(context).textMuted),
+            ),
+            trailing: Text(
+              'P${driver.position}',
+              style: TextStyle(color: AppColors.of(context).textMuted),
+            ),
+            onTap: () => Navigator.of(context).pop(driver),
+          ),
+        );
+      },
+    );
+    if (selection == null) {
+      return;
+    }
+    await UserPreferences.setFavoriteDriverId(selection.driverId);
+    await WidgetUpdateService.setFavoriteDriverDefault(
+      driver: selection,
+      season: _season,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _favoriteDriverId = selection.driverId;
+    });
+  }
+
+  Future<void> _selectFavoriteTeam(
+    List<ConstructorStanding> teams,
+    List<DriverStanding> drivers,
+  ) async {
+    final selection = await showModalBottomSheet<_TeamSelection>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) {
+        return _SelectionSheet<_TeamSelection>(
+          title: 'Favorite Team',
+          loadItems: () async {
+            return teams.map((team) {
+              final teamDrivers = drivers
+                  .where((driver) => driver.constructorId == team.constructorId)
+                  .take(2)
+                  .toList();
+              return _TeamSelection(team: team, drivers: teamDrivers);
+            }).toList();
+          },
+          itemBuilder: (context, selection) {
+            final driversLabel = selection.drivers.isEmpty
+                ? 'Drivers TBD'
+                : List.generate(
+                    selection.drivers.length,
+                    (index) => _shortDriverLabel(selection.drivers, index),
+                  ).join('  ');
+            return ListTile(
+              title: Text(
+                selection.team.teamName,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                '$driversLabel • ${selection.team.points} pts',
+                style: TextStyle(color: AppColors.of(context).textMuted),
+              ),
+              trailing: Text(
+                'P${selection.team.position}',
+                style: TextStyle(color: AppColors.of(context).textMuted),
+              ),
+              onTap: () => Navigator.of(context).pop(selection),
+            );
+          },
+        );
+      },
+    );
+    if (selection == null) {
+      return;
+    }
+    await UserPreferences.setFavoriteTeamId(selection.team.constructorId);
+    await WidgetUpdateService.setFavoriteTeamDefault(
+      team: selection.team,
+      drivers: selection.drivers,
+      season: _season,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _favoriteTeamId = selection.team.constructorId;
+    });
+  }
+
+  String _shortDriverLabel(List<DriverStanding> drivers, int index) {
+    if (index >= drivers.length) {
+      return 'TBD';
+    }
+    final driver = drivers[index];
+    final code = driver.code?.trim();
+    if (code != null && code.isNotEmpty) {
+      return code.toUpperCase();
+    }
+    final family = driver.familyName.trim();
+    if (family.isEmpty) {
+      return 'TBD';
+    }
+    return family.substring(0, family.length >= 3 ? 3 : family.length).toUpperCase();
   }
 
   @override
@@ -108,6 +374,8 @@ class _HomeScreenState extends State<HomeScreen> {
         final topDrivers = overview.driverStandings.take(3).toList();
         final topTeams = overview.constructorStandings.take(3).toList();
         final upcomingRaces = _getUpcomingRaces(overview, count: 3);
+        final favoriteDriver = _findFavoriteDriver(overview.driverStandings);
+        final favoriteTeam = _findFavoriteTeam(overview.constructorStandings);
 
         if (!_didUpdateWidget) {
           _didUpdateWidget = true;
@@ -129,17 +397,63 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Text(
-                "Season $_season",
-                style: TextStyle(
-                  color: colors.textMuted,
-                  fontSize: 12,
-                  letterSpacing: 1.6,
-                ),
+              child: Row(
+                children: [
+                  Text(
+                    "Season",
+                    style: TextStyle(
+                      color: colors.textMuted,
+                      fontSize: 12,
+                      letterSpacing: 1.6,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  InkWell(
+                    onTap: _selectSeason,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceAlt,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: colors.border),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _season,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 16,
+                            color: colors.textMuted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Reveal(
               index: 0,
+              child: _buildFavoritesCard(
+                colors,
+                drivers: overview.driverStandings,
+                teams: overview.constructorStandings,
+                favoriteDriver: favoriteDriver,
+                favoriteTeam: favoriteTeam,
+              ),
+            ),
+            Reveal(
+              index: 1,
               child: _buildSummaryCard(
                 title: "Next Race",
                 subtitle:
@@ -162,7 +476,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Reveal(
-              index: 1,
+              index: 2,
               child: _buildSummaryCard(
                 title: "Driver Standings",
                 subtitle: "Top 3 drivers",
@@ -180,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Reveal(
-              index: 2,
+              index: 3,
               child: _buildSummaryCard(
                 title: "Team Standings",
                 subtitle: "Top 3 teams",
@@ -198,7 +512,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Reveal(
-              index: 3,
+              index: 4,
               child: _buildSummaryCard(
                 title: "Upcoming Races",
                 subtitle: "Next 3 races",
@@ -286,6 +600,146 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildFavoritesCard(
+    AppColors colors, {
+    required List<DriverStanding> drivers,
+    required List<ConstructorStanding> teams,
+    required DriverStanding? favoriteDriver,
+    required ConstructorStanding? favoriteTeam,
+  }) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final driverTitle = favoriteDriver == null
+        ? 'Select favorite driver'
+        : '${favoriteDriver.givenName} ${favoriteDriver.familyName}';
+    final driverSubtitle = favoriteDriver == null
+        ? 'Tap to choose'
+        : '${favoriteDriver.teamName} • ${favoriteDriver.points} pts';
+    final teamTitle =
+        favoriteTeam == null ? 'Select favorite team' : favoriteTeam.teamName;
+    final teamSubtitle = favoriteTeam == null
+        ? 'Tap to choose'
+        : 'P${favoriteTeam.position} • ${favoriteTeam.points} pts';
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.star, color: colors.f1RedBright, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Favorites',
+                style: TextStyle(
+                  color: onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          _buildFavoriteRow(
+            label: 'Driver',
+            title: driverTitle,
+            subtitle: driverSubtitle,
+            leading: favoriteDriver == null
+                ? Icon(Icons.person_outline, color: colors.textMuted)
+                : TeamLogo(teamName: favoriteDriver.teamName, size: 22),
+            onTap: drivers.isEmpty ? null : () => _selectFavoriteDriver(drivers),
+          ),
+          SizedBox(height: 10),
+          _buildFavoriteRow(
+            label: 'Team',
+            title: teamTitle,
+            subtitle: teamSubtitle,
+            leading: favoriteTeam == null
+                ? Icon(Icons.shield_outlined, color: colors.textMuted)
+                : TeamLogo(teamName: favoriteTeam.teamName, size: 22),
+            onTap: teams.isEmpty
+                ? null
+                : () => _selectFavoriteTeam(teams, drivers),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoriteRow({
+    required String label,
+    required String title,
+    required String subtitle,
+    required Widget leading,
+    required VoidCallback? onTap,
+  }) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            color: colors.textMuted,
+            fontSize: 10,
+            letterSpacing: 1.2,
+          ),
+        ),
+        SizedBox(height: 6),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: colors.surfaceAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.border),
+              ),
+              child: Row(
+                children: [
+                  leading,
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: onSurface,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.edit,
+                    size: 16,
+                    color: colors.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDriverSummary(List<DriverStanding> drivers) {
     if (drivers.isEmpty) {
       return _buildEmptyState("No driver standings available.");
@@ -338,15 +792,32 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: "R${race.round}",
               title: race.raceName,
               subtitle: race.location,
-              trailing: race.date,
+              trailing: _localRaceDateLabel(race),
             ),
           )
           .toList(),
     );
   }
 
+  String _localRaceDateLabel(Race race) {
+    final start = race.startDateTime;
+    if (start == null) {
+      return race.date;
+    }
+    if (race.time == null || race.time!.isEmpty) {
+      return formatLocalDate(context, start);
+    }
+    return formatLocalDateTime(context, start);
+  }
+
   Widget _buildNextRaceSummary(Race race) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final start = race.startDateTime;
+    final dateLabel = start == null
+        ? race.date
+        : (race.time == null || race.time!.isEmpty)
+            ? formatLocalDate(context, start)
+            : formatLocalDateTime(context, start);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -359,7 +830,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                race.displayDateTime,
+                dateLabel,
                 style: TextStyle(
                   color: AppColors.of(context).textMuted,
                   fontSize: 12,
@@ -369,6 +840,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+        if (start != null)
+          Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: CountdownText(
+              target: start,
+              style: TextStyle(
+                color: AppColors.of(context).textMuted,
+                fontSize: 11,
+              ),
+            ),
+          ),
         SizedBox(height: 10),
         Text(
           race.raceName,
@@ -465,6 +947,103 @@ class _HomeScreenState extends State<HomeScreen> {
       style: TextStyle(
         color: AppColors.of(context).textMuted,
         fontSize: 12,
+      ),
+    );
+  }
+}
+
+class _TeamSelection {
+  final ConstructorStanding team;
+  final List<DriverStanding> drivers;
+
+  const _TeamSelection({
+    required this.team,
+    required this.drivers,
+  });
+}
+
+class _SelectionSheet<T> extends StatelessWidget {
+  final String title;
+  final Future<List<T>> Function() loadItems;
+  final Widget Function(BuildContext context, T item) itemBuilder;
+
+  const _SelectionSheet({
+    required this.title,
+    required this.loadItems,
+    required this.itemBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: colors.textMuted),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<T>>(
+              future: loadItems(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(color: colors.f1Red),
+                  );
+                }
+                if (snapshot.hasError || snapshot.data == null) {
+                  return Center(
+                    child: Text(
+                      'Failed to load',
+                      style: TextStyle(color: colors.textMuted),
+                    ),
+                  );
+                }
+                final items = snapshot.data!;
+                if (items.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No data available',
+                      style: TextStyle(color: colors.textMuted),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => Divider(color: colors.border),
+                  itemBuilder: (context, index) => itemBuilder(
+                    context,
+                    items[index],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
