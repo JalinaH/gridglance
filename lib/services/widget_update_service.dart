@@ -7,14 +7,14 @@ import 'package:home_widget/home_widget.dart';
 import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
+import '../models/race.dart';
 
 class WidgetUpdateService {
   static const String androidDriverWidgetProvider =
       'DriverStandingsWidgetProvider';
   static const String androidQualifiedDriverWidgetProvider =
       'com.example.gridglance.DriverStandingsWidgetProvider';
-  static const String androidTeamWidgetProvider =
-      'TeamStandingsWidgetProvider';
+  static const String androidTeamWidgetProvider = 'TeamStandingsWidgetProvider';
   static const String androidQualifiedTeamWidgetProvider =
       'com.example.gridglance.TeamStandingsWidgetProvider';
   static const String androidFavoriteDriverWidgetProvider =
@@ -25,17 +25,30 @@ class WidgetUpdateService {
       'FavoriteTeamWidgetProvider';
   static const String androidQualifiedFavoriteTeamWidgetProvider =
       'com.example.gridglance.FavoriteTeamWidgetProvider';
+  static const String androidNextRaceCountdownWidgetProvider =
+      'NextRaceCountdownWidgetProvider';
+  static const String androidQualifiedNextRaceCountdownWidgetProvider =
+      'com.example.gridglance.NextRaceCountdownWidgetProvider';
+  static const String androidNextSessionWidgetProvider =
+      'NextSessionWidgetProvider';
+  static const String androidQualifiedNextSessionWidgetProvider =
+      'com.example.gridglance.NextSessionWidgetProvider';
   static const MethodChannel _dpsChannel = MethodChannel('gridglance/dps');
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
   static Timer? _driverRefreshTimer;
   static bool _driverRefreshInFlight = false;
   static String? _seasonOverride;
-  static const String _favoriteDriverWidgetIdsKey = 'favorite_driver_widget_ids';
+  static const String _favoriteDriverWidgetIdsKey =
+      'favorite_driver_widget_ids';
   static const String _favoriteTeamWidgetIdsKey = 'favorite_team_widget_ids';
   static const String _favoriteDriverDefaultKey = 'favorite_driver_default';
   static const String _favoriteTeamDefaultKey = 'favorite_team_default';
   static const String _driverWidgetTransparentKey = 'driver_widget_transparent';
   static const String _teamWidgetTransparentKey = 'team_widget_transparent';
+  static const String _nextRaceWidgetTransparentKey =
+      'next_race_widget_transparent';
+  static const String _nextSessionWidgetTransparentKey =
+      'next_session_widget_transparent';
   static const String _favoriteDriverDefaultTransparentKey =
       '${_favoriteDriverDefaultKey}_transparent';
   static const String _favoriteTeamDefaultTransparentKey =
@@ -78,6 +91,18 @@ class WidgetUpdateService {
       } catch (_) {
         // Ignore team update errors.
       }
+      try {
+        final nextRace = await api.getNextRace(season: season);
+        await updateNextRaceCountdown(nextRace, season: season);
+      } catch (_) {
+        // Ignore next race update errors.
+      }
+      try {
+        final races = await api.getRaceSchedule(season: season);
+        await updateNextSessionWidget(races, season: season);
+      } catch (_) {
+        // Ignore next session update errors.
+      }
     } catch (_) {
       // Ignore refresh errors to keep periodic updates alive.
     } finally {
@@ -86,9 +111,9 @@ class WidgetUpdateService {
   }
 
   static Future<void> updateDriverStandings(
-    List<DriverStanding> standings,
-    {String? season}
-  ) async {
+    List<DriverStanding> standings, {
+    String? season,
+  }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
@@ -109,9 +134,9 @@ class WidgetUpdateService {
   }
 
   static Future<void> updateTeamStandings(
-    List<ConstructorStanding> standings,
-    {String? season}
-  ) async {
+    List<ConstructorStanding> standings, {
+    String? season,
+  }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
@@ -131,18 +156,102 @@ class WidgetUpdateService {
     );
   }
 
+  static Future<void> updateNextRaceCountdown(
+    Race? race, {
+    String? season,
+  }) async {
+    final seasonLabel =
+        season ?? _seasonOverride ?? DateTime.now().year.toString();
+    _seasonOverride = seasonLabel;
+    await _saveDps('next_race_widget_title', 'Next Race');
+    await _saveDps('next_race_widget_season', seasonLabel);
+
+    if (race == null) {
+      await _saveDps('next_race_widget_name', 'No upcoming race');
+      await _saveDps('next_race_widget_location', 'Season complete');
+      await _saveDps('next_race_widget_start', 'Time TBA');
+      await _saveDps('next_race_widget_countdown', 'Awaiting next calendar');
+    } else {
+      await _saveDps(
+        'next_race_widget_name',
+        race.raceName.isEmpty ? 'Race weekend' : race.raceName,
+      );
+      await _saveDps(
+        'next_race_widget_location',
+        race.location.isEmpty
+            ? (race.circuitName.isEmpty ? 'Location TBA' : race.circuitName)
+            : race.location,
+      );
+      await _saveDps(
+        'next_race_widget_start',
+        _formatDateTimeLabel(race.startDateTime),
+      );
+      await _saveDps(
+        'next_race_widget_countdown',
+        _formatCountdownLabel(race.startDateTime),
+      );
+    }
+
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedNextRaceCountdownWidgetProvider,
+    );
+  }
+
+  static Future<void> updateNextSessionWidget(
+    List<Race> races, {
+    String? season,
+  }) async {
+    final seasonLabel =
+        season ?? _seasonOverride ?? DateTime.now().year.toString();
+    _seasonOverride = seasonLabel;
+    await _saveDps('next_session_widget_title', 'Next Session');
+    await _saveDps('next_session_widget_season', seasonLabel);
+
+    final sessions = _collectUpcomingSessions(races);
+    if (sessions.isEmpty) {
+      await _saveDps('next_session_widget_name', 'No upcoming session');
+      await _saveDps('next_session_widget_race', 'Schedule unavailable');
+      await _saveDps('next_session_widget_countdown', 'Check again later');
+      await _saveDps('next_session_widget_line1', 'No additional sessions');
+      await _saveDps('next_session_widget_line2', 'Waiting for updates');
+    } else {
+      final current = sessions.first;
+      final nextOne = sessions.length > 1 ? sessions[1] : null;
+      final nextTwo = sessions.length > 2 ? sessions[2] : null;
+      await _saveDps('next_session_widget_name', current.session.name);
+      await _saveDps(
+        'next_session_widget_race',
+        current.race.raceName.isEmpty ? 'Race weekend' : current.race.raceName,
+      );
+      await _saveDps(
+        'next_session_widget_countdown',
+        _formatCountdownLabel(current.session.startDateTime),
+      );
+      await _saveDps(
+        'next_session_widget_line1',
+        _formatSessionLine(nextOne) ?? 'No additional sessions',
+      );
+      await _saveDps(
+        'next_session_widget_line2',
+        _formatSessionLine(nextTwo) ?? 'Check again soon',
+      );
+    }
+
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
+    );
+  }
+
   static Future<void> updateFavoriteDrivers(
-    List<DriverStanding> standings,
-    {String? season}
-  ) async {
+    List<DriverStanding> standings, {
+    String? season,
+  }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
     final widgetIds = await _getWidgetIds(_favoriteDriverWidgetIdsKey);
     for (final widgetId in widgetIds) {
-      final driverId = await _getDps(
-        _favoriteDriverKey(widgetId, 'driverId'),
-      );
+      final driverId = await _getDps(_favoriteDriverKey(widgetId, 'driverId'));
       final driver = standings.firstWhere(
         (item) => item.driverId == driverId,
         orElse: () => DriverStanding(
@@ -158,18 +267,9 @@ class WidgetUpdateService {
           permanentNumber: null,
         ),
       );
-      await _saveDps(
-        _favoriteDriverKey(widgetId, 'name'),
-        _driverName(driver),
-      );
-      await _saveDps(
-        _favoriteDriverKey(widgetId, 'team'),
-        driver.teamName,
-      );
-      await _saveDps(
-        _favoriteDriverKey(widgetId, 'position'),
-        driver.position,
-      );
+      await _saveDps(_favoriteDriverKey(widgetId, 'name'), _driverName(driver));
+      await _saveDps(_favoriteDriverKey(widgetId, 'team'), driver.teamName);
+      await _saveDps(_favoriteDriverKey(widgetId, 'position'), driver.position);
       await _saveDps(
         _favoriteDriverKey(widgetId, 'points'),
         '${driver.points} pts',
@@ -183,9 +283,9 @@ class WidgetUpdateService {
   }
 
   static Future<void> updateFavoriteTeams(
-    List<ConstructorStanding> standings,
-    {String? season}
-  ) async {
+    List<ConstructorStanding> standings, {
+    String? season,
+  }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
@@ -209,14 +309,8 @@ class WidgetUpdateService {
           .where((driver) => driver.constructorId == team.constructorId)
           .take(2)
           .toList();
-      await _saveDps(
-        _favoriteTeamKey(widgetId, 'name'),
-        team.teamName,
-      );
-      await _saveDps(
-        _favoriteTeamKey(widgetId, 'position'),
-        team.position,
-      );
+      await _saveDps(_favoriteTeamKey(widgetId, 'name'), team.teamName);
+      await _saveDps(_favoriteTeamKey(widgetId, 'position'), team.position);
       await _saveDps(
         _favoriteTeamKey(widgetId, 'points'),
         '${team.points} pts',
@@ -245,7 +339,10 @@ class WidgetUpdateService {
     await _saveDps('${_favoriteDriverDefaultKey}_name', _driverName(driver));
     await _saveDps('${_favoriteDriverDefaultKey}_team', driver.teamName);
     await _saveDps('${_favoriteDriverDefaultKey}_position', driver.position);
-    await _saveDps('${_favoriteDriverDefaultKey}_points', '${driver.points} pts');
+    await _saveDps(
+      '${_favoriteDriverDefaultKey}_points',
+      '${driver.points} pts',
+    );
     await _saveDps('${_favoriteDriverDefaultKey}_season', season);
     await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
@@ -257,12 +354,21 @@ class WidgetUpdateService {
     required List<DriverStanding> drivers,
     required String season,
   }) async {
-    await _saveDps('${_favoriteTeamDefaultKey}_constructorId', team.constructorId);
+    await _saveDps(
+      '${_favoriteTeamDefaultKey}_constructorId',
+      team.constructorId,
+    );
     await _saveDps('${_favoriteTeamDefaultKey}_name', team.teamName);
     await _saveDps('${_favoriteTeamDefaultKey}_position', team.position);
     await _saveDps('${_favoriteTeamDefaultKey}_points', '${team.points} pts');
-    await _saveDps('${_favoriteTeamDefaultKey}_driver1', _formatDriverLine(drivers, 0));
-    await _saveDps('${_favoriteTeamDefaultKey}_driver2', _formatDriverLine(drivers, 1));
+    await _saveDps(
+      '${_favoriteTeamDefaultKey}_driver1',
+      _formatDriverLine(drivers, 0),
+    );
+    await _saveDps(
+      '${_favoriteTeamDefaultKey}_driver2',
+      _formatDriverLine(drivers, 1),
+    );
     await _saveDps('${_favoriteTeamDefaultKey}_season', season);
     await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
@@ -295,7 +401,10 @@ class WidgetUpdateService {
     await _saveDps(_favoriteDriverKey(widgetId, 'name'), _driverName(driver));
     await _saveDps(_favoriteDriverKey(widgetId, 'team'), driver.teamName);
     await _saveDps(_favoriteDriverKey(widgetId, 'position'), driver.position);
-    await _saveDps(_favoriteDriverKey(widgetId, 'points'), '${driver.points} pts');
+    await _saveDps(
+      _favoriteDriverKey(widgetId, 'points'),
+      '${driver.points} pts',
+    );
     await _saveDps(_favoriteDriverKey(widgetId, 'season'), season);
     await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
@@ -346,11 +455,28 @@ class WidgetUpdateService {
     );
   }
 
+  static Future<void> setNextRaceWidgetTransparent(bool value) async {
+    await _saveDps(_nextRaceWidgetTransparentKey, value.toString());
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedNextRaceCountdownWidgetProvider,
+    );
+  }
+
+  static Future<void> setNextSessionWidgetTransparent(bool value) async {
+    await _saveDps(_nextSessionWidgetTransparentKey, value.toString());
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
+    );
+  }
+
   static Future<void> setFavoriteDriverWidgetTransparent({
     required int widgetId,
     required bool value,
   }) async {
-    await _saveDps(_favoriteDriverKey(widgetId, 'transparent'), value.toString());
+    await _saveDps(
+      _favoriteDriverKey(widgetId, 'transparent'),
+      value.toString(),
+    );
     await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
     );
@@ -372,6 +498,14 @@ class WidgetUpdateService {
 
   static Future<bool> getTeamWidgetTransparent() async {
     return _getBool(_teamWidgetTransparentKey);
+  }
+
+  static Future<bool> getNextRaceWidgetTransparent() async {
+    return _getBool(_nextRaceWidgetTransparentKey);
+  }
+
+  static Future<bool> getNextSessionWidgetTransparent() async {
+    return _getBool(_nextSessionWidgetTransparentKey);
   }
 
   static Future<bool> getFavoriteDriverWidgetTransparent(int widgetId) async {
@@ -416,7 +550,10 @@ class WidgetUpdateService {
     }
     try {
       final decoded = jsonDecode(raw) as List<dynamic>;
-      return decoded.map((id) => int.tryParse('$id') ?? 0).where((id) => id > 0).toSet();
+      return decoded
+          .map((id) => int.tryParse('$id') ?? 0)
+          .where((id) => id > 0)
+          .toSet();
     } catch (_) {
       return <int>{};
     }
@@ -464,7 +601,9 @@ class WidgetUpdateService {
     if (family.isEmpty) {
       return '---';
     }
-    return family.substring(0, family.length >= 3 ? 3 : family.length).toUpperCase();
+    return family
+        .substring(0, family.length >= 3 ? 3 : family.length)
+        .toUpperCase();
   }
 
   static String _formatDriverLine(List<DriverStanding> drivers, int index) {
@@ -476,4 +615,93 @@ class WidgetUpdateService {
     final code = _shortDriverCode(driver);
     return "$number $code";
   }
+
+  static String _formatDateTimeLabel(DateTime? dateTime) {
+    if (dateTime == null) {
+      return 'Time TBA';
+    }
+    final local = dateTime.toLocal();
+    final month = _monthLabel(local.month);
+    final minute = local.minute.toString().padLeft(2, '0');
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final meridiem = local.hour >= 12 ? 'PM' : 'AM';
+    return '$month ${local.day} • $hour:$minute $meridiem';
+  }
+
+  static String _formatCountdownLabel(DateTime? dateTime) {
+    if (dateTime == null) {
+      return 'Time TBA';
+    }
+    final remaining = dateTime.difference(DateTime.now());
+    if (remaining.isNegative) {
+      return 'Weekend in progress';
+    }
+    if (remaining.inMinutes <= 0) {
+      return 'Starting now';
+    }
+    final days = remaining.inDays;
+    final hours = remaining.inHours % 24;
+    final minutes = remaining.inMinutes % 60;
+    if (days > 0) {
+      return 'Starts in ${days}d ${hours}h';
+    }
+    if (remaining.inHours > 0) {
+      return 'Starts in ${remaining.inHours}h ${minutes}m';
+    }
+    return 'Starts in ${minutes}m';
+  }
+
+  static List<_UpcomingSession> _collectUpcomingSessions(List<Race> races) {
+    final now = DateTime.now();
+    final sessions = <_UpcomingSession>[];
+    for (final race in races) {
+      for (final session in race.sessions) {
+        final start = session.startDateTime;
+        if (start == null || !start.isAfter(now)) {
+          continue;
+        }
+        sessions.add(_UpcomingSession(race: race, session: session));
+      }
+    }
+    sessions.sort(
+      (a, b) => a.session.startDateTime!.compareTo(b.session.startDateTime!),
+    );
+    return sessions;
+  }
+
+  static String? _formatSessionLine(_UpcomingSession? item) {
+    if (item == null) {
+      return null;
+    }
+    final dateLabel = _formatDateTimeLabel(item.session.startDateTime);
+    return '${item.session.name} • $dateLabel';
+  }
+
+  static String _monthLabel(int month) {
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    if (month < 1 || month > 12) {
+      return '---';
+    }
+    return months[month - 1];
+  }
+}
+
+class _UpcomingSession {
+  final Race race;
+  final RaceSession session;
+
+  const _UpcomingSession({required this.race, required this.session});
 }

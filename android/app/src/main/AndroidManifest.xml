@@ -66,6 +66,30 @@
                 android:resource="@xml/favorite_driver_widget_info" />
         </receiver>
         <receiver
+            android:name=".NextRaceCountdownWidgetProvider"
+            android:exported="true"
+            android:label="Next Race Countdown"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_race_countdown_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".NextSessionWidgetProvider"
+            android:exported="true"
+            android:label="Next Session"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_session_widget_info" />
+        </receiver>
+        <receiver
             android:name=".FavoriteTeamWidgetProvider"
             android:exported="true"
             android:label="Favorite Team"

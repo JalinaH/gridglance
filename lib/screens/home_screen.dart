@@ -139,8 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         season,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight:
-                              season == _season ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: season == _season
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
                       ),
                       trailing: season == _season
@@ -271,7 +272,9 @@ class _HomeScreenState extends State<HomeScreen> {
             return ListTile(
               title: Text(
                 selection.team.teamName,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               subtitle: Text(
                 '$driversLabel • ${selection.team.points} pts',
@@ -317,7 +320,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (family.isEmpty) {
       return 'TBD';
     }
-    return family.substring(0, family.length >= 3 ? 3 : family.length).toUpperCase();
+    return family
+        .substring(0, family.length >= 3 ? 3 : family.length)
+        .toUpperCase();
   }
 
   @override
@@ -353,9 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
       future: _overview,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: colors.f1Red),
-          );
+          return Center(child: CircularProgressIndicator(color: colors.f1Red));
         } else if (snapshot.hasError) {
           return Center(
             child: Text(
@@ -385,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _didScheduleNotifications = true;
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final race = overview.nextRace!;
-            final key = '${_season}|${race.round}|${race.raceName}';
+            final key = '$_season|${race.round}|${race.raceName}';
             final scheduled = await NotificationPreferences.getScheduledRace();
             if (scheduled == key) {
               return;
@@ -407,6 +410,14 @@ class _HomeScreenState extends State<HomeScreen> {
             );
             WidgetUpdateService.updateTeamStandings(
               overview.constructorStandings,
+              season: _season,
+            );
+            WidgetUpdateService.updateNextRaceCountdown(
+              overview.nextRace,
+              season: _season,
+            );
+            WidgetUpdateService.updateNextSessionWidget(
+              overview.raceSchedule,
               season: _season,
             );
           });
@@ -433,7 +444,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: _selectSeason,
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: colors.surfaceAlt,
                         borderRadius: BorderRadius.circular(16),
@@ -477,8 +491,9 @@ class _HomeScreenState extends State<HomeScreen> {
               index: 1,
               child: _buildSummaryCard(
                 title: "Next Race",
-                subtitle:
-                    overview.nextRace == null ? null : "Tap for full details",
+                subtitle: overview.nextRace == null
+                    ? null
+                    : "Tap for full details",
                 onTap: overview.nextRace == null
                     ? null
                     : () {
@@ -653,8 +668,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final driverSubtitle = favoriteDriver == null
         ? 'Tap to choose'
         : '${favoriteDriver.teamName} • ${favoriteDriver.points} pts';
-    final teamTitle =
-        favoriteTeam == null ? 'Select favorite team' : favoriteTeam.teamName;
+    final teamTitle = favoriteTeam == null
+        ? 'Select favorite team'
+        : favoriteTeam.teamName;
     final teamSubtitle = favoriteTeam == null
         ? 'Tap to choose'
         : 'P${favoriteTeam.position} • ${favoriteTeam.points} pts';
@@ -686,7 +702,9 @@ class _HomeScreenState extends State<HomeScreen> {
             leading: favoriteDriver == null
                 ? Icon(Icons.person_outline, color: colors.textMuted)
                 : TeamLogo(teamName: favoriteDriver.teamName, size: 22),
-            onTap: drivers.isEmpty ? null : () => _selectFavoriteDriver(drivers),
+            onTap: drivers.isEmpty
+                ? null
+                : () => _selectFavoriteDriver(drivers),
           ),
           SizedBox(height: 10),
           _buildFavoriteRow(
@@ -765,11 +783,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: colors.textMuted,
-                  ),
+                  Icon(Icons.edit, size: 16, color: colors.textMuted),
                 ],
               ),
             ),
@@ -855,8 +869,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final dateLabel = start == null
         ? race.date
         : (race.time == null || race.time!.isEmpty)
-            ? formatLocalDate(context, start)
-            : formatLocalDateTime(context, start);
+        ? formatLocalDate(context, start)
+        : formatLocalDateTime(context, start);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -937,10 +951,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          if (prefix != null) ...[
-            prefix,
-            SizedBox(width: 8),
-          ],
+          if (prefix != null) ...[prefix, SizedBox(width: 8)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -983,10 +994,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEmptyState(String message) {
     return Text(
       message,
-      style: TextStyle(
-        color: AppColors.of(context).textMuted,
-        fontSize: 12,
-      ),
+      style: TextStyle(color: AppColors.of(context).textMuted, fontSize: 12),
     );
   }
 }
@@ -995,10 +1003,7 @@ class _TeamSelection {
   final ConstructorStanding team;
   final List<DriverStanding> drivers;
 
-  const _TeamSelection({
-    required this.team,
-    required this.drivers,
-  });
+  const _TeamSelection({required this.team, required this.drivers});
 }
 
 class _SelectionSheet<T> extends StatelessWidget {
@@ -1074,10 +1079,8 @@ class _SelectionSheet<T> extends StatelessWidget {
                 return ListView.separated(
                   itemCount: items.length,
                   separatorBuilder: (_, _) => Divider(color: colors.border),
-                  itemBuilder: (context, index) => itemBuilder(
-                    context,
-                    items[index],
-                  ),
+                  itemBuilder: (context, index) =>
+                      itemBuilder(context, items[index]),
                 );
               },
             ),
