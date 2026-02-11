@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../data/api_service.dart';
+import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../services/calendar_service.dart';
+import '../services/prediction_service.dart';
 import '../services/share_card_service.dart';
 import '../services/favorite_result_alert_service.dart';
 import '../services/notification_preferences.dart';
@@ -24,15 +27,27 @@ class RaceDetailScreen extends StatefulWidget {
 }
 
 class _RaceDetailScreenState extends State<RaceDetailScreen> {
+  final ApiService _apiService = ApiService();
+  final PredictionService _predictionService = PredictionService();
   late final List<RaceSession> _sessions;
   late final Future<WeekendWeather?> _weatherFuture;
   final GlobalKey _countdownShareCardKey = GlobalKey();
   final Map<String, bool> _sessionReminderEnabled = {};
   final Map<String, int> _sessionLeadMinutes = {};
+  List<DriverStanding> _predictionDrivers = [];
+  List<String> _racePodiumPrediction = const [];
+  List<String> _qualifyingTop3Prediction = const [];
+  PredictionSeasonScore _seasonPredictionScore = const PredictionSeasonScore(
+    totalPoints: 0,
+    gradedPredictions: 0,
+    pendingPredictions: 0,
+  );
   bool _weekendDigestEnabled = false;
   bool _favoriteSessionFinishedAlertsEnabled = false;
   bool _favoritePositionPointsAlertsEnabled = false;
   bool _loadingNotificationPreferences = true;
+  bool _loadingPredictions = true;
+  bool _savingPrediction = false;
   bool _importingWeekendCalendar = false;
   bool _sharingCountdownCard = false;
 
@@ -46,6 +61,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           ..sort(_sortSessions);
     _weatherFuture = WeatherService().getRaceWeekendWeather(widget.race);
     _loadNotificationPreferences();
+    _loadPredictions();
   }
 
   Future<void> _loadNotificationPreferences() async {
@@ -240,6 +256,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
               ],
             ),
           ),
+          _buildPredictionsCard(context),
           _buildNotificationCard(context),
         ],
       ),
@@ -808,6 +825,509 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPredictionsCard(BuildContext context) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Predictions',
+                style: TextStyle(
+                  color: onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Spacer(),
+              if (_loadingPredictions || _savingPrediction)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colors.f1RedBright,
+                  ),
+                ),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Predict qualifying and race top 3 to build your season score.',
+            style: TextStyle(color: colors.textMuted, fontSize: 12),
+          ),
+          SizedBox(height: 10),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: colors.surfaceAlt,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.border),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'Season score',
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Spacer(),
+                Text(
+                  '${_seasonPredictionScore.totalPoints} pts',
+                  style: TextStyle(
+                    color: colors.f1RedBright,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            _seasonPredictionScore.totalPredictions == 0
+                ? 'No predictions saved yet.'
+                : '${_seasonPredictionScore.gradedPredictions} graded • ${_seasonPredictionScore.pendingPredictions} pending',
+            style: TextStyle(color: colors.textMuted, fontSize: 11),
+          ),
+          SizedBox(height: 12),
+          _buildPredictionRow(
+            context: context,
+            label: 'Qualifying top 3',
+            predictions: _qualifyingTop3Prediction,
+            locked: _isQualifyingPredictionLocked,
+            lockMessage: _isQualifyingPredictionLocked
+                ? 'Locked after qualifying start.'
+                : null,
+            onTap: _canEditQualifyingPrediction
+                ? () => _pickTop3Prediction(isQualifying: true)
+                : null,
+          ),
+          SizedBox(height: 8),
+          _buildPredictionRow(
+            context: context,
+            label: 'Race podium',
+            predictions: _racePodiumPrediction,
+            locked: _isRacePredictionLocked,
+            lockMessage: _isRacePredictionLocked
+                ? 'Locked after race start.'
+                : null,
+            onTap: _canEditRacePrediction
+                ? () => _pickTop3Prediction(isQualifying: false)
+                : null,
+          ),
+          if (_predictionDrivers.length < 3)
+            Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Prediction options load from current driver standings.',
+                style: TextStyle(color: colors.textMuted, fontSize: 11),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPredictionRow({
+    required BuildContext context,
+    required String label,
+    required List<String> predictions,
+    required bool locked,
+    required String? lockMessage,
+    required VoidCallback? onTap,
+  }) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final hasPrediction = predictions.length == 3;
+    final summary = hasPrediction
+        ? predictions
+              .asMap()
+              .entries
+              .map(
+                (entry) =>
+                    'P${entry.key + 1}: ${_driverShortLabel(entry.value)}',
+              )
+              .join('   ')
+        : 'No picks yet';
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colors.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: onTap,
+                child: Text(
+                  hasPrediction ? 'Edit' : 'Set',
+                  style: TextStyle(
+                    color: onTap == null
+                        ? colors.textMuted
+                        : colors.f1RedBright,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Text(
+            summary,
+            style: TextStyle(
+              color: hasPrediction ? onSurface : colors.textMuted,
+              fontSize: 11,
+            ),
+          ),
+          if (locked && lockMessage != null)
+            Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                lockMessage,
+                style: TextStyle(color: colors.textMuted, fontSize: 11),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickTop3Prediction({required bool isQualifying}) async {
+    if (_predictionDrivers.length < 3) {
+      _showSnackBar('Driver standings unavailable for predictions.');
+      return;
+    }
+    final existing = isQualifying
+        ? _qualifyingTop3Prediction
+        : _racePodiumPrediction;
+    final selections = List<String?>.filled(3, null, growable: false);
+    for (var index = 0; index < existing.length && index < 3; index += 1) {
+      selections[index] = existing[index];
+    }
+
+    final result = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final colors = AppColors.of(sheetContext);
+        final onSurface = Theme.of(sheetContext).colorScheme.onSurface;
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            final hasAllSelections = selections.every((value) => value != null);
+            final hasDuplicates = _hasDuplicateSelections(selections);
+            final canSave = hasAllSelections && !hasDuplicates;
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.of(modalContext).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isQualifying ? 'Qualifying top 3' : 'Race podium',
+                    style: TextStyle(
+                      color: onSurface,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Pick one driver for each position.',
+                    style: TextStyle(color: colors.textMuted, fontSize: 12),
+                  ),
+                  SizedBox(height: 14),
+                  for (var index = 0; index < 3; index += 1) ...[
+                    DropdownButtonFormField<String>(
+                      initialValue: selections[index],
+                      decoration: InputDecoration(
+                        labelText: 'P${index + 1}',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _buildPredictionDropdownItems(
+                        selections: selections,
+                        slotIndex: index,
+                      ),
+                      onChanged: (value) {
+                        setModalState(() {
+                          selections[index] = value;
+                        });
+                      },
+                    ),
+                    if (index < 2) SizedBox(height: 10),
+                  ],
+                  if (hasDuplicates)
+                    Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Each position must have a different driver.',
+                        style: TextStyle(
+                          color: colors.f1RedBright,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: canSave
+                          ? () {
+                              Navigator.of(
+                                modalContext,
+                              ).pop(selections.map((value) => value!).toList());
+                            }
+                          : null,
+                      child: Text('Save prediction'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null || result.length != 3) {
+      return;
+    }
+    await _savePrediction(isQualifying: isQualifying, driverIds: result);
+  }
+
+  List<DropdownMenuItem<String>> _buildPredictionDropdownItems({
+    required List<String?> selections,
+    required int slotIndex,
+  }) {
+    final selected = selections[slotIndex];
+    final takenByOthers = <String>{};
+    for (var index = 0; index < selections.length; index += 1) {
+      if (index == slotIndex) {
+        continue;
+      }
+      final value = selections[index];
+      if (value != null && value.isNotEmpty) {
+        takenByOthers.add(value);
+      }
+    }
+
+    final options =
+        _predictionDrivers.where((driver) {
+          final id = driver.driverId;
+          if (id.isEmpty) {
+            return false;
+          }
+          if (selected == id) {
+            return true;
+          }
+          return !takenByOthers.contains(id);
+        }).toList()..sort(
+          (a, b) => _driverDisplayName(a).compareTo(_driverDisplayName(b)),
+        );
+
+    return options
+        .map(
+          (driver) => DropdownMenuItem<String>(
+            value: driver.driverId,
+            child: Text(_driverDisplayName(driver)),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> _savePrediction({
+    required bool isQualifying,
+    required List<String> driverIds,
+  }) async {
+    if (_savingPrediction) {
+      return;
+    }
+    if (driverIds.toSet().length != 3 || driverIds.length != 3) {
+      _showSnackBar('Prediction must include 3 different drivers.');
+      return;
+    }
+    setState(() {
+      _savingPrediction = true;
+    });
+
+    try {
+      if (isQualifying) {
+        await _predictionService.setQualifyingTop3Prediction(
+          season: widget.season,
+          round: widget.race.round,
+          driverIds: driverIds,
+        );
+      } else {
+        await _predictionService.setRacePodiumPrediction(
+          season: widget.season,
+          round: widget.race.round,
+          driverIds: driverIds,
+        );
+      }
+      final updatedScore = await _predictionService.getSeasonScore(
+        season: widget.season,
+        apiService: _apiService,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        if (isQualifying) {
+          _qualifyingTop3Prediction = driverIds;
+        } else {
+          _racePodiumPrediction = driverIds;
+        }
+        _seasonPredictionScore = updatedScore;
+      });
+      _showSnackBar(
+        isQualifying
+            ? 'Qualifying prediction saved.'
+            : 'Race podium prediction saved.',
+      );
+    } catch (_) {
+      _showSnackBar('Unable to save prediction right now.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _savingPrediction = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadPredictions() async {
+    try {
+      List<DriverStanding> drivers = const [];
+      try {
+        drivers = await _apiService.getDriverStandings(season: widget.season);
+      } catch (_) {
+        drivers = const [];
+      }
+
+      final values = await Future.wait<Object>([
+        _predictionService.getRacePodiumPrediction(
+          season: widget.season,
+          round: widget.race.round,
+        ),
+        _predictionService.getQualifyingTop3Prediction(
+          season: widget.season,
+          round: widget.race.round,
+        ),
+        _predictionService.getSeasonScore(
+          season: widget.season,
+          apiService: _apiService,
+        ),
+      ]);
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _predictionDrivers = drivers;
+        _racePodiumPrediction = values[0] as List<String>;
+        _qualifyingTop3Prediction = values[1] as List<String>;
+        _seasonPredictionScore = values[2] as PredictionSeasonScore;
+        _loadingPredictions = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loadingPredictions = false;
+      });
+    }
+  }
+
+  bool _hasDuplicateSelections(List<String?> selections) {
+    final values = selections.whereType<String>().toList();
+    return values.toSet().length != values.length;
+  }
+
+  String _driverDisplayName(DriverStanding driver) {
+    final code = driver.code?.trim() ?? '';
+    if (code.isNotEmpty) {
+      return '$code • ${driver.givenName} ${driver.familyName}';
+    }
+    return '${driver.givenName} ${driver.familyName}';
+  }
+
+  String _driverShortLabel(String driverId) {
+    for (final driver in _predictionDrivers) {
+      if (driver.driverId != driverId) {
+        continue;
+      }
+      final code = driver.code?.trim() ?? '';
+      if (code.isNotEmpty) {
+        return code;
+      }
+      return driver.familyName.isEmpty ? driverId : driver.familyName;
+    }
+    return driverId;
+  }
+
+  bool get _canEditQualifyingPrediction {
+    if (_savingPrediction || _loadingPredictions) {
+      return false;
+    }
+    if (_predictionDrivers.length < 3) {
+      return false;
+    }
+    return !_isQualifyingPredictionLocked;
+  }
+
+  bool get _canEditRacePrediction {
+    if (_savingPrediction || _loadingPredictions) {
+      return false;
+    }
+    if (_predictionDrivers.length < 3) {
+      return false;
+    }
+    return !_isRacePredictionLocked;
+  }
+
+  bool get _isQualifyingPredictionLocked {
+    final lockTime =
+        widget.race.qualifying?.startDateTime ?? widget.race.startDateTime;
+    if (lockTime == null) {
+      return false;
+    }
+    return !DateTime.now().isBefore(lockTime);
+  }
+
+  bool get _isRacePredictionLocked {
+    final lockTime = widget.race.startDateTime;
+    if (lockTime == null) {
+      return false;
+    }
+    return !DateTime.now().isBefore(lockTime);
   }
 
   Widget _buildDetailRow(

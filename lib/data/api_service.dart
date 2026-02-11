@@ -301,6 +301,70 @@ class ApiService {
     }
   }
 
+  Future<List<String>> getRaceTop3DriverIds({
+    required String season,
+    required String round,
+  }) async {
+    final response = await http.get(Uri.parse('$_baseUrl$season/$round/results/'));
+    if (response.statusCode == 404) {
+      return [];
+    }
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load race results');
+    }
+    final data = _decodeJsonMap(response.body);
+    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+    final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+    final racesJson = raceTable['Races'] as List? ?? [];
+    if (racesJson.isEmpty) {
+      return [];
+    }
+    final raceJson = racesJson.first as Map<String, dynamic>;
+    final results = raceJson['Results'] as List? ?? [];
+    return results
+        .take(3)
+        .map((result) {
+          final resultJson = result as Map<String, dynamic>;
+          final driver = resultJson['Driver'] as Map<String, dynamic>? ?? {};
+          return '${driver['driverId'] ?? ''}';
+        })
+        .where((id) => id.isNotEmpty)
+        .toList();
+  }
+
+  Future<List<String>> getQualifyingTop3DriverIds({
+    required String season,
+    required String round,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/$round/qualifying/'),
+    );
+    if (response.statusCode == 404) {
+      return [];
+    }
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load qualifying results');
+    }
+    final data = _decodeJsonMap(response.body);
+    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+    final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+    final racesJson = raceTable['Races'] as List? ?? [];
+    if (racesJson.isEmpty) {
+      return [];
+    }
+    final raceJson = racesJson.first as Map<String, dynamic>;
+    final results = raceJson['QualifyingResults'] as List? ?? [];
+    return results
+        .take(3)
+        .map((result) {
+          final resultJson = result as Map<String, dynamic>;
+          final driver = resultJson['Driver'] as Map<String, dynamic>? ?? {};
+          return '${driver['driverId'] ?? ''}';
+        })
+        .where((id) => id.isNotEmpty)
+        .toList();
+  }
+
   Future<SessionResults?> getLastRaceResults({required String season}) async {
     return _getSessionResults(
       season: season,
