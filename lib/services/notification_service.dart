@@ -72,6 +72,52 @@ class NotificationService {
     }
   }
 
+  static Future<bool> showFavoriteResultNotification({
+    required String season,
+    required String entityType,
+    required String entityId,
+    required String category,
+    required String eventKey,
+    required String title,
+    required String body,
+    bool requestPermissionIfNeeded = false,
+  }) async {
+    await init();
+    if (requestPermissionIfNeeded) {
+      final allowed = await requestPermissions();
+      if (!allowed) {
+        _lastError = 'Permissions denied';
+        return false;
+      }
+    }
+    final id = notificationIdForFavoriteAlert(
+      season: season,
+      entityType: entityType,
+      entityId: entityId,
+      category: category,
+      eventKey: eventKey,
+    );
+    try {
+      await _plugin.show(
+        id,
+        title,
+        body,
+        _favoriteResultsNotificationDetails(),
+      );
+      return true;
+    } on PlatformException catch (error) {
+      _lastError = 'Platform error: ${error.code} ${error.message ?? ''}'
+          .trim();
+      return false;
+    } on MissingPluginException catch (error) {
+      _lastError = 'Missing plugin: $error';
+      return false;
+    } catch (error) {
+      _lastError = 'Unexpected error: $error';
+      return false;
+    }
+  }
+
   static Future<void> scheduleRaceWeekend({
     required Race race,
     required String season,
@@ -289,6 +335,24 @@ class NotificationService {
     return _stableHash(key);
   }
 
+  static int notificationIdForFavoriteAlert({
+    required String season,
+    required String entityType,
+    required String entityId,
+    required String category,
+    required String eventKey,
+  }) {
+    final raw = [
+      'favorite',
+      season,
+      entityType,
+      entityId,
+      category,
+      eventKey,
+    ].join('|');
+    return _stableHash(raw);
+  }
+
   static String sessionKey({
     required Race race,
     required RaceSession session,
@@ -324,6 +388,20 @@ class NotificationService {
         channelDescription: 'Race weekend summary reminders',
         importance: Importance.defaultImportance,
         priority: Priority.defaultPriority,
+      ),
+      iOS: const DarwinNotificationDetails(),
+    );
+  }
+
+  static NotificationDetails _favoriteResultsNotificationDetails() {
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        'favorite_results',
+        'Favorite results',
+        channelDescription:
+            'Session finished and standings updates for favorite picks',
+        importance: Importance.high,
+        priority: Priority.high,
       ),
       iOS: const DarwinNotificationDetails(),
     );

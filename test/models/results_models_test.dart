@@ -121,13 +121,19 @@ void main() {
         'points': '15',
         'status': 'Finished',
         'Time': {'time': '+7.981s'},
-        'Driver': {'givenName': 'Charles', 'familyName': 'Leclerc'},
-        'Constructor': {'name': 'Ferrari'},
+        'Driver': {
+          'givenName': 'Charles',
+          'familyName': 'Leclerc',
+          'driverId': 'leclerc',
+        },
+        'Constructor': {'name': 'Ferrari', 'constructorId': 'ferrari'},
       }, type: SessionType.race);
 
       expect(entry.position, '3');
       expect(entry.driverName, 'Charles Leclerc');
+      expect(entry.driverId, 'leclerc');
       expect(entry.teamName, 'Ferrari');
+      expect(entry.constructorId, 'ferrari');
       expect(entry.points, '15');
       expect(entry.time, '+7.981s');
       expect(entry.q1, null);
@@ -144,12 +150,18 @@ void main() {
         'Q1': '1:26.001',
         'Q2': '1:25.421',
         'Q3': '1:25.102',
-        'Driver': {'givenName': 'George', 'familyName': 'Russell'},
-        'Constructor': {'name': 'Mercedes'},
+        'Driver': {
+          'givenName': 'George',
+          'familyName': 'Russell',
+          'driverId': 'russell',
+        },
+        'Constructor': {'name': 'Mercedes', 'constructorId': 'mercedes'},
       }, type: SessionType.qualifying);
 
       expect(entry.driverName, 'George Russell');
+      expect(entry.driverId, 'russell');
       expect(entry.teamName, 'Mercedes');
+      expect(entry.constructorId, 'mercedes');
       expect(entry.q1, '1:26.001');
       expect(entry.q2, '1:25.421');
       expect(entry.q3, '1:25.102');

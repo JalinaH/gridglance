@@ -49,5 +49,14 @@
 	<string>GridGlance adds race sessions to your calendar.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>GridGlance can attach race details to calendar entries.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.example.gridglance.favorite-result-sync</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
 </dict>
 </plist>

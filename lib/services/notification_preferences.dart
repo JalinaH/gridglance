@@ -4,6 +4,10 @@ import 'notification_service.dart';
 
 class NotificationPreferences {
   static const String _scheduledRaceKey = 'scheduled_race';
+  static const String _favoriteSessionFinishedAlertsKey =
+      'notify_favorite_session_finished';
+  static const String _favoritePositionPointsAlertsKey =
+      'notify_favorite_position_points';
   static const int defaultLeadTimeMinutes = 15;
   static const List<int> leadTimePresets = [5, 15, 60, 1440];
 
@@ -88,6 +92,26 @@ class NotificationPreferences {
     final prefs = await SharedPreferences.getInstance();
     final key = _weekendDigestKey(race: race, season: season);
     await prefs.setBool(key, value);
+  }
+
+  static Future<bool> isFavoriteSessionFinishedEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_favoriteSessionFinishedAlertsKey) ?? false;
+  }
+
+  static Future<void> setFavoriteSessionFinishedEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_favoriteSessionFinishedAlertsKey, value);
+  }
+
+  static Future<bool> isFavoritePositionPointsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_favoritePositionPointsAlertsKey) ?? false;
+  }
+
+  static Future<void> setFavoritePositionPointsEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_favoritePositionPointsAlertsKey, value);
   }
 
   static String _keyForSession({

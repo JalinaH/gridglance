@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
 import '../services/calendar_service.dart';
+import '../services/favorite_result_alert_service.dart';
 import '../services/notification_preferences.dart';
 import '../services/notification_service.dart';
 import '../services/weather_service.dart';
@@ -26,6 +27,8 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   final Map<String, bool> _sessionReminderEnabled = {};
   final Map<String, int> _sessionLeadMinutes = {};
   bool _weekendDigestEnabled = false;
+  bool _favoriteSessionFinishedAlertsEnabled = false;
+  bool _favoritePositionPointsAlertsEnabled = false;
   bool _loadingNotificationPreferences = true;
   bool _importingWeekendCalendar = false;
 
@@ -64,6 +67,10 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
       race: widget.race,
       season: widget.season,
     );
+    final favoriteSessionFinished =
+        await NotificationPreferences.isFavoriteSessionFinishedEnabled();
+    final favoritePositionPoints =
+        await NotificationPreferences.isFavoritePositionPointsEnabled();
 
     if (!mounted) {
       return;
@@ -76,6 +83,8 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         ..clear()
         ..addAll(sessionLeadMinutes);
       _weekendDigestEnabled = weekendDigest;
+      _favoriteSessionFinishedAlertsEnabled = favoriteSessionFinished;
+      _favoritePositionPointsAlertsEnabled = favoritePositionPoints;
       _loadingNotificationPreferences = false;
     });
   }
@@ -494,7 +503,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           ),
           SizedBox(height: 6),
           Text(
-            "Toggle reminders per session and pick when to be notified.",
+            "Manage pre-session reminders and favorite result alerts.",
             style: TextStyle(color: colors.textMuted, fontSize: 12),
           ),
           SizedBox(height: 12),
@@ -502,6 +511,10 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           Divider(color: colors.border),
           SizedBox(height: 6),
           _buildWeekendDigestRow(context),
+          SizedBox(height: 12),
+          Divider(color: colors.border),
+          SizedBox(height: 6),
+          _buildFavoriteResultAlerts(context),
         ],
       ),
     );
@@ -677,6 +690,95 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           activeThumbColor: colors.f1RedBright,
         ),
       ],
+    );
+  }
+
+  Widget _buildFavoriteResultAlerts(BuildContext context) {
+    final colors = AppColors.of(context);
+    final canInteract = !_loadingNotificationPreferences;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Favorite result alerts",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        SizedBox(height: 2),
+        Text(
+          "Get alerts for your favorite driver/team after sessions and standings updates.",
+          style: TextStyle(color: colors.textMuted, fontSize: 11),
+        ),
+        SizedBox(height: 8),
+        _buildFavoriteAlertToggle(
+          context: context,
+          title: "Session finished",
+          subtitle: "Sent when race, sprint, or qualifying results are posted.",
+          value: _favoriteSessionFinishedAlertsEnabled,
+          onChanged: canInteract ? _toggleFavoriteSessionFinishedAlerts : null,
+        ),
+        SizedBox(height: 8),
+        _buildFavoriteAlertToggle(
+          context: context,
+          title: "Position / points updates",
+          subtitle:
+              "Sent when your favorite's standings position or points change.",
+          value: _favoritePositionPointsAlertsEnabled,
+          onChanged: canInteract ? _toggleFavoritePositionPointsAlerts : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFavoriteAlertToggle({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    final colors = AppColors.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: colors.f1RedBright.withValues(alpha: 0.55),
+            activeThumbColor: colors.f1RedBright,
+          ),
+        ],
+      ),
     );
   }
 
@@ -1124,6 +1226,56 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
       _weekendDigestEnabled = false;
     });
     _showSnackBar('Weekend digest turned off.');
+  }
+
+  Future<void> _toggleFavoriteSessionFinishedAlerts(bool enabled) async {
+    if (enabled) {
+      final allowed = await NotificationService.requestPermissions();
+      if (!allowed) {
+        _showSnackBar('Notification permission denied.');
+        return;
+      }
+    }
+    await NotificationPreferences.setFavoriteSessionFinishedEnabled(enabled);
+    if (enabled) {
+      await FavoriteResultAlertService.checkForUpdates(season: widget.season);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _favoriteSessionFinishedAlertsEnabled = enabled;
+    });
+    _showSnackBar(
+      enabled
+          ? 'Favorite session-finished alerts enabled.'
+          : 'Favorite session-finished alerts turned off.',
+    );
+  }
+
+  Future<void> _toggleFavoritePositionPointsAlerts(bool enabled) async {
+    if (enabled) {
+      final allowed = await NotificationService.requestPermissions();
+      if (!allowed) {
+        _showSnackBar('Notification permission denied.');
+        return;
+      }
+    }
+    await NotificationPreferences.setFavoritePositionPointsEnabled(enabled);
+    if (enabled) {
+      await FavoriteResultAlertService.checkForUpdates(season: widget.season);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _favoritePositionPointsAlertsEnabled = enabled;
+    });
+    _showSnackBar(
+      enabled
+          ? 'Favorite position/points alerts enabled.'
+          : 'Favorite position/points alerts turned off.',
+    );
   }
 
   String _sessionScheduleFailureMessage(

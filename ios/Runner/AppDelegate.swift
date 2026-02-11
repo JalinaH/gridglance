@@ -1,17 +1,24 @@
 import Flutter
 import UIKit
+import workmanager
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   private let dpsChannelName = "gridglance/dps"
   private let widgetIntentChannelName = "gridglance/widget_intent"
   private let widgetAppGroupId = "group.com.example.gridglance"
+  private let backgroundTaskIdentifier = "com.example.gridglance.favorite-result-sync"
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+    WorkmanagerPlugin.setPluginRegistrantCallback { registry in
+      GeneratedPluginRegistrant.register(with: registry)
+    }
+    WorkmanagerPlugin.registerTask(withIdentifier: backgroundTaskIdentifier)
+    UIApplication.shared.setMinimumBackgroundFetchInterval(TimeInterval(60 * 15))
     if let dpsMessenger = resolveMessenger(pluginKey: "GridGlanceDpsChannel") {
       configureDpsChannel(binaryMessenger: dpsMessenger)
     }

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/main_shell.dart';
 import 'screens/widget_config_screen.dart';
+import 'services/background_task_service.dart';
+import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/widget_update_service.dart';
 import 'theme/app_theme.dart';
@@ -11,6 +15,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await WidgetUpdateService.ensureHomeWidgetSetup();
   await NotificationService.init();
+  await BackgroundTaskService.initializeAndSchedule();
   runApp(const MyApp());
 }
 
@@ -35,6 +40,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _loadThemeMode();
     _checkForWidgetClick();
+    _runBackgroundChecks();
   }
 
   @override
@@ -47,6 +53,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkForWidgetClick();
+      _runBackgroundChecks();
     }
   }
 
@@ -101,6 +108,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
     );
     _navigatorKey.currentState?.push(route);
+  }
+
+  void _runBackgroundChecks() {
+    unawaited(FavoriteResultAlertService.checkForUpdates());
   }
 
   @override

@@ -21,7 +21,9 @@ class SessionResults {
 class ResultEntry {
   final String position;
   final String driverName;
+  final String driverId;
   final String teamName;
+  final String constructorId;
   final String points;
   final String status;
   final String? time;
@@ -32,7 +34,9 @@ class ResultEntry {
   const ResultEntry({
     required this.position,
     required this.driverName,
+    required this.driverId,
     required this.teamName,
+    required this.constructorId,
     required this.points,
     required this.status,
     required this.time,
@@ -54,7 +58,9 @@ class ResultEntry {
       position: json['position'] ?? '-',
       driverName: '${driver['givenName'] ?? ''} ${driver['familyName'] ?? ''}'
           .trim(),
+      driverId: driver['driverId'] ?? '',
       teamName: constructor['name'] ?? '',
+      constructorId: constructor['constructorId'] ?? '',
       points: json['points'] ?? '',
       status: status ?? '',
       time: time,

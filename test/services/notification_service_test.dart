@@ -124,6 +124,47 @@ void main() {
       expect(firstId, isNot(secondId));
     });
   });
+
+  group('NotificationService.notificationIdForFavoriteAlert', () {
+    test('returns deterministic ids for the same payload', () {
+      final first = NotificationService.notificationIdForFavoriteAlert(
+        season: '2026',
+        entityType: 'driver',
+        entityId: 'verstappen',
+        category: 'position_points',
+        eventKey: '2026|driver|1|350',
+      );
+      final second = NotificationService.notificationIdForFavoriteAlert(
+        season: '2026',
+        entityType: 'driver',
+        entityId: 'verstappen',
+        category: 'position_points',
+        eventKey: '2026|driver|1|350',
+      );
+
+      expect(first, second);
+      expect(first, greaterThanOrEqualTo(0));
+    });
+
+    test('changes when category or event changes', () {
+      final sessionId = NotificationService.notificationIdForFavoriteAlert(
+        season: '2026',
+        entityType: 'team',
+        entityId: 'ferrari',
+        category: 'session_finished',
+        eventKey: 'race|3|australia',
+      );
+      final standingsId = NotificationService.notificationIdForFavoriteAlert(
+        season: '2026',
+        entityType: 'team',
+        entityId: 'ferrari',
+        category: 'position_points',
+        eventKey: '2026|team|2|300',
+      );
+
+      expect(sessionId, isNot(standingsId));
+    });
+  });
 }
 
 Race _buildRace({required String round}) {
