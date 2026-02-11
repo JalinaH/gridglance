@@ -25,6 +25,20 @@ void main() {
     });
   });
 
+  group('NotificationService.weekendDigestKey', () {
+    test('encodes season and race weekend identity data', () {
+      final race = _buildRace(round: '7');
+
+      final key = NotificationService.weekendDigestKey(
+        race: race,
+        season: '2026',
+      );
+      final decoded = utf8.decode(base64Url.decode(base64Url.normalize(key)));
+
+      expect(decoded, 'digest|2026|7|Sample Grand Prix|2026-03-08|06:00:00Z');
+    });
+  });
+
   group('NotificationService.notificationIdForSession', () {
     test('returns deterministic non-negative ids', () {
       final race = _buildRace(round: '3');
@@ -74,6 +88,40 @@ void main() {
       );
 
       expect(qualifyingId, isNot(raceId));
+    });
+  });
+
+  group('NotificationService.notificationIdForWeekendDigest', () {
+    test('returns deterministic non-negative ids', () {
+      final race = _buildRace(round: '9');
+
+      final first = NotificationService.notificationIdForWeekendDigest(
+        race: race,
+        season: '2026',
+      );
+      final second = NotificationService.notificationIdForWeekendDigest(
+        race: race,
+        season: '2026',
+      );
+
+      expect(first, second);
+      expect(first, greaterThanOrEqualTo(0));
+    });
+
+    test('changes when race weekend identity changes', () {
+      final firstRace = _buildRace(round: '10');
+      final secondRace = _buildRace(round: '11');
+
+      final firstId = NotificationService.notificationIdForWeekendDigest(
+        race: firstRace,
+        season: '2026',
+      );
+      final secondId = NotificationService.notificationIdForWeekendDigest(
+        race: secondRace,
+        season: '2026',
+      );
+
+      expect(firstId, isNot(secondId));
     });
   });
 }
