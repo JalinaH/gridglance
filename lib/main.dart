@@ -4,10 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/main_shell.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/notification_service.dart';
+import 'services/widget_update_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await WidgetUpdateService.ensureHomeWidgetSetup();
   await NotificationService.init();
   runApp(const MyApp());
 }
@@ -21,11 +23,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   static const String _themeKey = 'theme_mode';
-  static const MethodChannel _widgetIntentChannel =
-      MethodChannel('gridglance/widget_intent');
+  static const MethodChannel _widgetIntentChannel = MethodChannel(
+    'gridglance/widget_intent',
+  );
   ThemeMode _themeMode = ThemeMode.dark;
-  final GlobalKey<NavigatorState> _navigatorKey =
-      GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -61,8 +63,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _toggleTheme() async {
-    final nextMode =
-        _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    final nextMode = _themeMode == ThemeMode.dark
+        ? ThemeMode.light
+        : ThemeMode.dark;
     if (mounted) {
       setState(() {
         _themeMode = nextMode;
@@ -109,10 +112,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       darkTheme: AppTheme.dark(),
       themeMode: _themeMode,
       navigatorKey: _navigatorKey,
-      home: MainShell(
-        isDarkMode: _isDarkMode,
-        onToggleTheme: _toggleTheme,
-      ),
+      home: MainShell(isDarkMode: _isDarkMode, onToggleTheme: _toggleTheme),
     );
   }
 }

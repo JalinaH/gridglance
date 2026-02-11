@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import '../data/api_service.dart';
@@ -140,6 +141,37 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     });
   }
 
+  bool get _isIosWidgetPickerFlow =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  String get _primaryActionLabel =>
+      _isIosWidgetPickerFlow ? 'Prepare widget' : 'Add widget';
+
+  String get _iosWidgetPickerMessage =>
+      'Ready. Long-press Home Screen, tap +, then add GridGlance widget.';
+
+  String get _androidUnsupportedMessage =>
+      'Widget pinning not supported. Use widget picker.';
+
+  Future<void> _requestPinWidget({
+    required String qualifiedAndroidName,
+    required ValueSetter<String> onStatus,
+  }) async {
+    if (_isIosWidgetPickerFlow) {
+      onStatus(_iosWidgetPickerMessage);
+      return;
+    }
+    final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
+    if (!supported) {
+      onStatus(_androidUnsupportedMessage);
+      return;
+    }
+    await HomeWidget.requestPinWidget(
+      qualifiedAndroidName: qualifiedAndroidName,
+    );
+    onStatus('Widget add request sent');
+  }
+
   Future<void> _addNextRaceWidget() async {
     setState(() {
       _addingNextRace = true;
@@ -147,30 +179,23 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     });
 
     try {
-      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
-      if (!supported) {
-        if (mounted) {
-          setState(() {
-            _nextRaceStatusMessage =
-                "Widget pinning not supported. Use widget picker.";
-          });
-        }
-        return;
-      }
-      final data = _previewData;
+      final data = await _ensurePreviewData();
       await WidgetUpdateService.updateNextRaceCountdown(
-        data?.nextRace,
-        season: data?.season ?? _season,
+        data.nextRace,
+        season: data.season,
       );
-      await HomeWidget.requestPinWidget(
+      await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedNextRaceCountdownWidgetProvider,
+        onStatus: (message) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _nextRaceStatusMessage = message;
+          });
+        },
       );
-      if (mounted) {
-        setState(() {
-          _nextRaceStatusMessage = "Widget add request sent";
-        });
-      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -193,25 +218,23 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     });
 
     try {
-      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
-      if (!supported) {
-        if (mounted) {
-          setState(() {
-            _driverStatusMessage =
-                "Widget pinning not supported. Use widget picker.";
-          });
-        }
-        return;
-      }
-      await HomeWidget.requestPinWidget(
+      final data = await _ensurePreviewData();
+      await WidgetUpdateService.updateDriverStandings(
+        data.drivers,
+        season: data.season,
+      );
+      await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedDriverWidgetProvider,
+        onStatus: (message) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _driverStatusMessage = message;
+          });
+        },
       );
-      if (mounted) {
-        setState(() {
-          _driverStatusMessage = "Widget add request sent";
-        });
-      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -234,30 +257,23 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     });
 
     try {
-      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
-      if (!supported) {
-        if (mounted) {
-          setState(() {
-            _nextSessionStatusMessage =
-                "Widget pinning not supported. Use widget picker.";
-          });
-        }
-        return;
-      }
-      final data = _previewData;
+      final data = await _ensurePreviewData();
       await WidgetUpdateService.updateNextSessionWidget(
-        data?.raceSchedule ?? const <Race>[],
-        season: data?.season ?? _season,
+        data.raceSchedule,
+        season: data.season,
       );
-      await HomeWidget.requestPinWidget(
+      await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedNextSessionWidgetProvider,
+        onStatus: (message) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _nextSessionStatusMessage = message;
+          });
+        },
       );
-      if (mounted) {
-        setState(() {
-          _nextSessionStatusMessage = "Widget add request sent";
-        });
-      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -280,25 +296,23 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     });
 
     try {
-      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
-      if (!supported) {
-        if (mounted) {
-          setState(() {
-            _teamStatusMessage =
-                "Widget pinning not supported. Use widget picker.";
-          });
-        }
-        return;
-      }
-      await HomeWidget.requestPinWidget(
+      final data = await _ensurePreviewData();
+      await WidgetUpdateService.updateTeamStandings(
+        data.teams,
+        season: data.season,
+      );
+      await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedTeamWidgetProvider,
+        onStatus: (message) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _teamStatusMessage = message;
+          });
+        },
       );
-      if (mounted) {
-        setState(() {
-          _teamStatusMessage = "Widget add request sent";
-        });
-      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -320,16 +334,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       return;
     }
     try {
-      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
-      if (!supported) {
-        if (mounted) {
-          setState(() {
-            _favoriteDriverStatusMessage =
-                "Widget pinning not supported. Use widget picker.";
-          });
-        }
-        return;
-      }
       setState(() {
         _addingFavoriteDriver = true;
         _favoriteDriverStatusMessage = null;
@@ -338,15 +342,18 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         driver: driver,
         season: _season,
       );
-      await HomeWidget.requestPinWidget(
+      await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedFavoriteDriverWidgetProvider,
+        onStatus: (message) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _favoriteDriverStatusMessage = message;
+          });
+        },
       );
-      if (mounted) {
-        setState(() {
-          _favoriteDriverStatusMessage = "Widget add request sent";
-        });
-      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -368,16 +375,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       return;
     }
     try {
-      final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
-      if (!supported) {
-        if (mounted) {
-          setState(() {
-            _favoriteTeamStatusMessage =
-                "Widget pinning not supported. Use widget picker.";
-          });
-        }
-        return;
-      }
       setState(() {
         _addingFavoriteTeam = true;
         _favoriteTeamStatusMessage = null;
@@ -387,15 +384,18 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         drivers: selection.drivers,
         season: _season,
       );
-      await HomeWidget.requestPinWidget(
+      await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedFavoriteTeamWidgetProvider,
+        onStatus: (message) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _favoriteTeamStatusMessage = message;
+          });
+        },
       );
-      if (mounted) {
-        setState(() {
-          _favoriteTeamStatusMessage = "Widget add request sent";
-        });
-      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -555,6 +555,25 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               ),
             ),
             SizedBox(height: 16),
+            if (_isIosWidgetPickerFlow) ...[
+              Container(
+                margin: EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.of(context).surfaceAlt,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.of(context).border),
+                ),
+                child: Text(
+                  'iOS uses the widget picker. These buttons prepare live widget data and favorites.',
+                  style: TextStyle(
+                    color: AppColors.of(context).textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
             _buildWidgetCard(
               context,
               preview: _StandingsListPreview(
@@ -573,7 +592,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   await WidgetUpdateService.setDriverWidgetTransparent(value);
                 },
               ),
-              actionLabel: "Add widget",
+              actionLabel: _primaryActionLabel,
               isAdding: _addingDriver,
               onAction: _addingDriver ? null : _addDriverWidget,
               statusMessage: _driverStatusMessage,
@@ -596,7 +615,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   await WidgetUpdateService.setTeamWidgetTransparent(value);
                 },
               ),
-              actionLabel: "Add widget",
+              actionLabel: _primaryActionLabel,
               isAdding: _addingTeam,
               onAction: _addingTeam ? null : _addTeamWidget,
               statusMessage: _teamStatusMessage,
@@ -618,7 +637,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   await WidgetUpdateService.setNextRaceWidgetTransparent(value);
                 },
               ),
-              actionLabel: "Add widget",
+              actionLabel: _primaryActionLabel,
               isAdding: _addingNextRace,
               onAction: _addingNextRace ? null : _addNextRaceWidget,
               statusMessage: _nextRaceStatusMessage,
@@ -642,7 +661,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   );
                 },
               ),
-              actionLabel: "Add widget",
+              actionLabel: _primaryActionLabel,
               isAdding: _addingNextSession,
               onAction: _addingNextSession ? null : _addNextSessionWidget,
               statusMessage: _nextSessionStatusMessage,
@@ -666,7 +685,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   );
                 },
               ),
-              actionLabel: "Add widget",
+              actionLabel: _primaryActionLabel,
               isAdding: _addingFavoriteDriver,
               onAction: _addingFavoriteDriver ? null : _addFavoriteDriverWidget,
               statusMessage: _favoriteDriverStatusMessage,
@@ -691,7 +710,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   );
                 },
               ),
-              actionLabel: "Add widget",
+              actionLabel: _primaryActionLabel,
               isAdding: _addingFavoriteTeam,
               onAction: _addingFavoriteTeam ? null : _addFavoriteTeamWidget,
               statusMessage: _favoriteTeamStatusMessage,

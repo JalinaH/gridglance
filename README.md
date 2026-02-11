@@ -14,7 +14,7 @@ GridGlance is a Flutter app for following Formula 1 standings and race weekends 
 - Provides detail pages for drivers and teams, including points trend charts and recent form.
 - Adds race sessions to the device calendar from race detail screens.
 - Schedules local race-weekend notifications (default: 15 minutes before each session, when permissions are granted).
-- Supports home-screen widgets on Android:
+- Supports home-screen widgets on Android and iOS:
   - Driver Standings
   - Team Standings
   - Favorite Driver
@@ -103,7 +103,9 @@ flutter build ios --release
 ### iOS
 
 - Calendar permission usage descriptions are configured in `ios/Runner/Info.plist`.
+- WidgetKit extension target is `GridGlanceWidgets` (iOS 14+).
+- App and widget share data via App Group `group.com.example.gridglance`.
 
 ## Current status
 
-- The `test/` folder currently has no automated tests.
+- Automated tests are available under `test/` for core models, formatting utilities, and notifications.

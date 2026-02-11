@@ -33,6 +33,15 @@ class WidgetUpdateService {
       'NextSessionWidgetProvider';
   static const String androidQualifiedNextSessionWidgetProvider =
       'com.example.gridglance.NextSessionWidgetProvider';
+  static const String iOSAppGroupId = 'group.com.example.gridglance';
+  static const String iOSDriverWidgetKind = 'GridGlanceDriverStandingsWidget';
+  static const String iOSTeamWidgetKind = 'GridGlanceTeamStandingsWidget';
+  static const String iOSFavoriteDriverWidgetKind =
+      'GridGlanceFavoriteDriverWidget';
+  static const String iOSFavoriteTeamWidgetKind =
+      'GridGlanceFavoriteTeamWidget';
+  static const String iOSNextRaceWidgetKind = 'GridGlanceNextRaceWidget';
+  static const String iOSNextSessionWidgetKind = 'GridGlanceNextSessionWidget';
   static const MethodChannel _dpsChannel = MethodChannel('gridglance/dps');
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
   static Timer? _driverRefreshTimer;
@@ -53,6 +62,14 @@ class WidgetUpdateService {
       '${_favoriteDriverDefaultKey}_transparent';
   static const String _favoriteTeamDefaultTransparentKey =
       '${_favoriteTeamDefaultKey}_transparent';
+
+  static Future<void> ensureHomeWidgetSetup() async {
+    try {
+      await HomeWidget.setAppGroupId(iOSAppGroupId);
+    } catch (_) {
+      // App group setup is required for iOS widgets but should not block app startup.
+    }
+  }
 
   static void startDriverStandingsAutoRefresh({
     Duration interval = defaultRefreshInterval,
@@ -128,9 +145,7 @@ class WidgetUpdateService {
     await _saveDps('driver_2', _formatDriver(top, 1));
     await _saveDps('driver_3', _formatDriver(top, 2));
 
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedDriverWidgetProvider,
-    );
+    await _refreshDriverWidget();
   }
 
   static Future<void> updateTeamStandings(
@@ -151,9 +166,7 @@ class WidgetUpdateService {
     await _saveDps('team_2', _formatTeam(top, 1));
     await _saveDps('team_3', _formatTeam(top, 2));
 
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedTeamWidgetProvider,
-    );
+    await _refreshTeamWidget();
   }
 
   static Future<void> updateNextRaceCountdown(
@@ -192,9 +205,7 @@ class WidgetUpdateService {
       );
     }
 
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedNextRaceCountdownWidgetProvider,
-    );
+    await _refreshNextRaceWidget();
   }
 
   static Future<void> updateNextSessionWidget(
@@ -237,9 +248,7 @@ class WidgetUpdateService {
       );
     }
 
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
-    );
+    await _refreshNextSessionWidget();
   }
 
   static Future<void> updateFavoriteDrivers(
@@ -277,9 +286,7 @@ class WidgetUpdateService {
       await _saveDps(_favoriteDriverKey(widgetId, 'season'), seasonLabel);
     }
 
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
-    );
+    await _refreshFavoriteDriverWidget();
   }
 
   static Future<void> updateFavoriteTeams(
@@ -326,9 +333,7 @@ class WidgetUpdateService {
       await _saveDps(_favoriteTeamKey(widgetId, 'season'), seasonLabel);
     }
 
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
-    );
+    await _refreshFavoriteTeamWidget();
   }
 
   static Future<void> setFavoriteDriverDefault({
@@ -344,9 +349,7 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps('${_favoriteDriverDefaultKey}_season', season);
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
-    );
+    await _refreshFavoriteDriverWidget();
   }
 
   static Future<void> setFavoriteTeamDefault({
@@ -370,23 +373,17 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps('${_favoriteTeamDefaultKey}_season', season);
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
-    );
+    await _refreshFavoriteTeamWidget();
   }
 
   static Future<void> setFavoriteDriverDefaultTransparent(bool value) async {
     await _saveDps(_favoriteDriverDefaultTransparentKey, value.toString());
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
-    );
+    await _refreshFavoriteDriverWidget();
   }
 
   static Future<void> setFavoriteTeamDefaultTransparent(bool value) async {
     await _saveDps(_favoriteTeamDefaultTransparentKey, value.toString());
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
-    );
+    await _refreshFavoriteTeamWidget();
   }
 
   static Future<void> configureFavoriteDriverWidget({
@@ -406,9 +403,7 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps(_favoriteDriverKey(widgetId, 'season'), season);
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
-    );
+    await _refreshFavoriteDriverWidget();
   }
 
   static Future<void> configureFavoriteTeamWidget({
@@ -436,37 +431,27 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps(_favoriteTeamKey(widgetId, 'season'), season);
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
-    );
+    await _refreshFavoriteTeamWidget();
   }
 
   static Future<void> setDriverWidgetTransparent(bool value) async {
     await _saveDps(_driverWidgetTransparentKey, value.toString());
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedDriverWidgetProvider,
-    );
+    await _refreshDriverWidget();
   }
 
   static Future<void> setTeamWidgetTransparent(bool value) async {
     await _saveDps(_teamWidgetTransparentKey, value.toString());
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedTeamWidgetProvider,
-    );
+    await _refreshTeamWidget();
   }
 
   static Future<void> setNextRaceWidgetTransparent(bool value) async {
     await _saveDps(_nextRaceWidgetTransparentKey, value.toString());
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedNextRaceCountdownWidgetProvider,
-    );
+    await _refreshNextRaceWidget();
   }
 
   static Future<void> setNextSessionWidgetTransparent(bool value) async {
     await _saveDps(_nextSessionWidgetTransparentKey, value.toString());
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
-    );
+    await _refreshNextSessionWidget();
   }
 
   static Future<void> setFavoriteDriverWidgetTransparent({
@@ -477,9 +462,7 @@ class WidgetUpdateService {
       _favoriteDriverKey(widgetId, 'transparent'),
       value.toString(),
     );
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
-    );
+    await _refreshFavoriteDriverWidget();
   }
 
   static Future<void> setFavoriteTeamWidgetTransparent({
@@ -487,9 +470,7 @@ class WidgetUpdateService {
     required bool value,
   }) async {
     await _saveDps(_favoriteTeamKey(widgetId, 'transparent'), value.toString());
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
-    );
+    await _refreshFavoriteTeamWidget();
   }
 
   static Future<bool> getDriverWidgetTransparent() async {
@@ -522,6 +503,48 @@ class WidgetUpdateService {
 
   static Future<bool> getFavoriteTeamDefaultTransparent() async {
     return _getBool(_favoriteTeamDefaultTransparentKey);
+  }
+
+  static Future<void> _refreshDriverWidget() async {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedDriverWidgetProvider,
+      iOSName: iOSDriverWidgetKind,
+    );
+  }
+
+  static Future<void> _refreshTeamWidget() async {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedTeamWidgetProvider,
+      iOSName: iOSTeamWidgetKind,
+    );
+  }
+
+  static Future<void> _refreshFavoriteDriverWidget() async {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
+      iOSName: iOSFavoriteDriverWidgetKind,
+    );
+  }
+
+  static Future<void> _refreshFavoriteTeamWidget() async {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
+      iOSName: iOSFavoriteTeamWidgetKind,
+    );
+  }
+
+  static Future<void> _refreshNextRaceWidget() async {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedNextRaceCountdownWidgetProvider,
+      iOSName: iOSNextRaceWidgetKind,
+    );
+  }
+
+  static Future<void> _refreshNextSessionWidget() async {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
+      iOSName: iOSNextSessionWidgetKind,
+    );
   }
 
   static Future<void> _saveDps(String id, String value) async {
