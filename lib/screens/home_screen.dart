@@ -14,11 +14,12 @@ import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/team_logo.dart';
 import '../services/widget_update_service.dart';
+import 'compare_mode_screen.dart';
 import 'constructor_standings_screen.dart';
 import 'driver_standings_screen.dart';
 import 'last_race_results_screen.dart';
-import 'race_detail_screen.dart';
 import 'race_schedule_screen.dart';
+import 'race_weekend_center_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -487,13 +488,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: "Next Race",
                 subtitle: overview.nextRace == null
                     ? null
-                    : "Tap for full details",
+                    : "Tap for weekend center",
                 onTap: overview.nextRace == null
                     ? null
                     : () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => RaceDetailScreen(
+                            builder: (_) => RaceWeekendCenterScreen(
                               race: overview.nextRace!,
                               season: _season,
                             ),
@@ -581,6 +582,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 child: _buildRaceSummary(upcomingRaces),
+              ),
+            ),
+            Reveal(
+              index: 6,
+              child: _buildSummaryCard(
+                title: "Compare Mode",
+                subtitle: "Driver / team head-to-head",
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CompareModeScreen(season: _season),
+                    ),
+                  );
+                },
+                child: Text(
+                  "Pick two drivers or teams and compare points trend, finishes, quali delta, podiums, and wins.",
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
+                ),
               ),
             ),
           ],

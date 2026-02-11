@@ -77,6 +77,43 @@ void main() {
     });
   });
 
+  group('DriverSprintResult.fromRaceJson', () {
+    test('maps sprint points for a driver', () {
+      final result = DriverSprintResult.fromRaceJson({
+        'round': '6',
+        'raceName': 'Miami Grand Prix',
+        'date': '2026-05-03',
+        'SprintResults': [
+          {'points': '7'},
+        ],
+      });
+
+      expect(result.round, '6');
+      expect(result.raceName, 'Miami Grand Prix');
+      expect(result.date, '2026-05-03');
+      expect(result.points, '7');
+    });
+  });
+
+  group('TeamSprintResult.fromRaceJson', () {
+    test('maps sprint points for both team cars', () {
+      final result = TeamSprintResult.fromRaceJson({
+        'round': '7',
+        'raceName': 'Emilia Romagna Grand Prix',
+        'date': '2026-05-17',
+        'SprintResults': [
+          {'points': '8'},
+          {'points': '3'},
+        ],
+      });
+
+      expect(result.round, '7');
+      expect(result.raceName, 'Emilia Romagna Grand Prix');
+      expect(result.date, '2026-05-17');
+      expect(result.points, ['8', '3']);
+    });
+  });
+
   group('ResultEntry.fromJson', () {
     test('maps race results and prefers time in timeOrStatus', () {
       final entry = ResultEntry.fromJson({
@@ -118,6 +155,43 @@ void main() {
       expect(entry.q3, '1:25.102');
       expect(entry.time, null);
       expect(entry.timeOrStatus, 'Finished');
+    });
+  });
+
+  group('DriverQualifyingResult.fromRaceJson', () {
+    test('maps qualifying position for a driver', () {
+      final result = DriverQualifyingResult.fromRaceJson({
+        'round': '9',
+        'raceName': 'Canadian Grand Prix',
+        'date': '2026-06-14',
+        'QualifyingResults': [
+          {'position': '4'},
+        ],
+      });
+
+      expect(result.round, '9');
+      expect(result.raceName, 'Canadian Grand Prix');
+      expect(result.date, '2026-06-14');
+      expect(result.position, '4');
+    });
+  });
+
+  group('TeamQualifyingResult.fromRaceJson', () {
+    test('maps qualifying positions for both team cars', () {
+      final result = TeamQualifyingResult.fromRaceJson({
+        'round': '10',
+        'raceName': 'Austrian Grand Prix',
+        'date': '2026-06-28',
+        'QualifyingResults': [
+          {'position': '2'},
+          {'position': '7'},
+        ],
+      });
+
+      expect(result.round, '10');
+      expect(result.raceName, 'Austrian Grand Prix');
+      expect(result.date, '2026-06-28');
+      expect(result.positions, ['2', '7']);
     });
   });
 }

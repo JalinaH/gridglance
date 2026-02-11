@@ -6,6 +6,7 @@ import '../widgets/compact_search_field.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
+import 'race_weekend_center_screen.dart';
 
 enum RaceFilter { all, upcoming, completed }
 
@@ -168,9 +169,22 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                           physics: BouncingScrollPhysics(),
                           itemCount: races.length,
                           itemBuilder: (context, index) {
+                            final race = races[index];
                             return Reveal(
                               index: index,
-                              child: RaceCard(race: races[index]),
+                              child: RaceCard(
+                                race: race,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => RaceWeekendCenterScreen(
+                                        race: race,
+                                        season: widget.season,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             );
                           },
                         ),

@@ -2,6 +2,15 @@ import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/services.dart';
 import '../models/race.dart';
 
+class CalendarImportResult {
+  final int added;
+  final int total;
+
+  const CalendarImportResult({required this.added, required this.total});
+
+  int get failed => total - added;
+}
+
 class CalendarService {
   static Future<bool> addSessionToCalendar({
     required Race race,
@@ -33,6 +42,28 @@ class CalendarService {
     } on PlatformException {
       return false;
     }
+  }
+
+  static Future<CalendarImportResult> addRaceWeekendToCalendar({
+    required Race race,
+    required String season,
+  }) async {
+    final sessions =
+        race.sessions.where((session) => session.startDateTime != null).toList()
+          ..sort((a, b) => a.startDateTime!.compareTo(b.startDateTime!));
+
+    var added = 0;
+    for (final session in sessions) {
+      final success = await addSessionToCalendar(
+        race: race,
+        session: session,
+        season: season,
+      );
+      if (success) {
+        added += 1;
+      }
+    }
+    return CalendarImportResult(added: added, total: sessions.length);
   }
 
   static Duration _sessionDuration(RaceSession session) {

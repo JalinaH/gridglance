@@ -204,6 +204,103 @@ class ApiService {
     }
   }
 
+  Future<List<DriverSprintResult>> getDriverSprintResults({
+    required String season,
+    required String driverId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/drivers/$driverId/sprint/'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = _decodeJsonMap(response.body);
+      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+      final racesJson = raceTable['Races'] as List? ?? [];
+      return racesJson
+          .map(
+            (json) =>
+                DriverSprintResult.fromRaceJson(json as Map<String, dynamic>),
+          )
+          .toList();
+    } else {
+      throw Exception('Failed to load driver sprint results');
+    }
+  }
+
+  Future<List<TeamSprintResult>> getConstructorSprintResults({
+    required String season,
+    required String constructorId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/constructors/$constructorId/sprint/'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = _decodeJsonMap(response.body);
+      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+      final racesJson = raceTable['Races'] as List? ?? [];
+      return racesJson
+          .map(
+            (json) =>
+                TeamSprintResult.fromRaceJson(json as Map<String, dynamic>),
+          )
+          .toList();
+    } else {
+      throw Exception('Failed to load constructor sprint results');
+    }
+  }
+
+  Future<List<DriverQualifyingResult>> getDriverQualifyingResults({
+    required String season,
+    required String driverId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/drivers/$driverId/qualifying/'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = _decodeJsonMap(response.body);
+      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+      final racesJson = raceTable['Races'] as List? ?? [];
+      return racesJson
+          .map(
+            (json) => DriverQualifyingResult.fromRaceJson(
+              json as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } else {
+      throw Exception('Failed to load driver qualifying results');
+    }
+  }
+
+  Future<List<TeamQualifyingResult>> getConstructorQualifyingResults({
+    required String season,
+    required String constructorId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/constructors/$constructorId/qualifying/'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = _decodeJsonMap(response.body);
+      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
+      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
+      final racesJson = raceTable['Races'] as List? ?? [];
+      return racesJson
+          .map(
+            (json) =>
+                TeamQualifyingResult.fromRaceJson(json as Map<String, dynamic>),
+          )
+          .toList();
+    } else {
+      throw Exception('Failed to load constructor qualifying results');
+    }
+  }
+
   Future<SessionResults?> getLastRaceResults({required String season}) async {
     return _getSessionResults(
       season: season,

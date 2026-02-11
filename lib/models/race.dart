@@ -6,6 +6,8 @@ class Race {
   final String circuitName;
   final String locality;
   final String country;
+  final double? latitude;
+  final double? longitude;
   final RaceSession? practice1;
   final RaceSession? practice2;
   final RaceSession? practice3;
@@ -21,6 +23,8 @@ class Race {
     required this.circuitName,
     required this.locality,
     required this.country,
+    this.latitude,
+    this.longitude,
     required this.practice1,
     required this.practice2,
     required this.practice3,
@@ -42,6 +46,8 @@ class Race {
       circuitName: circuit['circuitName'] ?? '',
       locality: location['locality'] ?? '',
       country: location['country'] ?? '',
+      latitude: _parseCoordinate(location['lat']),
+      longitude: _parseCoordinate(location['long']),
       practice1: sessions['practice1'],
       practice2: sessions['practice2'],
       practice3: sessions['practice3'],
@@ -70,11 +76,8 @@ class Race {
 
   DateTime? get startDateTime => _parseDateTime(date, time);
 
-  RaceSession get raceSession => RaceSession(
-        name: 'Race',
-        date: date,
-        time: time,
-      );
+  RaceSession get raceSession =>
+      RaceSession(name: 'Race', date: date, time: time);
 
   List<RaceSession> get sessions {
     return [
@@ -125,11 +128,7 @@ class RaceSession {
   final String date;
   final String? time;
 
-  RaceSession({
-    required this.name,
-    required this.date,
-    required this.time,
-  });
+  RaceSession({required this.name, required this.date, required this.time});
 
   String get displayDateTime {
     if (time == null || time!.isEmpty) {
@@ -150,4 +149,17 @@ DateTime? _parseDateTime(String date, String? time) {
   }
   final normalizedTime = time.startsWith('T') ? time.substring(1) : time;
   return DateTime.tryParse('${date}T$normalizedTime');
+}
+
+double? _parseCoordinate(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is num) {
+    return value.toDouble();
+  }
+  if (value is String) {
+    return double.tryParse(value);
+  }
+  return null;
 }

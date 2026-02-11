@@ -3,6 +3,7 @@ import '../models/race.dart';
 import '../services/calendar_service.dart';
 import '../services/notification_preferences.dart';
 import '../services/notification_service.dart';
+import '../services/weather_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/countdown_text.dart';
@@ -21,17 +22,22 @@ class RaceDetailScreen extends StatefulWidget {
 
 class _RaceDetailScreenState extends State<RaceDetailScreen> {
   late final List<RaceSession> _sessions;
+  late final Future<WeekendWeather?> _weatherFuture;
   final Map<String, bool> _sessionReminderEnabled = {};
   final Map<String, int> _sessionLeadMinutes = {};
   bool _weekendDigestEnabled = false;
   bool _loadingNotificationPreferences = true;
+  bool _importingWeekendCalendar = false;
 
   @override
   void initState() {
     super.initState();
-    _sessions = widget.race.sessions
-        .where((session) => session.date.isNotEmpty)
-        .toList();
+    _sessions =
+        widget.race.sessions
+            .where((session) => session.date.isNotEmpty)
+            .toList()
+          ..sort(_sortSessions);
+    _weatherFuture = WeatherService().getRaceWeekendWeather(widget.race);
     _loadNotificationPreferences();
   }
 
@@ -84,9 +90,9 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Next Race"),
+            Text("Race Weekend Center"),
             Text(
-              "Season ${widget.season}",
+              "${widget.race.raceName} • ${widget.season}",
               style: TextStyle(color: colors.textMuted, fontSize: 12),
             ),
           ],
@@ -102,6 +108,16 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  "Track info",
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: 10),
                 _buildDetailRow(context, "Round", widget.race.round),
                 if (raceStart != null)
                   _buildDetailRow(
@@ -123,21 +139,64 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   ),
                 _buildDetailRow(context, "Circuit", widget.race.circuitName),
                 _buildDetailRow(context, "Location", widget.race.location),
+                if (widget.race.latitude != null &&
+                    widget.race.longitude != null)
+                  _buildDetailRow(
+                    context,
+                    "Coords",
+                    '${widget.race.latitude!.toStringAsFixed(3)}, ${widget.race.longitude!.toStringAsFixed(3)}',
+                  ),
               ],
             ),
           ),
+          _buildWeatherCard(context),
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Session Schedule",
-                  style: TextStyle(
-                    color: onSurface,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Weekend sessions",
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _importingWeekendCalendar
+                          ? null
+                          : _addWeekendToCalendar,
+                      icon: _importingWeekendCalendar
+                          ? SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: colors.f1RedBright,
+                              ),
+                            )
+                          : Icon(
+                              Icons.calendar_month,
+                              size: 16,
+                              color: colors.f1RedBright,
+                            ),
+                      label: Text(
+                        _importingWeekendCalendar
+                            ? "Importing..."
+                            : "Add all to calendar",
+                        style: TextStyle(
+                          color: colors.f1RedBright,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 10),
                 ..._buildSessionRows(context),
@@ -166,6 +225,216 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     return _sessions
         .map((session) => _buildSessionRow(context, session))
         .toList();
+  }
+
+  Widget _buildWeatherCard(BuildContext context) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return GlassCard(
+      child: FutureBuilder<WeekendWeather?>(
+        future: _weatherFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Weather outlook",
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colors.f1RedBright,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      "Loading weather...",
+                      style: TextStyle(color: colors.textMuted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Weather outlook",
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Weather data is unavailable right now.",
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
+                ),
+              ],
+            );
+          }
+
+          final weather = snapshot.data;
+          if (weather == null) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Weather outlook",
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Weather preview unavailable for this track.",
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
+                ),
+              ],
+            );
+          }
+
+          final current = weather.current;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Weather outlook",
+                style: TextStyle(
+                  color: onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              if (current != null) ...[
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(
+                      _weatherIcon(current.weatherCode),
+                      color: colors.f1RedBright,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        WeatherService.labelForCode(current.weatherCode),
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _temperatureLabel(current.temperatureC),
+                      style: TextStyle(
+                        color: onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                if (current.windSpeedKph != null)
+                  Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Wind ${current.windSpeedKph!.round()} km/h',
+                      style: TextStyle(color: colors.textMuted, fontSize: 12),
+                    ),
+                  ),
+              ],
+              if (weather.daily.isNotEmpty) ...[
+                SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: weather.daily.map((day) {
+                    return _buildWeatherDayTile(context, day);
+                  }).toList(),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildWeatherDayTile(BuildContext context, WeatherDaily day) {
+    final colors = AppColors.of(context);
+    return Container(
+      width: 128,
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            formatLocalDate(context, day.date),
+            style: TextStyle(color: colors.textMuted, fontSize: 11),
+          ),
+          SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(
+                _weatherIcon(day.weatherCode),
+                size: 16,
+                color: colors.f1Red,
+              ),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _temperatureRangeLabel(day.lowC, day.highC),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4),
+          Text(
+            WeatherService.labelForCode(day.weatherCode),
+            style: TextStyle(color: colors.textMuted, fontSize: 11),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (day.precipitationChance != null)
+            Text(
+              'Rain ${day.precipitationChance}%',
+              style: TextStyle(color: colors.textMuted, fontSize: 11),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildNotificationCard(BuildContext context) {
@@ -542,6 +811,112 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _addWeekendToCalendar() async {
+    if (_importingWeekendCalendar) {
+      return;
+    }
+    setState(() {
+      _importingWeekendCalendar = true;
+    });
+
+    final result = await CalendarService.addRaceWeekendToCalendar(
+      race: widget.race,
+      season: widget.season,
+    );
+
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _importingWeekendCalendar = false;
+    });
+
+    if (result.total == 0) {
+      _showSnackBar('Session schedule unavailable for calendar import.');
+      return;
+    }
+    if (result.added == result.total) {
+      _showSnackBar('Added ${result.added} sessions to calendar.');
+      return;
+    }
+    if (result.added == 0) {
+      _showSnackBar('Unable to add sessions to calendar.');
+      return;
+    }
+    _showSnackBar('Added ${result.added} of ${result.total} sessions.');
+  }
+
+  int _sortSessions(RaceSession a, RaceSession b) {
+    final first = a.startDateTime;
+    final second = b.startDateTime;
+    if (first == null && second == null) {
+      return a.name.compareTo(b.name);
+    }
+    if (first == null) {
+      return 1;
+    }
+    if (second == null) {
+      return -1;
+    }
+    return first.compareTo(second);
+  }
+
+  IconData _weatherIcon(int? code) {
+    switch (code) {
+      case 0:
+        return Icons.wb_sunny;
+      case 1:
+      case 2:
+      case 3:
+        return Icons.cloud;
+      case 45:
+      case 48:
+        return Icons.cloud;
+      case 51:
+      case 53:
+      case 55:
+      case 61:
+      case 63:
+      case 65:
+      case 80:
+      case 81:
+      case 82:
+        return Icons.umbrella;
+      case 71:
+      case 73:
+      case 75:
+      case 85:
+      case 86:
+        return Icons.ac_unit;
+      case 95:
+      case 96:
+      case 99:
+        return Icons.flash_on;
+      default:
+        return Icons.cloud;
+    }
+  }
+
+  String _temperatureLabel(double? value) {
+    if (value == null) {
+      return '--';
+    }
+    return '${value.round()}\u00B0C';
+  }
+
+  String _temperatureRangeLabel(double? low, double? high) {
+    if (low == null && high == null) {
+      return '--';
+    }
+    if (low == null) {
+      return '${high!.round()}\u00B0C';
+    }
+    if (high == null) {
+      return '${low.round()}\u00B0C';
+    }
+    return '${low.round()}\u00B0 / ${high.round()}\u00B0';
   }
 
   bool get _hasUpcomingTimedSession {

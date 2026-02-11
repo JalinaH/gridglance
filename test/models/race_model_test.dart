@@ -11,7 +11,12 @@ void main() {
         'time': '06:00:00Z',
         'Circuit': {
           'circuitName': 'Albert Park Grand Prix Circuit',
-          'Location': {'locality': 'Melbourne', 'country': 'Australia'},
+          'Location': {
+            'locality': 'Melbourne',
+            'country': 'Australia',
+            'lat': '-37.8497',
+            'long': '144.968',
+          },
         },
         'FirstPractice': {'date': '2026-03-06', 'time': '01:30:00Z'},
         'SecondPractice': {'date': '2026-03-06', 'time': '05:00:00Z'},
@@ -23,6 +28,8 @@ void main() {
       expect(race.raceName, 'Australian Grand Prix');
       expect(race.circuitName, 'Albert Park Grand Prix Circuit');
       expect(race.location, 'Melbourne, Australia');
+      expect(race.latitude, closeTo(-37.8497, 0.0001));
+      expect(race.longitude, closeTo(144.968, 0.0001));
       expect(race.displayDateTime, '2026-03-08 06:00:00Z');
       expect(race.startDateTime, DateTime.parse('2026-03-08T06:00:00Z'));
       expect(race.sessions.map((session) => session.name).toList(), [
@@ -44,6 +51,8 @@ void main() {
       expect(race.circuitName, '');
       expect(race.locality, '');
       expect(race.country, '');
+      expect(race.latitude, null);
+      expect(race.longitude, null);
       expect(race.sessions.length, 1);
       expect(race.sessions.first.name, 'Race');
       expect(race.startDateTime, null);

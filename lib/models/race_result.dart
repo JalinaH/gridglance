@@ -51,7 +51,9 @@ class TeamRaceResult {
       raceName: json['raceName'] ?? '',
       date: json['date'] ?? '',
       drivers: results
-          .map((item) => TeamDriverResult.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => TeamDriverResult.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -83,6 +85,114 @@ class TeamDriverResult {
       points: json['points'] ?? '0',
       code: driver['code'],
       permanentNumber: driver['permanentNumber'],
+    );
+  }
+}
+
+class DriverSprintResult {
+  final String round;
+  final String raceName;
+  final String date;
+  final String points;
+
+  const DriverSprintResult({
+    required this.round,
+    required this.raceName,
+    required this.date,
+    required this.points,
+  });
+
+  factory DriverSprintResult.fromRaceJson(Map<String, dynamic> json) {
+    final sprintResults = json['SprintResults'] as List? ?? [];
+    final result = sprintResults.isNotEmpty
+        ? sprintResults.first as Map<String, dynamic>? ?? {}
+        : <String, dynamic>{};
+    return DriverSprintResult(
+      round: json['round'] ?? '',
+      raceName: json['raceName'] ?? '',
+      date: json['date'] ?? '',
+      points: result['points'] ?? '0',
+    );
+  }
+}
+
+class TeamSprintResult {
+  final String round;
+  final String raceName;
+  final String date;
+  final List<String> points;
+
+  const TeamSprintResult({
+    required this.round,
+    required this.raceName,
+    required this.date,
+    required this.points,
+  });
+
+  factory TeamSprintResult.fromRaceJson(Map<String, dynamic> json) {
+    final sprintResults = json['SprintResults'] as List? ?? [];
+    final points = sprintResults
+        .map((item) => '${(item as Map<String, dynamic>)['points'] ?? '0'}')
+        .toList();
+    return TeamSprintResult(
+      round: json['round'] ?? '',
+      raceName: json['raceName'] ?? '',
+      date: json['date'] ?? '',
+      points: points,
+    );
+  }
+}
+
+class DriverQualifyingResult {
+  final String round;
+  final String raceName;
+  final String date;
+  final String position;
+
+  const DriverQualifyingResult({
+    required this.round,
+    required this.raceName,
+    required this.date,
+    required this.position,
+  });
+
+  factory DriverQualifyingResult.fromRaceJson(Map<String, dynamic> json) {
+    final qualifying = json['QualifyingResults'] as List? ?? [];
+    final result = qualifying.isNotEmpty
+        ? qualifying.first as Map<String, dynamic>? ?? {}
+        : <String, dynamic>{};
+    return DriverQualifyingResult(
+      round: json['round'] ?? '',
+      raceName: json['raceName'] ?? '',
+      date: json['date'] ?? '',
+      position: result['position'] ?? '-',
+    );
+  }
+}
+
+class TeamQualifyingResult {
+  final String round;
+  final String raceName;
+  final String date;
+  final List<String> positions;
+
+  const TeamQualifyingResult({
+    required this.round,
+    required this.raceName,
+    required this.date,
+    required this.positions,
+  });
+
+  factory TeamQualifyingResult.fromRaceJson(Map<String, dynamic> json) {
+    final qualifying = json['QualifyingResults'] as List? ?? [];
+    final positions = qualifying
+        .map((item) => '${(item as Map<String, dynamic>)['position'] ?? '-'}')
+        .toList();
+    return TeamQualifyingResult(
+      round: json['round'] ?? '',
+      raceName: json['raceName'] ?? '',
+      date: json['date'] ?? '',
+      positions: positions,
     );
   }
 }
