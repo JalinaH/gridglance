@@ -3,6 +3,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gridglance/utils/date_time_format.dart';
 
 void main() {
+  test('formatLastUpdatedAgo returns human-friendly relative labels', () {
+    final now = DateTime(2026, 2, 11, 12, 0, 0);
+
+    expect(
+      formatLastUpdatedAgo(now.subtract(Duration(seconds: 40)), now: now),
+      'Last updated just now',
+    );
+    expect(
+      formatLastUpdatedAgo(now.subtract(Duration(minutes: 1)), now: now),
+      'Last updated 1 min ago',
+    );
+    expect(
+      formatLastUpdatedAgo(now.subtract(Duration(minutes: 42)), now: now),
+      'Last updated 42 mins ago',
+    );
+    expect(
+      formatLastUpdatedAgo(now.subtract(Duration(hours: 3)), now: now),
+      'Last updated 3 hours ago',
+    );
+    expect(
+      formatLastUpdatedAgo(now.subtract(Duration(days: 2)), now: now),
+      'Last updated 2 days ago',
+    );
+  });
+
   testWidgets('formatLocalDate matches MaterialLocalizations short date', (
     tester,
   ) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
+import '../utils/date_time_format.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
@@ -11,11 +12,15 @@ enum RaceFilter { all, upcoming, completed }
 class RaceScheduleScreen extends StatefulWidget {
   final List<Race> races;
   final String season;
+  final DateTime? lastUpdated;
+  final bool isFromCache;
 
   const RaceScheduleScreen({
     super.key,
     required this.races,
     required this.season,
+    this.lastUpdated,
+    this.isFromCache = false,
   });
 
   @override
@@ -93,6 +98,19 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
             )
           : Column(
               children: [
+                if (widget.lastUpdated != null)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        widget.isFromCache
+                            ? '${formatLastUpdatedAgo(widget.lastUpdated!)} • Offline cache'
+                            : formatLastUpdatedAgo(widget.lastUpdated!),
+                        style: TextStyle(color: colors.textMuted, fontSize: 11),
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 8, 16, 6),
                   child: CompactSearchField(
@@ -190,9 +208,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
       selectedColor: colors.f1Red,
       backgroundColor: colors.surfaceAlt,
       onSelected: (_) => onTap(),
-      shape: StadiumBorder(
-        side: BorderSide(color: colors.border),
-      ),
+      shape: StadiumBorder(side: BorderSide(color: colors.border)),
     );
   }
 }

@@ -6,11 +6,15 @@ class SessionResults {
   final Race race;
   final List<ResultEntry> results;
   final SessionType type;
+  final DateTime? lastUpdated;
+  final bool isFromCache;
 
   const SessionResults({
     required this.race,
     required this.results,
     required this.type,
+    this.lastUpdated,
+    this.isFromCache = false,
   });
 }
 
@@ -37,8 +41,10 @@ class ResultEntry {
     required this.q3,
   });
 
-  factory ResultEntry.fromJson(Map<String, dynamic> json,
-      {required SessionType type}) {
+  factory ResultEntry.fromJson(
+    Map<String, dynamic> json, {
+    required SessionType type,
+  }) {
     final driver = json['Driver'] as Map<String, dynamic>? ?? {};
     final constructor = json['Constructor'] as Map<String, dynamic>? ?? {};
     final timeData = json['Time'] as Map<String, dynamic>?;
@@ -46,8 +52,8 @@ class ResultEntry {
     final time = timeData?['time'] as String?;
     return ResultEntry(
       position: json['position'] ?? '-',
-      driverName:
-          '${driver['givenName'] ?? ''} ${driver['familyName'] ?? ''}'.trim(),
+      driverName: '${driver['givenName'] ?? ''} ${driver['familyName'] ?? ''}'
+          .trim(),
       teamName: constructor['name'] ?? '',
       points: json['points'] ?? '',
       status: status ?? '',

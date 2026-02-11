@@ -359,8 +359,9 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (snapshot.hasError) {
           return Center(
             child: Text(
-              "Error loading data",
+              "Unable to reach live data and no cache is available yet.",
               style: TextStyle(color: colors.textMuted),
+              textAlign: TextAlign.center,
             ),
           );
         }
@@ -457,6 +458,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+            if (overview.lastUpdated != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    overview.isFromCache
+                        ? '${formatLastUpdatedAgo(overview.lastUpdated!)} • Offline cache'
+                        : formatLastUpdatedAgo(overview.lastUpdated!),
+                    style: TextStyle(color: colors.textMuted, fontSize: 11),
+                  ),
+                ),
+              ),
             Reveal(
               index: 0,
               child: _buildFavoritesCard(
@@ -520,6 +534,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (_) => DriverStandingsScreen(
                         standings: overview.driverStandings,
                         season: _season,
+                        lastUpdated: overview.driverStandingsUpdatedAt,
+                        isFromCache: overview.driverStandingsFromCache,
                       ),
                     ),
                   );
@@ -538,6 +554,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (_) => ConstructorStandingsScreen(
                         standings: overview.constructorStandings,
                         season: _season,
+                        lastUpdated: overview.constructorStandingsUpdatedAt,
+                        isFromCache: overview.constructorStandingsFromCache,
                       ),
                     ),
                   );
@@ -556,6 +574,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (_) => RaceScheduleScreen(
                         races: overview.raceSchedule,
                         season: _season,
+                        lastUpdated: overview.raceScheduleUpdatedAt,
+                        isFromCache: overview.raceScheduleFromCache,
                       ),
                     ),
                   );

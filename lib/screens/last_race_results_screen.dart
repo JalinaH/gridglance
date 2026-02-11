@@ -9,10 +9,7 @@ import '../widgets/season_cards.dart';
 class LastRaceResultsScreen extends StatefulWidget {
   final String season;
 
-  const LastRaceResultsScreen({
-    super.key,
-    required this.season,
-  });
+  const LastRaceResultsScreen({super.key, required this.season});
 
   @override
   State<LastRaceResultsScreen> createState() => _LastRaceResultsScreenState();
@@ -83,6 +80,14 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
             ),
           );
         }
+        if (snapshot.hasError) {
+          return GlassCard(
+            child: Text(
+              'Unable to load race results and no cache is available yet.',
+              style: TextStyle(color: colors.textMuted),
+            ),
+          );
+        }
         final results = snapshot.data;
         if (results == null) {
           return GlassCard(
@@ -144,9 +149,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
       selectedColor: colors.f1Red,
       backgroundColor: colors.surfaceAlt,
       onSelected: (_) => onTap(),
-      shape: StadiumBorder(
-        side: BorderSide(color: colors.border),
-      ),
+      shape: StadiumBorder(side: BorderSide(color: colors.border)),
     );
   }
 
@@ -179,7 +182,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         if (snapshot.hasError) {
           return GlassCard(
             child: Text(
-              'Failed to load results.',
+              'Unable to load results and no cache is available yet.',
               style: TextStyle(color: colors.textMuted),
             ),
           );
@@ -193,7 +196,24 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
             ),
           );
         }
-        return _buildResultsCard(results);
+        return Column(
+          children: [
+            if (results.lastUpdated != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    results.isFromCache
+                        ? '${formatLastUpdatedAgo(results.lastUpdated!)} • Offline cache'
+                        : formatLastUpdatedAgo(results.lastUpdated!),
+                    style: TextStyle(color: colors.textMuted, fontSize: 11),
+                  ),
+                ),
+              ),
+            _buildResultsCard(results),
+          ],
+        );
       },
     );
   }
@@ -230,8 +250,8 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
     final dateLabel = raceStart == null
         ? session.race.date
         : (session.race.time == null || session.race.time!.isEmpty)
-            ? formatLocalDate(context, raceStart)
-            : formatLocalDateTime(context, raceStart);
+        ? formatLocalDate(context, raceStart)
+        : formatLocalDateTime(context, raceStart);
     final title = _titleForSession(session.type);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
