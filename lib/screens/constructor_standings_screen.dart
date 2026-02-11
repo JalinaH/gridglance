@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/constructor_standing.dart';
 import '../screens/team_detail_screen.dart';
+import '../services/share_card_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/share_cards.dart';
 
 class ConstructorStandingsScreen extends StatefulWidget {
   final List<ConstructorStanding> standings;
@@ -30,7 +32,9 @@ class ConstructorStandingsScreen extends StatefulWidget {
 class _ConstructorStandingsScreenState
     extends State<ConstructorStandingsScreen> {
   final TextEditingController _controller = TextEditingController();
+  final GlobalKey _shareCardKey = GlobalKey();
   String _query = '';
+  bool _sharingCard = false;
 
   @override
   void dispose() {
@@ -48,6 +52,11 @@ class _ConstructorStandingsScreenState
           team.position.toLowerCase().contains(query) ||
           team.points.toLowerCase().contains(query);
     }).toList();
+  }
+
+  List<ConstructorStanding> get _shareStandings {
+    final filtered = _filteredStandings;
+    return filtered.isNotEmpty ? filtered : widget.standings;
   }
 
   @override
@@ -76,6 +85,48 @@ class _ConstructorStandingsScreenState
             )
           : Column(
               children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Shareable standings card',
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: _sharingCard ? null : _shareStandingsCard,
+                        icon: _sharingCard
+                            ? SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colors.f1RedBright,
+                                ),
+                              )
+                            : Icon(Icons.ios_share, size: 16),
+                        label: Text(
+                          _sharingCard ? 'Sharing...' : 'Share image',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16, 2, 16, 8),
+                  child: RepaintBoundary(
+                    key: _shareCardKey,
+                    child: ConstructorStandingsShareCard(
+                      standings: _shareStandings,
+                      season: widget.season,
+                    ),
+                  ),
+                ),
                 if (widget.lastUpdated != null)
                   Padding(
                     padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -144,5 +195,42 @@ class _ConstructorStandingsScreenState
               ],
             ),
     );
+  }
+
+  Future<void> _shareStandingsCard() async {
+    if (_shareStandings.isEmpty || _sharingCard) {
+      return;
+    }
+    setState(() {
+      _sharingCard = true;
+    });
+    try {
+      await ShareCardService.shareRepaintBoundary(
+        repaintBoundaryKey: _shareCardKey,
+        devicePixelRatio: View.of(context).devicePixelRatio,
+        fileName: 'team-standings-${widget.season}',
+        text: 'F1 team standings (${widget.season}) via GridGlance',
+        subject: 'F1 Team Standings',
+      );
+    } on ShareCardException catch (error) {
+      _showSnackBar(error.message);
+    } catch (_) {
+      _showSnackBar('Unable to share standings card right now.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _sharingCard = false;
+        });
+      }
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

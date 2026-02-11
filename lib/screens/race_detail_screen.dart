@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
 import '../services/calendar_service.dart';
+import '../services/share_card_service.dart';
 import '../services/favorite_result_alert_service.dart';
 import '../services/notification_preferences.dart';
 import '../services/notification_service.dart';
@@ -10,6 +11,7 @@ import '../utils/date_time_format.dart';
 import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/share_cards.dart';
 
 class RaceDetailScreen extends StatefulWidget {
   final Race race;
@@ -24,6 +26,7 @@ class RaceDetailScreen extends StatefulWidget {
 class _RaceDetailScreenState extends State<RaceDetailScreen> {
   late final List<RaceSession> _sessions;
   late final Future<WeekendWeather?> _weatherFuture;
+  final GlobalKey _countdownShareCardKey = GlobalKey();
   final Map<String, bool> _sessionReminderEnabled = {};
   final Map<String, int> _sessionLeadMinutes = {};
   bool _weekendDigestEnabled = false;
@@ -31,6 +34,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   bool _favoritePositionPointsAlertsEnabled = false;
   bool _loadingNotificationPreferences = true;
   bool _importingWeekendCalendar = false;
+  bool _sharingCountdownCard = false;
 
   @override
   void initState() {
@@ -106,13 +110,37 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             ),
           ],
         ),
-        actions: [],
+        actions: [
+          IconButton(
+            tooltip: 'Share race countdown',
+            onPressed: _sharingCountdownCard ? null : _shareCountdownCard,
+            icon: _sharingCountdownCard
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colors.f1RedBright,
+                    ),
+                  )
+                : Icon(Icons.ios_share, color: colors.f1RedBright),
+          ),
+        ],
       ),
       body: ListView(
         padding: EdgeInsets.only(bottom: 24),
         physics: BouncingScrollPhysics(),
         children: [
-          RaceCard(race: widget.race, highlight: true),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 6, 16, 6),
+            child: RepaintBoundary(
+              key: _countdownShareCardKey,
+              child: RaceCountdownShareCard(
+                race: widget.race,
+                season: widget.season,
+              ),
+            ),
+          ),
           GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1318,5 +1346,33 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _shareCountdownCard() async {
+    if (_sharingCountdownCard) {
+      return;
+    }
+    setState(() {
+      _sharingCountdownCard = true;
+    });
+    try {
+      await ShareCardService.shareRepaintBoundary(
+        repaintBoundaryKey: _countdownShareCardKey,
+        devicePixelRatio: View.of(context).devicePixelRatio,
+        fileName: 'race-countdown-${widget.season}-round-${widget.race.round}',
+        text: '${widget.race.raceName} countdown via GridGlance',
+        subject: 'F1 Race Countdown',
+      );
+    } on ShareCardException catch (error) {
+      _showSnackBar(error.message);
+    } catch (_) {
+      _showSnackBar('Unable to share race countdown right now.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _sharingCountdownCard = false;
+        });
+      }
+    }
   }
 }
