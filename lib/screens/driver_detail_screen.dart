@@ -10,6 +10,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/points_trend_chart.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/animated_counter.dart';
 import '../widgets/skeleton_loaders.dart';
 import '../widgets/team_logo.dart';
 
@@ -123,11 +124,21 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     StatPill(
                       text: _positionLabel(widget.driver.position),
                       color: colors.f1Red,
+                      animateValue: double.tryParse(widget.driver.position),
+                      animatePrefix: 'P',
                     ),
                     SizedBox(height: 6),
-                    StatPill(text: '${widget.driver.points} PTS'),
+                    StatPill(
+                      text: '${widget.driver.points} PTS',
+                      animateValue: double.tryParse(widget.driver.points),
+                      animateSuffix: ' PTS',
+                    ),
                     SizedBox(height: 6),
-                    StatPill(text: '${widget.driver.wins} W'),
+                    StatPill(
+                      text: '${widget.driver.wins} W',
+                      animateValue: double.tryParse(widget.driver.wins),
+                      animateSuffix: ' W',
+                    ),
                   ],
                 ),
               ],
@@ -306,10 +317,15 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              StatPill(text: _positionLabel(result.position)),
+              StatPill(
+                text: _positionLabel(result.position),
+                animateValue: double.tryParse(result.position),
+                animatePrefix: 'P',
+              ),
               SizedBox(height: 4),
-              Text(
-                '${result.points} pts',
+              AnimatedCounter(
+                value: double.tryParse(result.points) ?? 0,
+                suffix: ' pts',
                 style: TextStyle(color: colors.textMuted, fontSize: 11),
               ),
             ],

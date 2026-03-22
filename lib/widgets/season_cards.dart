@@ -4,6 +4,7 @@ import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
+import 'animated_counter.dart';
 import 'team_logo.dart';
 
 class GlassCard extends StatelessWidget {
@@ -102,12 +103,28 @@ class StatPill extends StatelessWidget {
   final String text;
   final Color? color;
 
-  const StatPill({super.key, required this.text, this.color});
+  /// If non-null, the numeric portion animates from 0 to [animateValue].
+  /// [text] is still used as the static fallback format.
+  final double? animateValue;
+  final String? animatePrefix;
+  final String? animateSuffix;
+  final int animateDecimals;
+
+  const StatPill({
+    super.key,
+    required this.text,
+    this.color,
+    this.animateValue,
+    this.animatePrefix,
+    this.animateSuffix,
+    this.animateDecimals = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final textColor = color == null ? onSurface : Colors.white;
     final pillGradient = color == null
         ? LinearGradient(
             colors: [
@@ -121,6 +138,12 @@ class StatPill extends StatelessWidget {
               color!.withValues(alpha: 0.75),
             ],
           );
+    final textStyle = TextStyle(
+      color: textColor,
+      fontWeight: FontWeight.bold,
+      fontSize: 12,
+      letterSpacing: 0.6,
+    );
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -128,15 +151,15 @@ class StatPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color == null ? onSurface : Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-          letterSpacing: 0.6,
-        ),
-      ),
+      child: animateValue != null
+          ? AnimatedCounter(
+              value: animateValue!,
+              prefix: animatePrefix,
+              suffix: animateSuffix,
+              decimalPlaces: animateDecimals,
+              style: textStyle,
+            )
+          : Text(text, style: textStyle),
     );
   }
 }
@@ -159,14 +182,16 @@ class DriverStandingCard extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Text(
-            "#${driver.position}",
+          AnimatedCounter(
+            value: double.tryParse(driver.position) ?? 0,
+            prefix: '#',
             style: TextStyle(
               color: colors.f1RedBright,
               fontSize: 18,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
             ),
+            duration: Duration(milliseconds: 600),
           ),
           SizedBox(width: 12),
           Hero(
@@ -208,9 +233,15 @@ class DriverStandingCard extends StatelessWidget {
               StatPill(
                 text: "${driver.points} PTS",
                 color: colors.f1Red,
+                animateValue: double.tryParse(driver.points),
+                animateSuffix: ' PTS',
               ),
               SizedBox(height: 6),
-              StatPill(text: "${driver.wins} W"),
+              StatPill(
+                text: "${driver.wins} W",
+                animateValue: double.tryParse(driver.wins),
+                animateSuffix: ' W',
+              ),
             ],
           ),
         ],
@@ -237,14 +268,16 @@ class ConstructorStandingCard extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Text(
-            "#${team.position}",
+          AnimatedCounter(
+            value: double.tryParse(team.position) ?? 0,
+            prefix: '#',
             style: TextStyle(
               color: colors.f1RedBright,
               fontSize: 18,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
             ),
+            duration: Duration(milliseconds: 600),
           ),
           SizedBox(width: 12),
           Hero(
@@ -286,9 +319,15 @@ class ConstructorStandingCard extends StatelessWidget {
               StatPill(
                 text: "${team.points} PTS",
                 color: colors.f1Red,
+                animateValue: double.tryParse(team.points),
+                animateSuffix: ' PTS',
               ),
               SizedBox(height: 6),
-              StatPill(text: "${team.wins} W"),
+              StatPill(
+                text: "${team.wins} W",
+                animateValue: double.tryParse(team.wins),
+                animateSuffix: ' W',
+              ),
             ],
           ),
         ],
