@@ -1,4 +1,4 @@
-package com.example.gridglance
+package com.gridglance.app
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider

@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-private let widgetAppGroupId = "group.com.example.gridglance"
+private let widgetAppGroupId = "group.com.gridglance.app"
 
 private struct GridGlanceEntry: TimelineEntry {
   let date: Date

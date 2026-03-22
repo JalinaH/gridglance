@@ -1,4 +1,4 @@
-package com.example.gridglance
+package com.gridglance.app
 
 import android.content.Context
 import io.flutter.embedding.android.FlutterActivity
@@ -23,7 +23,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun handleWidgetIntent(intent: android.content.Intent?) {
-        if (intent?.action != "com.example.gridglance.WIDGET_CLICK") {
+        if (intent?.action != "com.gridglance.app.WIDGET_CLICK") {
             return
         }
         val type = intent.getStringExtra("widget_type")

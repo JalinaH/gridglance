@@ -25,6 +25,7 @@ No code generation (build_runner, freezed, json_serializable) is used — models
 **Theme system:** Custom `AppColors` as `ThemeExtension` in `lib/theme/`. Dark mode is the default, toggled via SharedPreferences (`theme_mode` key). F1 brand red (#E10600) is the primary accent.
 
 **Platform channels:** Two MethodChannels for Android widget integration:
+
 - `gridglance/dps` — widget data persistence via DeviceProtectedStorage
 - `gridglance/widget_intent` — routes widget clicks back to Flutter
 
@@ -49,4 +50,4 @@ Startup order: WidgetUpdateService → NotificationService → BackgroundTaskSer
 ## Platform Notes
 
 - **Android:** Requires INTERNET, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM permissions. Background tasks run every 30 min via workmanager.
-- **iOS:** Uses App Groups (`group.com.example.gridglance`) for widget data sharing. Background modes: fetch + processing.
+- **iOS:** Uses App Groups (`group.com.gridglance.app`) for widget data sharing. Background modes: fetch + processing.

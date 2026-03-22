@@ -109,13 +109,13 @@ flutter build ios --release
 
 - Uses `POST_NOTIFICATIONS` and `SCHEDULE_EXACT_ALARM` permissions for reminders.
 - Widgets are implemented as Android App Widgets in `android/app/src/main/`.
-- Current application ID is `com.example.gridglance` and should be changed before production release.
+- Current application ID is `com.gridglance.app` and should be changed before production release.
 
 ### iOS
 
 - Calendar permission usage descriptions are configured in `ios/Runner/Info.plist`.
 - WidgetKit extension target is `GridGlanceWidgets` (iOS 14+).
-- App and widget share data via App Group `group.com.example.gridglance`.
+- App and widget share data via App Group `group.com.gridglance.app`.
 
 ## Testing
 

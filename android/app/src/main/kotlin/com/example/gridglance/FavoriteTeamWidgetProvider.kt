@@ -1,4 +1,4 @@
-package com.example.gridglance
+package com.gridglance.app
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -47,7 +47,7 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             ) == "true"
 
             val intent = Intent(context, MainActivity::class.java).apply {
-                action = "com.example.gridglance.WIDGET_CLICK"
+                action = "com.gridglance.app.WIDGET_CLICK"
                 putExtra("widget_type", "favorite_team")
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             }

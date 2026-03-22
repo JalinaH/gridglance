@@ -30,7 +30,7 @@ class BackgroundTaskService {
   static const String androidPeriodicTaskName =
       'gridglance.favorite_results.periodic.task';
   static const String iOSBgProcessingTaskIdentifier =
-      'com.example.gridglance.favorite-result-sync';
+      'com.gridglance.app.favorite-result-sync';
 
   static bool _initialized = false;
   static bool _iosBgProcessingAvailable = true;
@@ -50,9 +50,7 @@ class BackgroundTaskService {
     if (_initialized) {
       return;
     }
-    await Workmanager().initialize(
-      backgroundTaskDispatcher,
-    );
+    await Workmanager().initialize(backgroundTaskDispatcher);
     _initialized = true;
   }
 

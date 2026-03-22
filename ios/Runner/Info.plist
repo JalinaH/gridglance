@@ -51,7 +51,7 @@
 	<string>GridGlance can attach race details to calendar entries.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.example.gridglance.favorite-result-sync</string>
+		<string>com.gridglance.app.favorite-result-sync</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

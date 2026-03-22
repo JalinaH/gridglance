@@ -6,8 +6,8 @@ import workmanager
 @objc class AppDelegate: FlutterAppDelegate {
   private let dpsChannelName = "gridglance/dps"
   private let widgetIntentChannelName = "gridglance/widget_intent"
-  private let widgetAppGroupId = "group.com.example.gridglance"
-  private let backgroundTaskIdentifier = "com.example.gridglance.favorite-result-sync"
+  private let widgetAppGroupId = "group.com.gridglance.app"
+  private let backgroundTaskIdentifier = "com.gridglance.app.favorite-result-sync"
 
   override func application(
     _ application: UIApplication,

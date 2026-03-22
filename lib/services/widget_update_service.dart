@@ -13,27 +13,27 @@ class WidgetUpdateService {
   static const String androidDriverWidgetProvider =
       'DriverStandingsWidgetProvider';
   static const String androidQualifiedDriverWidgetProvider =
-      'com.example.gridglance.DriverStandingsWidgetProvider';
+      'com.gridglance.app.DriverStandingsWidgetProvider';
   static const String androidTeamWidgetProvider = 'TeamStandingsWidgetProvider';
   static const String androidQualifiedTeamWidgetProvider =
-      'com.example.gridglance.TeamStandingsWidgetProvider';
+      'com.gridglance.app.TeamStandingsWidgetProvider';
   static const String androidFavoriteDriverWidgetProvider =
       'FavoriteDriverWidgetProvider';
   static const String androidQualifiedFavoriteDriverWidgetProvider =
-      'com.example.gridglance.FavoriteDriverWidgetProvider';
+      'com.gridglance.app.FavoriteDriverWidgetProvider';
   static const String androidFavoriteTeamWidgetProvider =
       'FavoriteTeamWidgetProvider';
   static const String androidQualifiedFavoriteTeamWidgetProvider =
-      'com.example.gridglance.FavoriteTeamWidgetProvider';
+      'com.gridglance.app.FavoriteTeamWidgetProvider';
   static const String androidNextRaceCountdownWidgetProvider =
       'NextRaceCountdownWidgetProvider';
   static const String androidQualifiedNextRaceCountdownWidgetProvider =
-      'com.example.gridglance.NextRaceCountdownWidgetProvider';
+      'com.gridglance.app.NextRaceCountdownWidgetProvider';
   static const String androidNextSessionWidgetProvider =
       'NextSessionWidgetProvider';
   static const String androidQualifiedNextSessionWidgetProvider =
-      'com.example.gridglance.NextSessionWidgetProvider';
-  static const String iOSAppGroupId = 'group.com.example.gridglance';
+      'com.gridglance.app.NextSessionWidgetProvider';
+  static const String iOSAppGroupId = 'group.com.gridglance.app';
   static const String iOSDriverWidgetKind = 'GridGlanceDriverStandingsWidget';
   static const String iOSTeamWidgetKind = 'GridGlanceTeamStandingsWidget';
   static const String iOSFavoriteDriverWidgetKind =
