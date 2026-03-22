@@ -3,6 +3,7 @@ import '../data/api_service.dart';
 import '../models/session_results.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/skeleton_loaders.dart';
@@ -77,7 +78,6 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
   }
 
   Widget _buildRaceHeader() {
-    final colors = AppColors.of(context);
     return FutureBuilder<SessionResults?>(
       future: _raceFuture,
       builder: (context, snapshot) {
@@ -86,18 +86,20 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         }
         if (snapshot.hasError) {
           return GlassCard(
-            child: Text(
-              'Unable to load race results and no cache is available yet.',
-              style: TextStyle(color: colors.textMuted),
+            child: EmptyState(
+              message: 'Unable to load race results and no cache is available yet.',
+              type: EmptyStateType.network,
+              iconSize: 36,
             ),
           );
         }
         final results = snapshot.data;
         if (results == null) {
           return GlassCard(
-            child: Text(
-              'No recent race results available.',
-              style: TextStyle(color: colors.textMuted),
+            child: EmptyState(
+              message: 'No recent race results available.',
+              type: EmptyStateType.results,
+              iconSize: 36,
             ),
           );
         }
@@ -184,18 +186,20 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         }
         if (snapshot.hasError) {
           return GlassCard(
-            child: Text(
-              'Unable to load results and no cache is available yet.',
-              style: TextStyle(color: colors.textMuted),
+            child: EmptyState(
+              message: 'Unable to load results and no cache is available yet.',
+              type: EmptyStateType.network,
+              iconSize: 36,
             ),
           );
         }
         final results = snapshot.data;
         if (results == null || results.results.isEmpty) {
           return GlassCard(
-            child: Text(
-              _emptyLabel(),
-              style: TextStyle(color: colors.textMuted),
+            child: EmptyState(
+              message: _emptyLabel(),
+              type: EmptyStateType.results,
+              iconSize: 36,
             ),
           );
         }

@@ -12,6 +12,7 @@ import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/skeleton_loaders.dart';
 import '../widgets/team_logo.dart';
 import '../services/widget_update_service.dart';
@@ -362,10 +363,9 @@ class _HomeScreenState extends State<HomeScreen> {
           return HomeScreenSkeleton();
         } else if (snapshot.hasError) {
           return Center(
-            child: Text(
-              "Unable to reach live data and no cache is available yet.",
-              style: TextStyle(color: colors.textMuted),
-              textAlign: TextAlign.center,
+            child: EmptyState(
+              message: "Unable to reach live data and no cache is available yet.",
+              type: EmptyStateType.network,
             ),
           );
         }
@@ -373,9 +373,9 @@ class _HomeScreenState extends State<HomeScreen> {
         final overview = snapshot.data;
         if (overview == null) {
           return Center(
-            child: Text(
-              "No data available",
-              style: TextStyle(color: colors.textMuted),
+            child: EmptyState(
+              message: "No data available",
+              type: EmptyStateType.generic,
             ),
           );
         }
@@ -508,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                 child: overview.nextRace == null
-                    ? _buildEmptyState("No upcoming race data.")
+                    ? _buildEmptyState("No upcoming race data.", type: EmptyStateType.race)
                     : _buildNextRaceSummary(overview.nextRace!),
               ),
             ),
@@ -821,7 +821,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDriverSummary(List<DriverStanding> drivers) {
     if (drivers.isEmpty) {
-      return _buildEmptyState("No driver standings available.");
+      return _buildEmptyState("No driver standings available.", type: EmptyStateType.standings);
     }
 
     return Column(
@@ -841,7 +841,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTeamSummary(List<ConstructorStanding> teams) {
     if (teams.isEmpty) {
-      return _buildEmptyState("No team standings available.");
+      return _buildEmptyState("No team standings available.", type: EmptyStateType.standings);
     }
 
     return Column(
@@ -861,7 +861,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRaceSummary(List<Race> races) {
     if (races.isEmpty) {
-      return _buildEmptyState("No race schedule available.");
+      return _buildEmptyState("No race schedule available.", type: EmptyStateType.schedule);
     }
 
     return Column(
@@ -1017,10 +1017,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyState(String message) {
-    return Text(
-      message,
-      style: TextStyle(color: AppColors.of(context).textMuted, fontSize: 12),
+  Widget _buildEmptyState(String message, {EmptyStateType type = EmptyStateType.generic}) {
+    return EmptyState(
+      message: message,
+      type: type,
+      iconSize: 36,
     );
   }
 }
@@ -1087,18 +1088,18 @@ class _SelectionSheet<T> extends StatelessWidget {
                 }
                 if (snapshot.hasError || snapshot.data == null) {
                   return Center(
-                    child: Text(
-                      'Failed to load',
-                      style: TextStyle(color: colors.textMuted),
+                    child: EmptyState(
+                      message: 'Failed to load',
+                      type: EmptyStateType.network,
                     ),
                   );
                 }
                 final items = snapshot.data!;
                 if (items.isEmpty) {
                   return Center(
-                    child: Text(
-                      'No data available',
-                      style: TextStyle(color: colors.textMuted),
+                    child: EmptyState(
+                      message: 'No data available',
+                      type: EmptyStateType.generic,
                     ),
                   );
                 }

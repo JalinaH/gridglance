@@ -8,6 +8,7 @@ import '../models/race.dart';
 import '../services/widget_update_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/team_assets.dart';
+import '../widgets/empty_state.dart';
 
 class WidgetsScreen extends StatefulWidget {
   const WidgetsScreen({super.key});
@@ -2040,18 +2041,18 @@ class _SelectionSheet<T> extends StatelessWidget {
                 }
                 if (snapshot.hasError || snapshot.data == null) {
                   return Center(
-                    child: Text(
-                      'Failed to load',
-                      style: TextStyle(color: colors.textMuted),
+                    child: EmptyState(
+                      message: 'Failed to load',
+                      type: EmptyStateType.network,
                     ),
                   );
                 }
                 final items = snapshot.data!;
                 if (items.isEmpty) {
                   return Center(
-                    child: Text(
-                      'No data available',
-                      style: TextStyle(color: colors.textMuted),
+                    child: EmptyState(
+                      message: 'No data available',
+                      type: EmptyStateType.generic,
                     ),
                   );
                 }

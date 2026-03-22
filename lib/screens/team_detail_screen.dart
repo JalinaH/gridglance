@@ -6,6 +6,7 @@ import '../models/constructor_standing.dart';
 import '../models/race_result.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/points_trend_chart.dart';
 import '../widgets/season_cards.dart';
@@ -184,16 +185,18 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       );
                     }
                     if (snapshot.hasError) {
-                      return Text(
-                        'Failed to load recent results.',
-                        style: TextStyle(color: colors.textMuted),
+                      return EmptyState(
+                        message: 'Failed to load recent results.',
+                        type: EmptyStateType.network,
+                        iconSize: 36,
                       );
                     }
                     final results = _recentResults(snapshot.data ?? []);
                     if (results.isEmpty) {
-                      return Text(
-                        'No results available.',
-                        style: TextStyle(color: colors.textMuted),
+                      return EmptyState(
+                        message: 'No results available.',
+                        type: EmptyStateType.results,
+                        iconSize: 36,
                       );
                     }
                     return Column(

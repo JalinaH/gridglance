@@ -6,6 +6,7 @@ import '../services/share_card_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/compact_search_field.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
@@ -102,9 +103,9 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
       ),
       body: _standings.isEmpty
           ? Center(
-              child: Text(
-                "No driver standings available.",
-                style: TextStyle(color: colors.textMuted),
+              child: EmptyState(
+                message: "No driver standings available.",
+                type: EmptyStateType.standings,
               ),
             )
           : Column(
