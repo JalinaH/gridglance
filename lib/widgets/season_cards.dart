@@ -4,6 +4,7 @@ import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
+import '../utils/haptics.dart';
 import 'animated_counter.dart';
 import 'team_logo.dart';
 
@@ -90,7 +91,12 @@ class GlassCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: onTap == null
+              ? null
+              : () {
+                  Haptics.light();
+                  onTap!();
+                },
           borderRadius: BorderRadius.circular(18),
           child: content,
         ),

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../data/api_service.dart';
+import '../utils/haptics.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race_result.dart';
@@ -199,6 +200,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
                 ),
                 onSelected: driversEnabled
                     ? (_) {
+                        Haptics.selection();
                         setState(() {
                           _mode = CompareMode.drivers;
                         });
@@ -221,6 +223,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
                 ),
                 onSelected: teamsEnabled
                     ? (_) {
+                        Haptics.selection();
                         setState(() {
                           _mode = CompareMode.teams;
                         });

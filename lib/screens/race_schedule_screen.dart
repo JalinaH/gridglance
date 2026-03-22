@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
+import '../utils/haptics.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/empty_state.dart';
@@ -199,6 +200,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
     if (_filter == filter) {
       return;
     }
+    Haptics.selection();
     setState(() {
       _filter = filter;
     });

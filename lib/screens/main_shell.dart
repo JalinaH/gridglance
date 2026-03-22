@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/haptics.dart';
 import '../widgets/f1_scaffold.dart';
 import '../services/widget_update_service.dart';
 import 'about_screen.dart';
@@ -47,7 +48,10 @@ class _MainShellState extends State<MainShell> {
               widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
               color: colors.f1RedBright,
             ),
-            onPressed: widget.onToggleTheme,
+            onPressed: () {
+              Haptics.light();
+              widget.onToggleTheme();
+            },
           ),
         ],
       ),
@@ -156,6 +160,7 @@ class _MainShellState extends State<MainShell> {
     return Expanded(
       child: InkWell(
         onTap: () {
+          Haptics.light();
           setState(() {
             _index = index;
           });

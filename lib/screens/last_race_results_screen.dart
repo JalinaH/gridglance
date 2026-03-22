@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/api_service.dart';
+import '../utils/haptics.dart';
 import '../models/session_results.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
@@ -475,6 +476,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
     if (_selected == type) {
       return;
     }
+    Haptics.selection();
     setState(() {
       _selected = type;
     });

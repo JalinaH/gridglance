@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../data/api_service.dart';
+import '../utils/haptics.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
@@ -343,7 +344,10 @@ class _HomeScreenState extends State<HomeScreen> {
               widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
               color: colors.f1RedBright,
             ),
-            onPressed: widget.onToggleTheme,
+            onPressed: () {
+              Haptics.light();
+              widget.onToggleTheme();
+            },
           ),
           IconButton(
             icon: Icon(Icons.refresh, color: colors.f1RedBright),
@@ -429,7 +433,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   SizedBox(width: 10),
                   InkWell(
-                    onTap: _selectSeason,
+                    onTap: () {
+                      Haptics.light();
+                      _selectSeason();
+                    },
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -730,7 +737,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 : TeamLogo(teamName: favoriteDriver.teamName, size: 22),
             onTap: drivers.isEmpty
                 ? null
-                : () => _selectFavoriteDriver(drivers),
+                : () {
+                    Haptics.medium();
+                    _selectFavoriteDriver(drivers);
+                  },
           ),
           SizedBox(height: 10),
           _buildFavoriteRow(
@@ -742,7 +752,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 : TeamLogo(teamName: favoriteTeam.teamName, size: 22),
             onTap: teams.isEmpty
                 ? null
-                : () => _selectFavoriteTeam(teams, drivers),
+                : () {
+                    Haptics.medium();
+                    _selectFavoriteTeam(teams, drivers);
+                  },
           ),
         ],
       ),

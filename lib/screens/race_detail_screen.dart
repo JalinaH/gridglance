@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/api_service.dart';
+import '../utils/haptics.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../services/calendar_service.dart';
@@ -1154,6 +1155,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     if (_savingPrediction) {
       return;
     }
+    Haptics.medium();
     if (driverIds.toSet().length != 3 || driverIds.length != 3) {
       _showSnackBar('Prediction must include 3 different drivers.');
       return;
@@ -1587,6 +1589,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   }
 
   Future<void> _toggleSessionReminder(RaceSession session, bool enabled) async {
+    Haptics.selection();
     final key = _sessionKey(session);
     final leadMinutes =
         _sessionLeadMinutes[key] ??
@@ -1708,6 +1711,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   }
 
   Future<void> _toggleWeekendDigest(bool enabled) async {
+    Haptics.selection();
     if (enabled) {
       final result = await NotificationService.scheduleWeekendDigest(
         race: widget.race,
@@ -1762,6 +1766,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   }
 
   Future<void> _toggleFavoriteSessionFinishedAlerts(bool enabled) async {
+    Haptics.selection();
     if (enabled) {
       final allowed = await NotificationService.requestPermissions();
       if (!allowed) {
@@ -1787,6 +1792,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   }
 
   Future<void> _toggleFavoritePositionPointsAlerts(bool enabled) async {
+    Haptics.selection();
     if (enabled) {
       final allowed = await NotificationService.requestPermissions();
       if (!allowed) {
