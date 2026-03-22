@@ -11,6 +11,8 @@ import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/share_cards.dart';
+import '../widgets/swipe_action_wrapper.dart';
+import '../services/user_preferences.dart';
 
 class ConstructorStandingsScreen extends StatefulWidget {
   final List<ConstructorStanding> standings;
@@ -40,12 +42,19 @@ class _ConstructorStandingsScreenState
   late List<ConstructorStanding> _standings = widget.standings;
   DateTime? _lastUpdated;
   bool _isFromCache = false;
+  String? _favoriteTeamId;
 
   @override
   void initState() {
     super.initState();
     _lastUpdated = widget.lastUpdated;
     _isFromCache = widget.isFromCache;
+    _loadFavoriteTeam();
+  }
+
+  Future<void> _loadFavoriteTeam() async {
+    final id = await UserPreferences.getFavoriteTeamId();
+    if (mounted) setState(() => _favoriteTeamId = id);
   }
 
   @override
@@ -76,6 +85,21 @@ class _ConstructorStandingsScreenState
           team.position.toLowerCase().contains(query) ||
           team.points.toLowerCase().contains(query);
     }).toList();
+  }
+
+  Future<void> _toggleFavoriteTeam(ConstructorStanding team) async {
+    final isFav = _favoriteTeamId == team.constructorId;
+    final newId = isFav ? null : team.constructorId;
+    await UserPreferences.setFavoriteTeamId(newId);
+    if (!mounted) return;
+    setState(() => _favoriteTeamId = newId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isFav
+            ? '${team.teamName} removed from favorites'
+            : '${team.teamName} set as favorite'),
+      ),
+    );
   }
 
   List<ConstructorStanding> get _shareStandings {
@@ -200,20 +224,28 @@ class _ConstructorStandingsScreenState
                             physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                             itemCount: standings.length,
                             itemBuilder: (context, index) {
+                              final team = standings[index];
+                              final isFav = _favoriteTeamId == team.constructorId;
                               return Reveal(
                                 index: index,
-                                child: ConstructorStandingCard(
-                                  team: standings[index],
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => TeamDetailScreen(
-                                          team: standings[index],
-                                          season: widget.season,
+                                child: SwipeActionWrapper(
+                                  icon: isFav ? Icons.star : Icons.star_border,
+                                  label: isFav ? 'Unfavorite' : 'Favorite',
+                                  backgroundColor: isFav ? Colors.orange : null,
+                                  onSwipe: () => _toggleFavoriteTeam(team),
+                                  child: ConstructorStandingCard(
+                                    team: team,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => TeamDetailScreen(
+                                            team: team,
+                                            season: widget.season,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
+                                      );
+                                    },
+                                  ),
                                 ),
                               );
                             },

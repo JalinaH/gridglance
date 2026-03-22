@@ -8,6 +8,8 @@ import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/swipe_action_wrapper.dart';
+import '../services/calendar_service.dart';
 import 'race_weekend_center_screen.dart';
 
 enum RaceFilter { all, upcoming, completed }
@@ -174,18 +176,23 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                             final race = races[index];
                             return Reveal(
                               index: index,
-                              child: RaceCard(
-                                race: race,
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => RaceWeekendCenterScreen(
-                                        race: race,
-                                        season: widget.season,
+                              child: SwipeActionWrapper(
+                                icon: Icons.calendar_today,
+                                label: 'Add to Calendar',
+                                onSwipe: () => _addRaceToCalendar(race),
+                                child: RaceCard(
+                                  race: race,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => RaceWeekendCenterScreen(
+                                          race: race,
+                                          season: widget.season,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
+                                    );
+                                  },
+                                ),
                               ),
                             );
                           },
@@ -193,6 +200,20 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  Future<void> _addRaceToCalendar(Race race) async {
+    final result = await CalendarService.addRaceWeekendToCalendar(
+      race: race,
+      season: widget.season,
+    );
+    if (!mounted) return;
+    final message = result.added > 0
+        ? '${result.added} session${result.added > 1 ? 's' : ''} added to calendar'
+        : 'Could not add sessions to calendar';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 

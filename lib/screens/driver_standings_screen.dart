@@ -11,6 +11,8 @@ import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/share_cards.dart';
+import '../widgets/swipe_action_wrapper.dart';
+import '../services/user_preferences.dart';
 
 class DriverStandingsScreen extends StatefulWidget {
   final List<DriverStanding> standings;
@@ -38,12 +40,19 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
   late List<DriverStanding> _standings = widget.standings;
   DateTime? _lastUpdated;
   bool _isFromCache = false;
+  String? _favoriteDriverId;
 
   @override
   void initState() {
     super.initState();
     _lastUpdated = widget.lastUpdated;
     _isFromCache = widget.isFromCache;
+    _loadFavoriteDriver();
+  }
+
+  Future<void> _loadFavoriteDriver() async {
+    final id = await UserPreferences.getFavoriteDriverId();
+    if (mounted) setState(() => _favoriteDriverId = id);
   }
 
   @override
@@ -77,6 +86,21 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
           driver.position.toLowerCase().contains(query) ||
           driver.points.toLowerCase().contains(query);
     }).toList();
+  }
+
+  Future<void> _toggleFavoriteDriver(DriverStanding driver) async {
+    final isFav = _favoriteDriverId == driver.driverId;
+    final newId = isFav ? null : driver.driverId;
+    await UserPreferences.setFavoriteDriverId(newId);
+    if (!mounted) return;
+    setState(() => _favoriteDriverId = newId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isFav
+            ? '${driver.givenName} ${driver.familyName} removed from favorites'
+            : '${driver.givenName} ${driver.familyName} set as favorite'),
+      ),
+    );
   }
 
   List<DriverStanding> get _shareStandings {
@@ -201,20 +225,28 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
                             physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                             itemCount: standings.length,
                             itemBuilder: (context, index) {
+                              final driver = standings[index];
+                              final isFav = _favoriteDriverId == driver.driverId;
                               return Reveal(
                                 index: index,
-                                child: DriverStandingCard(
-                                  driver: standings[index],
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => DriverDetailScreen(
-                                          driver: standings[index],
-                                          season: widget.season,
+                                child: SwipeActionWrapper(
+                                  icon: isFav ? Icons.star : Icons.star_border,
+                                  label: isFav ? 'Unfavorite' : 'Favorite',
+                                  backgroundColor: isFav ? Colors.orange : null,
+                                  onSwipe: () => _toggleFavoriteDriver(driver),
+                                  child: DriverStandingCard(
+                                    driver: driver,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => DriverDetailScreen(
+                                            driver: driver,
+                                            season: widget.season,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
+                                      );
+                                    },
+                                  ),
                                 ),
                               );
                             },
