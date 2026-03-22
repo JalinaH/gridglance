@@ -98,9 +98,11 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
     setState(() => _favoriteDriverId = newId);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(isFav
-            ? '${driver.givenName} ${driver.familyName} removed from favorites'
-            : '${driver.givenName} ${driver.familyName} set as favorite'),
+        content: Text(
+          isFav
+              ? '${driver.givenName} ${driver.familyName} removed from favorites'
+              : '${driver.givenName} ${driver.familyName} set as favorite',
+        ),
       ),
     );
   }
@@ -226,11 +228,14 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
                           color: colors.f1Red,
                           child: AdaptiveCardList(
                             padding: EdgeInsets.only(bottom: 24),
-                            physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            physics: AlwaysScrollableScrollPhysics(
+                              parent: BouncingScrollPhysics(),
+                            ),
                             itemCount: standings.length,
                             itemBuilder: (context, index) {
                               final driver = standings[index];
-                              final isFav = _favoriteDriverId == driver.driverId;
+                              final isFav =
+                                  _favoriteDriverId == driver.driverId;
                               return Reveal(
                                 index: index,
                                 child: SwipeActionWrapper(

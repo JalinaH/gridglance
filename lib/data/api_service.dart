@@ -305,7 +305,9 @@ class ApiService {
     required String season,
     required String round,
   }) async {
-    final response = await http.get(Uri.parse('$_baseUrl$season/$round/results/'));
+    final response = await http.get(
+      Uri.parse('$_baseUrl$season/$round/results/'),
+    );
     if (response.statusCode == 404) {
       return [];
     }

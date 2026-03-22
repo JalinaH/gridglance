@@ -6,9 +6,9 @@ import 'package:gridglance/widgets/empty_state.dart';
 /// Wraps a widget with MaterialApp and the required AppColors theme extension.
 Widget _wrapWithTheme(Widget child) {
   return MaterialApp(
-    theme: ThemeData.dark(useMaterial3: true).copyWith(
-      extensions: [AppTheme.darkColors],
-    ),
+    theme: ThemeData.dark(
+      useMaterial3: true,
+    ).copyWith(extensions: [AppTheme.darkColors]),
     home: Scaffold(body: child),
   );
 }
@@ -17,9 +17,7 @@ void main() {
   group('EmptyState', () {
     testWidgets('displays the message text', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          const EmptyState(message: 'No standings available'),
-        ),
+        _wrapWithTheme(const EmptyState(message: 'No standings available')),
       );
 
       expect(find.text('No standings available'), findsOneWidget);
@@ -27,9 +25,7 @@ void main() {
 
     testWidgets('centers the message text', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          const EmptyState(message: 'Empty'),
-        ),
+        _wrapWithTheme(const EmptyState(message: 'Empty')),
       );
 
       final text = tester.widget<Text>(find.text('Empty'));
@@ -52,10 +48,7 @@ void main() {
     testWidgets('shows flag icon for race type', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          const EmptyState(
-            message: 'No race',
-            type: EmptyStateType.race,
-          ),
+          const EmptyState(message: 'No race', type: EmptyStateType.race),
         ),
       );
 
@@ -65,10 +58,7 @@ void main() {
     testWidgets('shows trophy icon for results type', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          const EmptyState(
-            message: 'No results',
-            type: EmptyStateType.results,
-          ),
+          const EmptyState(message: 'No results', type: EmptyStateType.results),
         ),
       );
 
@@ -129,9 +119,7 @@ void main() {
 
     testWidgets('defaults to generic type', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          const EmptyState(message: 'Default'),
-        ),
+        _wrapWithTheme(const EmptyState(message: 'Default')),
       );
 
       expect(find.byIcon(Icons.grid_view_outlined), findsOneWidget);
@@ -139,14 +127,10 @@ void main() {
 
     testWidgets('renders icon inside a circular container', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          const EmptyState(message: 'Test'),
-        ),
+        _wrapWithTheme(const EmptyState(message: 'Test')),
       );
 
-      final container = tester.widget<Container>(
-        find.byType(Container).first,
-      );
+      final container = tester.widget<Container>(find.byType(Container).first);
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.shape, BoxShape.circle);
     });

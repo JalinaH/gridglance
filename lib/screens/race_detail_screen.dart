@@ -1105,9 +1105,9 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                       child: ElevatedButton(
                         onPressed: canSave
                             ? () {
-                                Navigator.of(
-                                  modalContext,
-                                ).pop(selections.map((value) => value!).toList());
+                                Navigator.of(modalContext).pop(
+                                  selections.map((value) => value!).toList(),
+                                );
                               }
                             : null,
                         child: Text('Save prediction'),

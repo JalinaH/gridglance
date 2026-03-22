@@ -92,10 +92,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                       SizedBox(height: 4),
                       Text(
                         widget.driver.teamName,
-                        style: TextStyle(
-                          color: colors.textMuted,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: colors.textMuted, fontSize: 13),
                       ),
                       SizedBox(height: 8),
                       Wrap(
@@ -184,8 +181,9 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     final points = results
                         .map((result) => _parsePoints(result.points))
                         .toList();
-                    final labels =
-                        results.map((result) => 'R${result.round}').toList();
+                    final labels = results
+                        .map((result) => 'R${result.round}')
+                        .toList();
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

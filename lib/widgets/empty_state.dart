@@ -57,17 +57,10 @@ class EmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: colors.border,
-          width: 1,
-        ),
+        border: Border.all(color: colors.border, width: 1),
       ),
       child: Center(
-        child: Icon(
-          _iconData,
-          size: iconSize * 0.6,
-          color: iconColor,
-        ),
+        child: Icon(_iconData, size: iconSize * 0.6, color: iconColor),
       ),
     );
   }

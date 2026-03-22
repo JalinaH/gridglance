@@ -69,10 +69,7 @@ class _BounceTapState extends State<BounceTap>
       onPointerDown: _onPointerDown,
       onPointerUp: _onPointerUp,
       onPointerCancel: _onPointerCancel,
-      child: ScaleTransition(
-        scale: _scale,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scale, child: widget.child),
     );
   }
 }

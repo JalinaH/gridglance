@@ -6,9 +6,7 @@ void main() {
   group('AnimatedCounter', () {
     testWidgets('starts at zero and animates to target value', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: AnimatedCounter(value: 100),
-        ),
+        const MaterialApp(home: AnimatedCounter(value: 100)),
       );
 
       // At start, text should show 0
@@ -22,11 +20,7 @@ void main() {
     testWidgets('displays prefix and suffix', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: AnimatedCounter(
-            value: 42,
-            prefix: 'P',
-            suffix: ' pts',
-          ),
+          home: AnimatedCounter(value: 42, prefix: 'P', suffix: ' pts'),
         ),
       );
 
@@ -36,27 +30,18 @@ void main() {
 
     testWidgets('formats decimal places correctly', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: AnimatedCounter(
-            value: 3.5,
-            decimalPlaces: 1,
-          ),
-        ),
+        const MaterialApp(home: AnimatedCounter(value: 3.5, decimalPlaces: 1)),
       );
 
       await tester.pumpAndSettle();
       expect(find.text('3.5'), findsOneWidget);
     });
 
-    testWidgets('rounds integer values with zero decimal places',
-        (tester) async {
+    testWidgets('rounds integer values with zero decimal places', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: AnimatedCounter(
-            value: 7.9,
-            decimalPlaces: 0,
-          ),
-        ),
+        const MaterialApp(home: AnimatedCounter(value: 7.9, decimalPlaces: 0)),
       );
 
       await tester.pumpAndSettle();
@@ -66,12 +51,7 @@ void main() {
     testWidgets('applies custom TextStyle', (tester) async {
       const style = TextStyle(fontSize: 24, color: Colors.red);
       await tester.pumpWidget(
-        const MaterialApp(
-          home: AnimatedCounter(
-            value: 50,
-            style: style,
-          ),
-        ),
+        const MaterialApp(home: AnimatedCounter(value: 50, style: style)),
       );
 
       await tester.pumpAndSettle();
@@ -83,10 +63,7 @@ void main() {
     testWidgets('applies textAlign', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: AnimatedCounter(
-            value: 10,
-            textAlign: TextAlign.center,
-          ),
+          home: AnimatedCounter(value: 10, textAlign: TextAlign.center),
         ),
       );
 
@@ -97,9 +74,7 @@ void main() {
 
     testWidgets('handles zero value', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: AnimatedCounter(value: 0),
-        ),
+        const MaterialApp(home: AnimatedCounter(value: 0)),
       );
 
       await tester.pumpAndSettle();

@@ -65,7 +65,9 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         color: colors.f1Red,
         child: ListView(
           padding: EdgeInsets.only(bottom: 24),
-          physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          physics: AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
           children: [
             _buildRaceHeader(),
             Padding(
@@ -89,7 +91,8 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         if (snapshot.hasError) {
           return GlassCard(
             child: EmptyState(
-              message: 'Unable to load race results and no cache is available yet.',
+              message:
+                  'Unable to load race results and no cache is available yet.',
               type: EmptyStateType.network,
               iconSize: 36,
             ),

@@ -23,10 +23,7 @@ class Reveal extends StatelessWidget {
         final offset = 18 * (1 - value);
         return Opacity(
           opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, offset),
-            child: child,
-          ),
+          child: Transform.translate(offset: Offset(0, offset), child: child),
         );
       },
       child: child,

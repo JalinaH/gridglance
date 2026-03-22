@@ -43,9 +43,10 @@ class _SplashScreenState extends State<SplashScreen>
     _logoScale = Tween<double>(begin: 0.3, end: 1.0).animate(
       CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
     );
-    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeOut),
-    );
+    _logoOpacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _logoController, curve: Curves.easeOut));
 
     // Glow pulsing behind logo
     _glowController = AnimationController(
@@ -79,24 +80,24 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
-    );
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
-    );
+    _textOpacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _textController, curve: Curves.easeOut));
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+        );
 
     // Exit animation
     _exitController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _exitOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _exitController, curve: Curves.easeIn),
-    );
+    _exitOpacity = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _exitController, curve: Curves.easeIn));
 
     _startSequence();
   }
@@ -226,8 +227,9 @@ class _SplashScreenState extends State<SplashScreen>
                             children: List.generate(5, (i) {
                               final value = _lightAnimations[i].value;
                               return Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 5),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                ),
                                 width: 16,
                                 height: 16,
                                 decoration: BoxDecoration(
@@ -355,7 +357,10 @@ class _StripesPainter extends CustomPainter {
 
       path.moveTo(0, yStart);
       path.lineTo(xEnd, yStart - size.height * 0.15);
-      path.lineTo(xEnd, yStart - size.height * 0.15 + size.height * stripe.thickness);
+      path.lineTo(
+        xEnd,
+        yStart - size.height * 0.15 + size.height * stripe.thickness,
+      );
       path.lineTo(0, yStart + size.height * stripe.thickness);
       path.close();
 

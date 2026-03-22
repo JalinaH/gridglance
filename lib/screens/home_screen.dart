@@ -369,7 +369,8 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (snapshot.hasError) {
           return Center(
             child: EmptyState(
-              message: "Unable to reach live data and no cache is available yet.",
+              message:
+                  "Unable to reach live data and no cache is available yet.",
               type: EmptyStateType.network,
             ),
           );
@@ -416,7 +417,9 @@ class _HomeScreenState extends State<HomeScreen> {
         final summaryCards = <Widget>[
           _buildSummaryCard(
             title: "Next Race",
-            subtitle: overview.nextRace == null ? null : "Tap for weekend center",
+            subtitle: overview.nextRace == null
+                ? null
+                : "Tap for weekend center",
             onTap: overview.nextRace == null
                 ? null
                 : () {
@@ -430,7 +433,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
             child: overview.nextRace == null
-                ? _buildEmptyState("No upcoming race data.", type: EmptyStateType.race)
+                ? _buildEmptyState(
+                    "No upcoming race data.",
+                    type: EmptyStateType.race,
+                  )
                 : _buildNextRaceSummary(overview.nextRace!),
           ),
           _buildSummaryCard(
@@ -600,7 +606,9 @@ class _HomeScreenState extends State<HomeScreen> {
           color: colors.f1Red,
           child: ListView(
             padding: EdgeInsets.only(bottom: 24),
-            physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            physics: AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
             children: [
               ...headerWidgets,
               if (wide)
@@ -610,10 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Reveal(
-                          index: i + 1,
-                          child: summaryCards[i],
-                        ),
+                        child: Reveal(index: i + 1, child: summaryCards[i]),
                       ),
                       if (i + 1 < summaryCards.length)
                         Expanded(
@@ -849,7 +854,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDriverSummary(List<DriverStanding> drivers) {
     if (drivers.isEmpty) {
-      return _buildEmptyState("No driver standings available.", type: EmptyStateType.standings);
+      return _buildEmptyState(
+        "No driver standings available.",
+        type: EmptyStateType.standings,
+      );
     }
 
     return Column(
@@ -869,7 +877,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTeamSummary(List<ConstructorStanding> teams) {
     if (teams.isEmpty) {
-      return _buildEmptyState("No team standings available.", type: EmptyStateType.standings);
+      return _buildEmptyState(
+        "No team standings available.",
+        type: EmptyStateType.standings,
+      );
     }
 
     return Column(
@@ -889,7 +900,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRaceSummary(List<Race> races) {
     if (races.isEmpty) {
-      return _buildEmptyState("No race schedule available.", type: EmptyStateType.schedule);
+      return _buildEmptyState(
+        "No race schedule available.",
+        type: EmptyStateType.schedule,
+      );
     }
 
     return Column(
@@ -1045,12 +1059,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyState(String message, {EmptyStateType type = EmptyStateType.generic}) {
-    return EmptyState(
-      message: message,
-      type: type,
-      iconSize: 36,
-    );
+  Widget _buildEmptyState(
+    String message, {
+    EmptyStateType type = EmptyStateType.generic,
+  }) {
+    return EmptyState(message: message, type: type, iconSize: 36);
   }
 }
 

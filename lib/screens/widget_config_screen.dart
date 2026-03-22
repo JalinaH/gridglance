@@ -72,14 +72,8 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final selector = widget.type == WidgetConfigType.driver
-        ? _DriverSelector(
-            widgetId: widget.widgetId,
-            season: widget.season,
-          )
-        : _TeamSelector(
-            widgetId: widget.widgetId,
-            season: widget.season,
-          );
+        ? _DriverSelector(widgetId: widget.widgetId, season: widget.season)
+        : _TeamSelector(widgetId: widget.widgetId, season: widget.season);
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
@@ -131,10 +125,7 @@ class _DriverSelector extends StatelessWidget {
   final int widgetId;
   final String season;
 
-  const _DriverSelector({
-    required this.widgetId,
-    required this.season,
-  });
+  const _DriverSelector({required this.widgetId, required this.season});
 
   @override
   Widget build(BuildContext context) {
@@ -143,9 +134,7 @@ class _DriverSelector extends StatelessWidget {
       future: ApiService().getDriverStandings(season: season),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: colors.f1Red),
-          );
+          return Center(child: CircularProgressIndicator(color: colors.f1Red));
         }
         if (snapshot.hasError || snapshot.data == null) {
           return Center(
@@ -164,7 +153,9 @@ class _DriverSelector extends StatelessWidget {
             return ListTile(
               title: Text(
                 '${driver.givenName} ${driver.familyName}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               subtitle: Text(
                 '${driver.teamName} • ${driver.points} pts',
@@ -196,10 +187,7 @@ class _TeamSelector extends StatelessWidget {
   final int widgetId;
   final String season;
 
-  const _TeamSelector({
-    required this.widgetId,
-    required this.season,
-  });
+  const _TeamSelector({required this.widgetId, required this.season});
 
   @override
   Widget build(BuildContext context) {
@@ -208,9 +196,7 @@ class _TeamSelector extends StatelessWidget {
       future: _loadData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: colors.f1Red),
-          );
+          return Center(child: CircularProgressIndicator(color: colors.f1Red));
         }
         if (snapshot.hasError || snapshot.data == null) {
           return Center(
@@ -232,14 +218,14 @@ class _TeamSelector extends StatelessWidget {
                 .toList();
             final driverLabel = drivers.isEmpty
                 ? 'Drivers TBD'
-                : drivers
-                    .map((driver) => _driverLabel(driver))
-                    .join('  ');
+                : drivers.map((driver) => _driverLabel(driver)).join('  ');
             return ListTile(
               leading: teamLogoOrIcon(team.teamName, size: 22),
               title: Text(
                 team.teamName,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               subtitle: Text(
                 '$driverLabel • ${team.points} pts',
@@ -284,11 +270,11 @@ class _TeamSelector extends StatelessWidget {
     final code = driver.code?.isNotEmpty == true
         ? driver.code!
         : (driver.familyName.isNotEmpty
-            ? driver.familyName.substring(
-                0,
-                driver.familyName.length >= 3 ? 3 : driver.familyName.length,
-              )
-            : '---');
+              ? driver.familyName.substring(
+                  0,
+                  driver.familyName.length >= 3 ? 3 : driver.familyName.length,
+                )
+              : '---');
     return '${number.toUpperCase()} ${code.toUpperCase()}';
   }
 }
@@ -297,8 +283,5 @@ class _TeamSelectorData {
   final List<ConstructorStanding> teams;
   final List<DriverStanding> drivers;
 
-  const _TeamSelectorData({
-    required this.teams,
-    required this.drivers,
-  });
+  const _TeamSelectorData({required this.teams, required this.drivers});
 }

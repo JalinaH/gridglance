@@ -53,8 +53,7 @@ class AppColors extends ThemeExtension<AppColors> {
     }
     return AppColors(
       f1Red: Color.lerp(f1Red, other.f1Red, t) ?? f1Red,
-      f1RedBright:
-          Color.lerp(f1RedBright, other.f1RedBright, t) ?? f1RedBright,
+      f1RedBright: Color.lerp(f1RedBright, other.f1RedBright, t) ?? f1RedBright,
       background: Color.lerp(background, other.background, t) ?? background,
       backgroundAlt:
           Color.lerp(backgroundAlt, other.backgroundAlt, t) ?? backgroundAlt,

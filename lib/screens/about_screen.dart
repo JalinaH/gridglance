@@ -90,10 +90,7 @@ class _AboutScreenState extends State<AboutScreen> {
               if (_version.isNotEmpty)
                 Text(
                   'Version $_version ($_buildNumber)',
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: colors.textMuted, fontSize: 13),
                 ),
               const SizedBox(height: 10),
               Text(
@@ -114,18 +111,42 @@ class _AboutScreenState extends State<AboutScreen> {
         // Features section
         _buildSectionHeader(context, 'FEATURES'),
         const SizedBox(height: 10),
-        _buildFeatureRow(context, Icons.emoji_events_outlined, 'Live Standings',
-            'Driver & constructor championships'),
-        _buildFeatureRow(context, Icons.calendar_month_outlined, 'Race Calendar',
-            'Full season schedule with session times'),
-        _buildFeatureRow(context, Icons.notifications_outlined, 'Notifications',
-            'Race reminders & result alerts'),
-        _buildFeatureRow(context, Icons.widgets_outlined, 'Home Widgets',
-            'Glanceable widgets for your home screen'),
-        _buildFeatureRow(context, Icons.cloud_outlined, 'Race Weather',
-            'Weekend forecasts for every circuit'),
-        _buildFeatureRow(context, Icons.share_outlined, 'Share Cards',
-            'Share beautiful race result cards'),
+        _buildFeatureRow(
+          context,
+          Icons.emoji_events_outlined,
+          'Live Standings',
+          'Driver & constructor championships',
+        ),
+        _buildFeatureRow(
+          context,
+          Icons.calendar_month_outlined,
+          'Race Calendar',
+          'Full season schedule with session times',
+        ),
+        _buildFeatureRow(
+          context,
+          Icons.notifications_outlined,
+          'Notifications',
+          'Race reminders & result alerts',
+        ),
+        _buildFeatureRow(
+          context,
+          Icons.widgets_outlined,
+          'Home Widgets',
+          'Glanceable widgets for your home screen',
+        ),
+        _buildFeatureRow(
+          context,
+          Icons.cloud_outlined,
+          'Race Weather',
+          'Weekend forecasts for every circuit',
+        ),
+        _buildFeatureRow(
+          context,
+          Icons.share_outlined,
+          'Share Cards',
+          'Share beautiful race result cards',
+        ),
 
         const SizedBox(height: 24),
 
@@ -137,11 +158,7 @@ class _AboutScreenState extends State<AboutScreen> {
           title: 'Data Source',
           value: 'Jolpica F1 API (Ergast)',
         ),
-        _buildInfoCard(
-          context,
-          title: 'Weather Data',
-          value: 'Open-Meteo',
-        ),
+        _buildInfoCard(context, title: 'Weather Data', value: 'Open-Meteo'),
         const SizedBox(height: 24),
 
         // Links section
@@ -152,7 +169,8 @@ class _AboutScreenState extends State<AboutScreen> {
           icon: Icons.star_outline,
           title: 'Rate on Play Store',
           onTap: () => _launchUrl(
-              'https://play.google.com/store/apps/details?id=com.gridglance.app'),
+            'https://play.google.com/store/apps/details?id=com.gridglance.app',
+          ),
         ),
         _buildLinkTile(
           context,
@@ -181,10 +199,7 @@ class _AboutScreenState extends State<AboutScreen> {
             children: [
               Text(
                 'Made with passion for F1 fans',
-                style: TextStyle(
-                  color: colors.textMuted,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
               ),
               const SizedBox(height: 4),
               Text(
@@ -261,10 +276,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
                 ),
               ],
             ),
@@ -292,13 +304,7 @@ class _AboutScreenState extends State<AboutScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: colors.textMuted,
-              fontSize: 13,
-            ),
-          ),
+          Text(title, style: TextStyle(color: colors.textMuted, fontSize: 13)),
           Flexible(
             child: Text(
               value,
@@ -348,11 +354,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 ),
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: colors.textMuted,
-              size: 20,
-            ),
+            Icon(Icons.chevron_right, color: colors.textMuted, size: 20),
           ],
         ),
       ),

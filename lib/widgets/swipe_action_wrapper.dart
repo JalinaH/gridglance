@@ -87,9 +87,10 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
       widget.onSecondarySwipe!();
     }
 
-    _animation = Tween(begin: _dragExtent, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _animation = Tween(
+      begin: _dragExtent,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward(from: 0).then((_) {
       if (mounted) {
         setState(() {
@@ -110,8 +111,7 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final offset =
-            _controller.isAnimating ? _animation.value : _dragExtent;
+        final offset = _controller.isAnimating ? _animation.value : _dragExtent;
         final isRight = offset > 0;
         final progress = (offset.abs() / _threshold).clamp(0.0, 1.0);
 
@@ -138,28 +138,36 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
                           mainAxisSize: MainAxisSize.min,
                           children: isRight
                               ? [
-                                  Icon(widget.icon,
-                                      color: Colors.white,
-                                      size: 22 + (progress * 4)),
+                                  Icon(
+                                    widget.icon,
+                                    color: Colors.white,
+                                    size: 22 + (progress * 4),
+                                  ),
                                   SizedBox(width: 8),
-                                  Text(widget.label,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      )),
+                                  Text(
+                                    widget.label,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                 ]
                               : [
-                                  Text(widget.secondaryLabel ?? '',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      )),
-                                  SizedBox(width: 8),
-                                  Icon(widget.secondaryIcon,
+                                  Text(
+                                    widget.secondaryLabel ?? '',
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      size: 22 + (progress * 4)),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(
+                                    widget.secondaryIcon,
+                                    color: Colors.white,
+                                    size: 22 + (progress * 4),
+                                  ),
                                 ],
                         ),
                       ),

@@ -88,10 +88,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Season'), findsNothing);
-      expect(
-        find.text('2025 Formula 1 World Championship'),
-        findsNothing,
-      );
+      expect(find.text('2025 Formula 1 World Championship'), findsNothing);
     });
 
     testWidgets('renders LINKS section header', (tester) async {

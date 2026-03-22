@@ -73,11 +73,7 @@ class _MainShellState extends State<MainShell> {
           ? Row(
               children: [
                 _buildNavigationRail(context),
-                VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: colors.border,
-                ),
+                VerticalDivider(width: 1, thickness: 1, color: colors.border),
                 Expanded(child: body),
               ],
             )

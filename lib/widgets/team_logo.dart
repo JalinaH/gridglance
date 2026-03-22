@@ -20,12 +20,7 @@ class TeamLogo extends StatelessWidget {
       return _fallback(context);
     }
 
-    return Image.asset(
-      asset,
-      width: size,
-      height: size,
-      fit: fit,
-    );
+    return Image.asset(asset, width: size, height: size, fit: fit);
   }
 
   Widget _fallback(BuildContext context) {
@@ -79,8 +74,8 @@ class TeamLogo extends StatelessWidget {
     final lower = value.toLowerCase();
     final buffer = StringBuffer();
     for (final rune in lower.runes) {
-      final isAlphaNum = (rune >= 97 && rune <= 122) ||
-          (rune >= 48 && rune <= 57);
+      final isAlphaNum =
+          (rune >= 97 && rune <= 122) || (rune >= 48 && rune <= 57);
       if (isAlphaNum) {
         buffer.writeCharCode(rune);
       }

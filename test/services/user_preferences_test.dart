@@ -42,18 +42,16 @@ void main() {
     });
 
     test('removes driver when set to null', () async {
-      SharedPreferences.setMockInitialValues(
-        {'favorite_driver_id': 'hamilton'},
-      );
+      SharedPreferences.setMockInitialValues({
+        'favorite_driver_id': 'hamilton',
+      });
       await UserPreferences.setFavoriteDriverId(null);
       final result = await UserPreferences.getFavoriteDriverId();
       expect(result, isNull);
     });
 
     test('removes driver when set to empty string', () async {
-      SharedPreferences.setMockInitialValues(
-        {'favorite_driver_id': 'norris'},
-      );
+      SharedPreferences.setMockInitialValues({'favorite_driver_id': 'norris'});
       await UserPreferences.setFavoriteDriverId('');
       final result = await UserPreferences.getFavoriteDriverId();
       expect(result, isNull);
@@ -75,18 +73,14 @@ void main() {
     });
 
     test('removes team when set to null', () async {
-      SharedPreferences.setMockInitialValues(
-        {'favorite_team_id': 'mclaren'},
-      );
+      SharedPreferences.setMockInitialValues({'favorite_team_id': 'mclaren'});
       await UserPreferences.setFavoriteTeamId(null);
       final result = await UserPreferences.getFavoriteTeamId();
       expect(result, isNull);
     });
 
     test('removes team when set to empty string', () async {
-      SharedPreferences.setMockInitialValues(
-        {'favorite_team_id': 'mercedes'},
-      );
+      SharedPreferences.setMockInitialValues({'favorite_team_id': 'mercedes'});
       await UserPreferences.setFavoriteTeamId('');
       final result = await UserPreferences.getFavoriteTeamId();
       expect(result, isNull);

@@ -6,11 +6,7 @@ void main() {
   group('BounceTap', () {
     testWidgets('renders child widget', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: BounceTap(
-            child: Text('Tap me'),
-          ),
-        ),
+        const MaterialApp(home: BounceTap(child: Text('Tap me'))),
       );
 
       expect(find.text('Tap me'), findsOneWidget);
@@ -18,11 +14,7 @@ void main() {
 
     testWidgets('wraps child in ScaleTransition', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: BounceTap(
-            child: Text('Tap me'),
-          ),
-        ),
+        const MaterialApp(home: BounceTap(child: Text('Tap me'))),
       );
 
       expect(find.byType(ScaleTransition), findsOneWidget);
@@ -30,11 +22,7 @@ void main() {
 
     testWidgets('wraps child in Listener for pointer events', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: BounceTap(
-            child: Text('Tap me'),
-          ),
-        ),
+        const MaterialApp(home: BounceTap(child: Text('Tap me'))),
       );
 
       // Multiple Listener widgets exist in the tree (from MaterialApp etc),
@@ -44,11 +32,7 @@ void main() {
 
     testWidgets('starts at scale 1.0', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: BounceTap(
-            child: Text('Tap me'),
-          ),
-        ),
+        const MaterialApp(home: BounceTap(child: Text('Tap me'))),
       );
 
       final scaleTransition = tester.widget<ScaleTransition>(

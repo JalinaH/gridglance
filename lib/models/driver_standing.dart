@@ -27,7 +27,9 @@ class DriverStanding {
 
   factory DriverStanding.fromJson(Map<String, dynamic> json) {
     final constructors = json['Constructors'] as List? ?? [];
-    final team = constructors.isNotEmpty ? constructors[0] as Map<String, dynamic>? : null;
+    final team = constructors.isNotEmpty
+        ? constructors[0] as Map<String, dynamic>?
+        : null;
     final driver = json['Driver'] as Map<String, dynamic>? ?? {};
 
     return DriverStanding(

@@ -38,14 +38,8 @@ class _AnimatedCounterState extends State<AnimatedCounter>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
+    _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
     _controller.forward();
   }
 
@@ -64,13 +58,8 @@ class _AnimatedCounterState extends State<AnimatedCounter>
         final formatted = widget.decimalPlaces > 0
             ? current.toStringAsFixed(widget.decimalPlaces)
             : current.round().toString();
-        final text =
-            '${widget.prefix ?? ''}$formatted${widget.suffix ?? ''}';
-        return Text(
-          text,
-          style: widget.style,
-          textAlign: widget.textAlign,
-        );
+        final text = '${widget.prefix ?? ''}$formatted${widget.suffix ?? ''}';
+        return Text(text, style: widget.style, textAlign: widget.textAlign);
       },
     );
   }

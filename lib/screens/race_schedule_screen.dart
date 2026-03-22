@@ -213,9 +213,9 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
     final message = result.added > 0
         ? '${result.added} session${result.added > 1 ? 's' : ''} added to calendar'
         : 'Could not add sessions to calendar';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _setFilter(RaceFilter filter) {
