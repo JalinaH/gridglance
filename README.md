@@ -25,6 +25,7 @@ GridGlance is a Flutter app for following Formula 1 standings and race weekends 
   - Next Race Countdown
   - Next Session
 - Persists user preferences (theme mode, selected season, favorite driver/team, notification toggles).
+- Animated splash screen with F1 starting lights sequence, logo reveal, racing stripes, and glow effects.
 - Polished interactions: haptic feedback, bounce-tap animations, celebratory confetti/pulse overlays, swipe-to-favorite gestures, skeleton loading states, and adaptive responsive layouts.
 
 ## Tech stack
@@ -52,7 +53,7 @@ gridglance/
 ├── lib/
 │   ├── data/            # API client with HTTP response caching
 │   ├── models/          # Domain models (race, standings, results)
-│   ├── screens/         # 14 app screens and flows
+│   ├── screens/         # 15 app screens and flows (includes splash screen)
 │   ├── services/        # Notifications, predictions, weather, calendar, sharing, preferences
 │   ├── theme/           # AppColors theme extension (dark/light)
 │   ├── utils/           # Formatting, haptics, team assets
@@ -63,6 +64,7 @@ gridglance/
 │   ├── models/          # Race, results, standings model tests
 │   ├── services/        # Notification, prediction, preferences tests
 │   ├── utils/           # Date formatting, team asset tests
+│   ├── screens/         # SplashScreen, AboutScreen tests
 │   └── widgets/         # BounceTap, AnimatedCounter, EmptyState, SwipeAction, Celebration tests
 └── pubspec.yaml
 ```
@@ -119,9 +121,10 @@ flutter build ios --release
 
 ## Testing
 
-109 automated tests covering:
+128 automated tests covering:
 
 - **Models** — Race, RaceSession, DriverStanding, ConstructorStanding, and all result types (race, sprint, qualifying)
+- **Screens** — SplashScreen (animation sequence, 5 starting lights, onComplete callback, racing stripes, logo fade-in, dark background, disposal), AboutScreen (sections, features, info cards, links, Season card removal, scrollability)
 - **Services** — NotificationService key generation and ID determinism, NotificationPreferences (session toggles, lead times, weekend digest, favorite alerts), UserPreferences (season, favorite driver/team), PredictionService (scoring, season aggregation, input validation)
 - **Utils** — Date/time formatting (relative labels, localized dates), team logo asset lookup (case-insensitive matching, legacy names, 2026 roster)
 - **Widgets** — BounceTap (scale animation, event pass-through), AnimatedCounter (value animation, formatting, prefix/suffix), EmptyState (icon mapping for all 7 types), SwipeActionWrapper (primary/secondary swipe actions, threshold behavior), CelebrationOverlay (confetti/pulse variants, IgnorePointer)

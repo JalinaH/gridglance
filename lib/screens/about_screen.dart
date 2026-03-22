@@ -142,12 +142,6 @@ class _AboutScreenState extends State<AboutScreen> {
           title: 'Weather Data',
           value: 'Open-Meteo',
         ),
-        _buildInfoCard(
-          context,
-          title: 'Season',
-          value: '2025 Formula 1 World Championship',
-        ),
-
         const SizedBox(height: 24),
 
         // Links section
