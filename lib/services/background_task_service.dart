@@ -52,7 +52,6 @@ class BackgroundTaskService {
     }
     await Workmanager().initialize(
       backgroundTaskDispatcher,
-      isInDebugMode: kDebugMode,
     );
     _initialized = true;
   }
@@ -65,7 +64,7 @@ class BackgroundTaskService {
       frequency: const Duration(minutes: 30),
       initialDelay: const Duration(minutes: 15),
       constraints: Constraints(networkType: NetworkType.connected),
-      existingWorkPolicy: ExistingWorkPolicy.keep,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );
   }
 
