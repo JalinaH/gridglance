@@ -10,6 +10,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/adaptive_layout.dart';
 import '../widgets/reveal.dart';
+import '../widgets/bounce_tap.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/share_cards.dart';
 import '../widgets/swipe_action_wrapper.dart';
@@ -148,20 +149,22 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
                           ),
                         ),
                       ),
-                      TextButton.icon(
-                        onPressed: _sharingCard ? null : _shareStandingsCard,
-                        icon: _sharingCard
-                            ? SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: colors.f1RedBright,
-                                ),
-                              )
-                            : Icon(Icons.ios_share, size: 16),
-                        label: Text(
-                          _sharingCard ? 'Sharing...' : 'Share image',
+                      BounceTap(
+                        child: TextButton.icon(
+                          onPressed: _sharingCard ? null : _shareStandingsCard,
+                          icon: _sharingCard
+                              ? SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: colors.f1RedBright,
+                                  ),
+                                )
+                              : Icon(Icons.ios_share, size: 16),
+                          label: Text(
+                            _sharingCard ? 'Sharing...' : 'Share image',
+                          ),
                         ),
                       ),
                     ],

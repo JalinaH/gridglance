@@ -12,6 +12,7 @@ import '../services/notification_service.dart';
 import '../services/weather_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
+import '../widgets/bounce_tap.dart';
 import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
@@ -130,19 +131,21 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Share race countdown',
-            onPressed: _sharingCountdownCard ? null : _shareCountdownCard,
-            icon: _sharingCountdownCard
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colors.f1RedBright,
-                    ),
-                  )
-                : Icon(Icons.ios_share, color: colors.f1RedBright),
+          BounceTap(
+            child: IconButton(
+              tooltip: 'Share race countdown',
+              onPressed: _sharingCountdownCard ? null : _shareCountdownCard,
+              icon: _sharingCountdownCard
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colors.f1RedBright,
+                      ),
+                    )
+                  : Icon(Icons.ios_share, color: colors.f1RedBright),
+            ),
           ),
         ],
       ),
@@ -223,32 +226,34 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                         ),
                       ),
                     ),
-                    TextButton.icon(
-                      onPressed: _importingWeekendCalendar
-                          ? null
-                          : _addWeekendToCalendar,
-                      icon: _importingWeekendCalendar
-                          ? SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                    BounceTap(
+                      child: TextButton.icon(
+                        onPressed: _importingWeekendCalendar
+                            ? null
+                            : _addWeekendToCalendar,
+                        icon: _importingWeekendCalendar
+                            ? SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colors.f1RedBright,
+                                ),
+                              )
+                            : Icon(
+                                Icons.calendar_month,
+                                size: 16,
                                 color: colors.f1RedBright,
                               ),
-                            )
-                          : Icon(
-                              Icons.calendar_month,
-                              size: 16,
-                              color: colors.f1RedBright,
-                            ),
-                      label: Text(
-                        _importingWeekendCalendar
-                            ? "Importing..."
-                            : "Add all to calendar",
-                        style: TextStyle(
-                          color: colors.f1RedBright,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                        label: Text(
+                          _importingWeekendCalendar
+                              ? "Importing..."
+                              : "Add all to calendar",
+                          style: TextStyle(
+                            color: colors.f1RedBright,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -647,13 +652,16 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   ],
                 ),
               ),
-              Switch.adaptive(
-                value: reminderEnabled,
-                onChanged: canConfigure
-                    ? (value) => _toggleSessionReminder(session, value)
-                    : null,
-                activeTrackColor: colors.f1RedBright.withValues(alpha: 0.55),
-                activeThumbColor: colors.f1RedBright,
+              BounceTap(
+                scaleDown: 0.88,
+                child: Switch.adaptive(
+                  value: reminderEnabled,
+                  onChanged: canConfigure
+                      ? (value) => _toggleSessionReminder(session, value)
+                      : null,
+                  activeTrackColor: colors.f1RedBright.withValues(alpha: 0.55),
+                  activeThumbColor: colors.f1RedBright,
+                ),
               ),
             ],
           ),
@@ -715,11 +723,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             ],
           ),
         ),
-        Switch.adaptive(
-          value: _weekendDigestEnabled,
-          onChanged: canInteract ? _toggleWeekendDigest : null,
-          activeTrackColor: colors.f1RedBright.withValues(alpha: 0.55),
-          activeThumbColor: colors.f1RedBright,
+        BounceTap(
+          scaleDown: 0.88,
+          child: Switch.adaptive(
+            value: _weekendDigestEnabled,
+            onChanged: canInteract ? _toggleWeekendDigest : null,
+            activeTrackColor: colors.f1RedBright.withValues(alpha: 0.55),
+            activeThumbColor: colors.f1RedBright,
+          ),
         ),
       ],
     );
@@ -803,11 +814,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
               ],
             ),
           ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: colors.f1RedBright.withValues(alpha: 0.55),
-            activeThumbColor: colors.f1RedBright,
+          BounceTap(
+            scaleDown: 0.88,
+            child: Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              activeTrackColor: colors.f1RedBright.withValues(alpha: 0.55),
+              activeThumbColor: colors.f1RedBright,
+            ),
           ),
         ],
       ),
@@ -968,15 +982,17 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   ),
                 ),
               ),
-              TextButton(
-                onPressed: onTap,
-                child: Text(
-                  hasPrediction ? 'Edit' : 'Set',
-                  style: TextStyle(
-                    color: onTap == null
-                        ? colors.textMuted
-                        : colors.f1RedBright,
-                    fontWeight: FontWeight.w600,
+              BounceTap(
+                child: TextButton(
+                  onPressed: onTap,
+                  child: Text(
+                    hasPrediction ? 'Edit' : 'Set',
+                    style: TextStyle(
+                      color: onTap == null
+                          ? colors.textMuted
+                          : colors.f1RedBright,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -1084,15 +1100,17 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: canSave
-                          ? () {
-                              Navigator.of(
-                                modalContext,
-                              ).pop(selections.map((value) => value!).toList());
-                            }
-                          : null,
-                      child: Text('Save prediction'),
+                    child: BounceTap(
+                      child: ElevatedButton(
+                        onPressed: canSave
+                            ? () {
+                                Navigator.of(
+                                  modalContext,
+                                ).pop(selections.map((value) => value!).toList());
+                              }
+                            : null,
+                        child: Text('Save prediction'),
+                      ),
                     ),
                   ),
                 ],
