@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/main_shell.dart';
+import 'screens/splash_screen.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/background_task_service.dart';
 import 'services/favorite_result_alert_service.dart';
@@ -32,6 +33,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     'gridglance/widget_intent',
   );
   ThemeMode _themeMode = ThemeMode.dark;
+  bool _showSplash = true;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -123,7 +125,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       darkTheme: AppTheme.dark(),
       themeMode: _themeMode,
       navigatorKey: _navigatorKey,
-      home: MainShell(isDarkMode: _isDarkMode, onToggleTheme: _toggleTheme),
+      home: _showSplash
+          ? SplashScreen(
+              onComplete: () {
+                if (mounted) {
+                  setState(() {
+                    _showSplash = false;
+                  });
+                }
+              },
+            )
+          : MainShell(isDarkMode: _isDarkMode, onToggleTheme: _toggleTheme),
     );
   }
 }
