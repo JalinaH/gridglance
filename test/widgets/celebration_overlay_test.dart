@@ -14,8 +14,9 @@ void main() {
   });
 
   group('CelebrationOverlay', () {
-    testWidgets('shows confetti overlay and auto-removes after animation',
-        (tester) async {
+    testWidgets('shows confetti overlay and auto-removes after animation', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
@@ -104,8 +105,9 @@ void main() {
       expect(tappedAfterOverlay, isTrue);
     });
 
-    testWidgets('replaces active overlay when called multiple times',
-        (tester) async {
+    testWidgets('replaces active overlay when called multiple times', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(

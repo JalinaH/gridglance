@@ -9,9 +9,7 @@ void main() {
       VoidCallback? onComplete,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: SplashScreen(onComplete: onComplete ?? () {}),
-        ),
+        MaterialApp(home: SplashScreen(onComplete: onComplete ?? () {})),
       );
     }
 
@@ -23,9 +21,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       // Replace widget to stop repeating glow controller
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold()),
-      );
+      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
     }
 
     testWidgets('renders with a Scaffold', (tester) async {
@@ -36,8 +32,9 @@ void main() {
       await advanceAndDispose(tester);
     });
 
-    testWidgets('displays app name text after animation progresses',
-        (tester) async {
+    testWidgets('displays app name text after animation progresses', (
+      tester,
+    ) async {
       await pumpSplash(tester);
 
       // Advance past initial delay + logo + glow + lights + text start
@@ -104,8 +101,9 @@ void main() {
       await advanceAndDispose(tester);
     });
 
-    testWidgets('calls onComplete after full animation sequence',
-        (tester) async {
+    testWidgets('calls onComplete after full animation sequence', (
+      tester,
+    ) async {
       var completed = false;
 
       await pumpSplash(tester, onComplete: () => completed = true);
@@ -120,9 +118,7 @@ void main() {
       expect(completed, isTrue);
 
       // Replace widget to clean up repeating controller
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold()),
-      );
+      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
     });
 
     testWidgets('has dark background color', (tester) async {

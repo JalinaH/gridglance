@@ -73,18 +73,12 @@ class GlassCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      accent,
-                      accent.withValues(alpha: 0.2),
-                    ],
+                    colors: [accent, accent.withValues(alpha: 0.2)],
                   ),
                 ),
               ),
             ),
-          Padding(
-            padding: padding,
-            child: child,
-          ),
+          Padding(padding: padding, child: child),
         ],
       ),
     );
@@ -135,18 +129,8 @@ class StatPill extends StatelessWidget {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final textColor = color == null ? onSurface : Colors.white;
     final pillGradient = color == null
-        ? LinearGradient(
-            colors: [
-              colors.surfaceAlt,
-              colors.surface,
-            ],
-          )
-        : LinearGradient(
-            colors: [
-              color!,
-              color!.withValues(alpha: 0.75),
-            ],
-          );
+        ? LinearGradient(colors: [colors.surfaceAlt, colors.surface])
+        : LinearGradient(colors: [color!, color!.withValues(alpha: 0.75)]);
     final textStyle = TextStyle(
       color: textColor,
       fontWeight: FontWeight.bold,
@@ -177,11 +161,7 @@ class DriverStandingCard extends StatelessWidget {
   final DriverStanding driver;
   final VoidCallback? onTap;
 
-  const DriverStandingCard({
-    super.key,
-    required this.driver,
-    this.onTap,
-  });
+  const DriverStandingCard({super.key, required this.driver, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -249,10 +229,7 @@ class DriverStandingCard extends StatelessWidget {
                 ),
                 Text(
                   driver.teamName,
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: colors.textMuted, fontSize: 13),
                 ),
               ],
             ),
@@ -284,11 +261,7 @@ class ConstructorStandingCard extends StatelessWidget {
   final ConstructorStanding team;
   final VoidCallback? onTap;
 
-  const ConstructorStandingCard({
-    super.key,
-    required this.team,
-    this.onTap,
-  });
+  const ConstructorStandingCard({super.key, required this.team, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -335,10 +308,7 @@ class ConstructorStandingCard extends StatelessWidget {
                 ),
                 Text(
                   "Constructors",
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: colors.textMuted, fontSize: 13),
                 ),
               ],
             ),
@@ -386,12 +356,10 @@ class RaceCard extends StatelessWidget {
     final dateLabel = start == null
         ? race.date
         : (race.time == null || race.time!.isEmpty)
-            ? formatLocalDate(context, start)
-            : formatLocalDateTime(context, start);
+        ? formatLocalDate(context, start)
+        : formatLocalDateTime(context, start);
     return GlassCard(
-      borderColor: highlight
-          ? colors.f1Red.withValues(alpha: 0.6)
-          : null,
+      borderColor: highlight ? colors.f1Red.withValues(alpha: 0.6) : null,
       accentColor: highlight ? colors.f1Red : colors.f1RedBright,
       onTap: onTap,
       child: Row(
@@ -407,10 +375,7 @@ class RaceCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         dateLabel,
-                        style: TextStyle(
-                          color: colors.textMuted,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: colors.textMuted, fontSize: 12),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -441,10 +406,7 @@ class RaceCard extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   "${race.circuitName} - ${race.location}",
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
                 ),
               ],
             ),

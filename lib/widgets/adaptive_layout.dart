@@ -13,11 +13,7 @@ class AdaptiveLayout extends StatelessWidget {
   final Widget Function(BuildContext context) narrow;
   final Widget Function(BuildContext context, double width) wide;
 
-  const AdaptiveLayout({
-    super.key,
-    required this.narrow,
-    required this.wide,
-  });
+  const AdaptiveLayout({super.key, required this.narrow, required this.wide});
 
   @override
   Widget build(BuildContext context) {

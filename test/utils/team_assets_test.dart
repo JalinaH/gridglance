@@ -25,22 +25,13 @@ void main() {
         teamLogoAsset('Oracle Red Bull Racing'),
         'assets/teams/red_bull.png',
       );
-      expect(
-        teamLogoAsset('McLaren Mercedes'),
-        'assets/teams/mclaren.png',
-      );
+      expect(teamLogoAsset('McLaren Mercedes'), 'assets/teams/mclaren.png');
       expect(
         teamLogoAsset('Mercedes-AMG Petronas'),
         'assets/teams/mercedes.png',
       );
-      expect(
-        teamLogoAsset('Visa Cash App RB'),
-        'assets/teams/rb.png',
-      );
-      expect(
-        teamLogoAsset('Kick Sauber'),
-        'assets/teams/sauber.png',
-      );
+      expect(teamLogoAsset('Visa Cash App RB'), 'assets/teams/rb.png');
+      expect(teamLogoAsset('Kick Sauber'), 'assets/teams/sauber.png');
     });
 
     test('returns null for unknown team', () {

@@ -5,9 +5,9 @@ import 'package:gridglance/widgets/swipe_action_wrapper.dart';
 
 Widget _wrapWithTheme(Widget child) {
   return MaterialApp(
-    theme: ThemeData.dark(useMaterial3: true).copyWith(
-      extensions: [AppTheme.darkColors],
-    ),
+    theme: ThemeData.dark(
+      useMaterial3: true,
+    ).copyWith(extensions: [AppTheme.darkColors]),
     home: Scaffold(body: child),
   );
 }
@@ -29,8 +29,9 @@ void main() {
       expect(find.text('Driver'), findsOneWidget);
     });
 
-    testWidgets('triggers primary action on right swipe past threshold',
-        (tester) async {
+    testWidgets('triggers primary action on right swipe past threshold', (
+      tester,
+    ) async {
       var swiped = false;
       await tester.pumpWidget(
         _wrapWithTheme(
@@ -54,8 +55,9 @@ void main() {
       expect(swiped, isTrue);
     });
 
-    testWidgets('does not trigger primary action if swipe is below threshold',
-        (tester) async {
+    testWidgets('does not trigger primary action if swipe is below threshold', (
+      tester,
+    ) async {
       var swiped = false;
       await tester.pumpWidget(
         _wrapWithTheme(
@@ -79,8 +81,9 @@ void main() {
       expect(swiped, isFalse);
     });
 
-    testWidgets('triggers secondary action on left swipe past threshold',
-        (tester) async {
+    testWidgets('triggers secondary action on left swipe past threshold', (
+      tester,
+    ) async {
       var primarySwiped = false;
       var secondarySwiped = false;
       await tester.pumpWidget(
@@ -109,8 +112,9 @@ void main() {
       expect(secondarySwiped, isTrue);
     });
 
-    testWidgets('prevents left swipe when no secondary action is set',
-        (tester) async {
+    testWidgets('prevents left swipe when no secondary action is set', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _wrapWithTheme(
           SwipeActionWrapper(

@@ -18,7 +18,9 @@ class _ShimmerWrap extends StatelessWidget {
     final colors = AppColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
-      baseColor: isDark ? colors.surfaceAlt : colors.border.withValues(alpha: 0.3),
+      baseColor: isDark
+          ? colors.surfaceAlt
+          : colors.border.withValues(alpha: 0.3),
       highlightColor: isDark ? colors.surface : colors.surfaceAlt,
       child: child,
     );
@@ -60,10 +62,7 @@ class ShimmerCircle extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
     );
   }
 }
@@ -263,10 +262,7 @@ class RaceResultsSkeleton extends StatelessWidget {
         SizedBox(height: 4),
         GlassCard(
           child: Column(
-            children: List.generate(
-              rowCount,
-              (_) => ResultRowSkeleton(),
-            ),
+            children: List.generate(rowCount, (_) => ResultRowSkeleton()),
           ),
         ),
       ],

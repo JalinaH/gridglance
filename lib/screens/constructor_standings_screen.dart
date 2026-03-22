@@ -97,9 +97,11 @@ class _ConstructorStandingsScreenState
     setState(() => _favoriteTeamId = newId);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(isFav
-            ? '${team.teamName} removed from favorites'
-            : '${team.teamName} set as favorite'),
+        content: Text(
+          isFav
+              ? '${team.teamName} removed from favorites'
+              : '${team.teamName} set as favorite',
+        ),
       ),
     );
   }
@@ -225,11 +227,14 @@ class _ConstructorStandingsScreenState
                           color: colors.f1Red,
                           child: AdaptiveCardList(
                             padding: EdgeInsets.only(bottom: 24),
-                            physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            physics: AlwaysScrollableScrollPhysics(
+                              parent: BouncingScrollPhysics(),
+                            ),
                             itemCount: standings.length,
                             itemBuilder: (context, index) {
                               final team = standings[index];
-                              final isFav = _favoriteTeamId == team.constructorId;
+                              final isFav =
+                                  _favoriteTeamId == team.constructorId;
                               return Reveal(
                                 index: index,
                                 child: SwipeActionWrapper(

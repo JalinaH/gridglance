@@ -104,7 +104,11 @@ class _PointsTrendPainter extends CustomPainter {
 
     final midY = size.height * 0.5;
     canvas.drawLine(Offset(0, midY), Offset(size.width, midY), gridPaint);
-    canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), gridPaint);
+    canvas.drawLine(
+      Offset(0, size.height),
+      Offset(size.width, size.height),
+      gridPaint,
+    );
 
     final fillPaint = Paint()
       ..style = PaintingStyle.fill

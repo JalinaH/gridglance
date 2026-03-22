@@ -61,18 +61,19 @@ class _CelebrationAnimationState extends State<_CelebrationAnimation>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.variant == CelebrationType.confetti
-          ? Duration(milliseconds: 1200)
-          : Duration(milliseconds: 800),
-    )
-      ..forward()
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          widget.onComplete();
-        }
-      });
+    _controller =
+        AnimationController(
+            vsync: this,
+            duration: widget.variant == CelebrationType.confetti
+                ? Duration(milliseconds: 1200)
+                : Duration(milliseconds: 800),
+          )
+          ..forward()
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              widget.onComplete();
+            }
+          });
   }
 
   @override
@@ -145,7 +146,10 @@ class _ConfettiPainter extends CustomPainter {
 
       final radius = ease * maxRadius * particle.distance;
       final x = center.dx + cos(particle.angle) * radius;
-      final y = center.dy + sin(particle.angle) * radius + (ease * 40 * particle.gravity);
+      final y =
+          center.dy +
+          sin(particle.angle) * radius +
+          (ease * 40 * particle.gravity);
 
       final paint = Paint()
         ..color = particle.color.withValues(alpha: fade)
@@ -157,7 +161,11 @@ class _ConfettiPainter extends CustomPainter {
       canvas.rotate(ease * particle.spin * pi);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset.zero, width: particleSize, height: particleSize * 0.6),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: particleSize,
+            height: particleSize * 0.6,
+          ),
           Radius.circular(1.5),
         ),
         paint,

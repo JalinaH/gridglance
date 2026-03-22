@@ -17,11 +17,7 @@ class TeamDetailScreen extends StatefulWidget {
   final ConstructorStanding team;
   final String season;
 
-  const TeamDetailScreen({
-    super.key,
-    required this.team,
-    required this.season,
-  });
+  const TeamDetailScreen({super.key, required this.team, required this.season});
 
   @override
   State<TeamDetailScreen> createState() => _TeamDetailScreenState();
@@ -91,10 +87,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       SizedBox(height: 4),
                       Text(
                         'Constructor standings',
-                        style: TextStyle(
-                          color: colors.textMuted,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: colors.textMuted, fontSize: 13),
                       ),
                     ],
                   ),
@@ -164,8 +157,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     final points = results
                         .map((result) => _totalPoints(result.drivers))
                         .toList();
-                    final labels =
-                        results.map((result) => 'R${result.round}').toList();
+                    final labels = results
+                        .map((result) => 'R${result.round}')
+                        .toList();
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -303,8 +297,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                 text: _pointsLabel(totalPoints),
                 animateValue: totalPoints,
                 animateSuffix: ' PTS',
-                animateDecimals:
-                    totalPoints == totalPoints.roundToDouble() ? 0 : 1,
+                animateDecimals: totalPoints == totalPoints.roundToDouble()
+                    ? 0
+                    : 1,
               ),
               SizedBox(height: 4),
               Text(
@@ -347,11 +342,16 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     if (family.isEmpty) {
       return '---';
     }
-    return family.substring(0, family.length >= 3 ? 3 : family.length).toUpperCase();
+    return family
+        .substring(0, family.length >= 3 ? 3 : family.length)
+        .toUpperCase();
   }
 
   double _totalPoints(List<TeamDriverResult> drivers) {
-    return drivers.fold(0.0, (sum, driver) => sum + _parsePoints(driver.points));
+    return drivers.fold(
+      0.0,
+      (sum, driver) => sum + _parsePoints(driver.points),
+    );
   }
 
   double _parsePoints(String value) {
