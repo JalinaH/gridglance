@@ -83,6 +83,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return F1Scaffold(
+      maxContentWidth: 800,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

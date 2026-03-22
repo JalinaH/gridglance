@@ -44,6 +44,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return F1Scaffold(
+      maxContentWidth: 800,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

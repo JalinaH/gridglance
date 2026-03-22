@@ -6,16 +6,31 @@ class F1Scaffold extends StatelessWidget {
   final Widget body;
   final Widget? floatingActionButton;
 
+  /// When non-null, the body is centered with this maximum width on wide
+  /// screens. Useful for detail / single-column screens that shouldn't stretch
+  /// across the full tablet width.
+  final double? maxContentWidth;
+
   const F1Scaffold({
     super.key,
     required this.body,
     this.appBar,
     this.floatingActionButton,
+    this.maxContentWidth,
   });
 
   @override
   Widget build(BuildContext context) {
     final topInset = appBar == null ? 0.0 : kToolbarHeight + 8;
+    Widget content = body;
+    if (maxContentWidth != null) {
+      content = Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxContentWidth!),
+          child: body,
+        ),
+      );
+    }
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.transparent,
@@ -28,7 +43,7 @@ class F1Scaffold extends StatelessWidget {
             bottom: false,
             child: Padding(
               padding: EdgeInsets.only(top: topInset),
-              child: body,
+              child: content,
             ),
           ),
         ],

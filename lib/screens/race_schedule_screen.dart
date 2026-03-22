@@ -6,6 +6,7 @@ import '../utils/date_time_format.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
+import '../widgets/adaptive_layout.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/swipe_action_wrapper.dart';
@@ -168,7 +169,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                             style: TextStyle(color: colors.textMuted),
                           ),
                         )
-                      : ListView.builder(
+                      : AdaptiveCardList(
                           padding: EdgeInsets.only(bottom: 24),
                           physics: BouncingScrollPhysics(),
                           itemCount: races.length,

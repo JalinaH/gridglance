@@ -117,6 +117,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final raceStart = widget.race.startDateTime;
     return F1Scaffold(
+      maxContentWidth: 800,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

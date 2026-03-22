@@ -10,6 +10,7 @@ import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/countdown_text.dart';
+import '../widgets/adaptive_layout.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
@@ -412,211 +413,225 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
 
+        final summaryCards = <Widget>[
+          _buildSummaryCard(
+            title: "Next Race",
+            subtitle: overview.nextRace == null ? null : "Tap for weekend center",
+            onTap: overview.nextRace == null
+                ? null
+                : () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RaceWeekendCenterScreen(
+                          race: overview.nextRace!,
+                          season: _season,
+                        ),
+                      ),
+                    );
+                  },
+            child: overview.nextRace == null
+                ? _buildEmptyState("No upcoming race data.", type: EmptyStateType.race)
+                : _buildNextRaceSummary(overview.nextRace!),
+          ),
+          _buildSummaryCard(
+            title: "Last Race Results",
+            subtitle: "Race, qualifying, sprint",
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => LastRaceResultsScreen(season: _season),
+                ),
+              );
+            },
+            child: Text(
+              "Tap to view the latest results.",
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
+            ),
+          ),
+          _buildSummaryCard(
+            title: "Driver Standings",
+            subtitle: "Top 3 drivers",
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DriverStandingsScreen(
+                    standings: overview.driverStandings,
+                    season: _season,
+                    lastUpdated: overview.driverStandingsUpdatedAt,
+                    isFromCache: overview.driverStandingsFromCache,
+                  ),
+                ),
+              );
+            },
+            child: _buildDriverSummary(topDrivers),
+          ),
+          _buildSummaryCard(
+            title: "Team Standings",
+            subtitle: "Top 3 teams",
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ConstructorStandingsScreen(
+                    standings: overview.constructorStandings,
+                    season: _season,
+                    lastUpdated: overview.constructorStandingsUpdatedAt,
+                    isFromCache: overview.constructorStandingsFromCache,
+                  ),
+                ),
+              );
+            },
+            child: _buildTeamSummary(topTeams),
+          ),
+          _buildSummaryCard(
+            title: "Upcoming Races",
+            subtitle: "Next 3 races",
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => RaceScheduleScreen(
+                    races: overview.raceSchedule,
+                    season: _season,
+                    lastUpdated: overview.raceScheduleUpdatedAt,
+                    isFromCache: overview.raceScheduleFromCache,
+                  ),
+                ),
+              );
+            },
+            child: _buildRaceSummary(upcomingRaces),
+          ),
+          _buildSummaryCard(
+            title: "Compare Mode",
+            subtitle: "Driver / team head-to-head",
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => CompareModeScreen(season: _season),
+                ),
+              );
+            },
+            child: Text(
+              "Pick two drivers or teams and compare points trend, finishes, quali delta, podiums, and wins.",
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
+            ),
+          ),
+        ];
+
+        final wide = isWideScreen(context);
+
+        // Full-width header widgets (season selector, last-updated, favorites).
+        final headerWidgets = <Widget>[
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              children: [
+                Text(
+                  "Season",
+                  style: TextStyle(
+                    color: colors.textMuted,
+                    fontSize: 12,
+                    letterSpacing: 1.6,
+                  ),
+                ),
+                SizedBox(width: 10),
+                InkWell(
+                  onTap: () {
+                    Haptics.light();
+                    _selectSeason();
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceAlt,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _season,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 16,
+                          color: colors.textMuted,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (overview.lastUpdated != null)
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  overview.isFromCache
+                      ? '${formatLastUpdatedAgo(overview.lastUpdated!)} • Offline cache'
+                      : formatLastUpdatedAgo(overview.lastUpdated!),
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
+              ),
+            ),
+          Reveal(
+            index: 0,
+            child: _buildFavoritesCard(
+              colors,
+              drivers: overview.driverStandings,
+              teams: overview.constructorStandings,
+              favoriteDriver: favoriteDriver,
+              favoriteTeam: favoriteTeam,
+            ),
+          ),
+        ];
+
         return RefreshIndicator(
           onRefresh: _refresh,
           color: colors.f1Red,
           child: ListView(
-          padding: EdgeInsets.only(bottom: 24),
-          physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Row(
-                children: [
-                  Text(
-                    "Season",
-                    style: TextStyle(
-                      color: colors.textMuted,
-                      fontSize: 12,
-                      letterSpacing: 1.6,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  InkWell(
-                    onTap: () {
-                      Haptics.light();
-                      _selectSeason();
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+            padding: EdgeInsets.only(bottom: 24),
+            physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            children: [
+              ...headerWidgets,
+              if (wide)
+                // Two-column grid of summary cards on tablets.
+                for (int i = 0; i < summaryCards.length; i += 2)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Reveal(
+                          index: i + 1,
+                          child: summaryCards[i],
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: colors.surfaceAlt,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: colors.border),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _season,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      if (i + 1 < summaryCards.length)
+                        Expanded(
+                          child: Reveal(
+                            index: i + 2,
+                            child: summaryCards[i + 1],
                           ),
-                          SizedBox(width: 4),
-                          Icon(
-                            Icons.keyboard_arrow_down,
-                            size: 16,
-                            color: colors.textMuted,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (overview.lastUpdated != null)
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    overview.isFromCache
-                        ? '${formatLastUpdatedAgo(overview.lastUpdated!)} • Offline cache'
-                        : formatLastUpdatedAgo(overview.lastUpdated!),
-                    style: TextStyle(color: colors.textMuted, fontSize: 11),
-                  ),
-                ),
-              ),
-            Reveal(
-              index: 0,
-              child: _buildFavoritesCard(
-                colors,
-                drivers: overview.driverStandings,
-                teams: overview.constructorStandings,
-                favoriteDriver: favoriteDriver,
-                favoriteTeam: favoriteTeam,
-              ),
-            ),
-            Reveal(
-              index: 1,
-              child: _buildSummaryCard(
-                title: "Next Race",
-                subtitle: overview.nextRace == null
-                    ? null
-                    : "Tap for weekend center",
-                onTap: overview.nextRace == null
-                    ? null
-                    : () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => RaceWeekendCenterScreen(
-                              race: overview.nextRace!,
-                              season: _season,
-                            ),
-                          ),
-                        );
-                      },
-                child: overview.nextRace == null
-                    ? _buildEmptyState("No upcoming race data.", type: EmptyStateType.race)
-                    : _buildNextRaceSummary(overview.nextRace!),
-              ),
-            ),
-            Reveal(
-              index: 2,
-              child: _buildSummaryCard(
-                title: "Last Race Results",
-                subtitle: "Race, qualifying, sprint",
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => LastRaceResultsScreen(season: _season),
-                    ),
-                  );
-                },
-                child: Text(
-                  "Tap to view the latest results.",
-                  style: TextStyle(color: colors.textMuted, fontSize: 12),
-                ),
-              ),
-            ),
-            Reveal(
-              index: 3,
-              child: _buildSummaryCard(
-                title: "Driver Standings",
-                subtitle: "Top 3 drivers",
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => DriverStandingsScreen(
-                        standings: overview.driverStandings,
-                        season: _season,
-                        lastUpdated: overview.driverStandingsUpdatedAt,
-                        isFromCache: overview.driverStandingsFromCache,
-                      ),
-                    ),
-                  );
-                },
-                child: _buildDriverSummary(topDrivers),
-              ),
-            ),
-            Reveal(
-              index: 4,
-              child: _buildSummaryCard(
-                title: "Team Standings",
-                subtitle: "Top 3 teams",
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ConstructorStandingsScreen(
-                        standings: overview.constructorStandings,
-                        season: _season,
-                        lastUpdated: overview.constructorStandingsUpdatedAt,
-                        isFromCache: overview.constructorStandingsFromCache,
-                      ),
-                    ),
-                  );
-                },
-                child: _buildTeamSummary(topTeams),
-              ),
-            ),
-            Reveal(
-              index: 5,
-              child: _buildSummaryCard(
-                title: "Upcoming Races",
-                subtitle: "Next 3 races",
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => RaceScheduleScreen(
-                        races: overview.raceSchedule,
-                        season: _season,
-                        lastUpdated: overview.raceScheduleUpdatedAt,
-                        isFromCache: overview.raceScheduleFromCache,
-                      ),
-                    ),
-                  );
-                },
-                child: _buildRaceSummary(upcomingRaces),
-              ),
-            ),
-            Reveal(
-              index: 6,
-              child: _buildSummaryCard(
-                title: "Compare Mode",
-                subtitle: "Driver / team head-to-head",
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CompareModeScreen(season: _season),
-                    ),
-                  );
-                },
-                child: Text(
-                  "Pick two drivers or teams and compare points trend, finishes, quali delta, podiums, and wins.",
-                  style: TextStyle(color: colors.textMuted, fontSize: 12),
-                ),
-              ),
-            ),
-          ],
-        ),
+                        )
+                      else
+                        Expanded(child: SizedBox.shrink()),
+                    ],
+                  )
+              else
+                // Single-column on phones.
+                for (int i = 0; i < summaryCards.length; i++)
+                  Reveal(index: i + 1, child: summaryCards[i]),
+            ],
+          ),
         );
       },
     );
