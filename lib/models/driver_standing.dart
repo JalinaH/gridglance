@@ -9,6 +9,7 @@ class DriverStanding {
   final String constructorId;
   final String? code;
   final String? permanentNumber;
+  final String? nationality;
 
   DriverStanding({
     required this.position,
@@ -21,6 +22,7 @@ class DriverStanding {
     required this.constructorId,
     required this.code,
     required this.permanentNumber,
+    this.nationality,
   });
 
   factory DriverStanding.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,7 @@ class DriverStanding {
       constructorId: team?['constructorId'] ?? '',
       code: driver['code'],
       permanentNumber: driver['permanentNumber'],
+      nationality: driver['nationality'],
     );
   }
 }

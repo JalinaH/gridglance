@@ -173,6 +173,7 @@ Race _buildRace({required String round}) {
     raceName: 'Sample Grand Prix',
     date: '2026-03-08',
     time: '06:00:00Z',
+    circuitId: '',
     circuitName: 'Sample Circuit',
     locality: 'Sample City',
     country: 'Sample Country',

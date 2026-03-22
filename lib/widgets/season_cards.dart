@@ -3,9 +3,12 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../theme/app_theme.dart';
+import '../utils/country_flags.dart';
 import '../utils/date_time_format.dart';
 import '../utils/haptics.dart';
 import 'animated_counter.dart';
+import 'circuit_track.dart';
+import 'driver_number_badge.dart';
 import 'team_logo.dart';
 
 class GlassCard extends StatelessWidget {
@@ -184,21 +187,31 @@ class DriverStandingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final flag = driver.nationality != null
+        ? countryFlag(driver.nationality!)
+        : null;
     return GlassCard(
       onTap: onTap,
       child: Row(
         children: [
-          AnimatedCounter(
-            value: double.tryParse(driver.position) ?? 0,
-            prefix: '#',
-            style: TextStyle(
-              color: colors.f1RedBright,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+          if (driver.permanentNumber != null)
+            DriverNumberBadge(
+              number: driver.permanentNumber!,
+              teamName: driver.teamName,
+              size: 34,
+            )
+          else
+            AnimatedCounter(
+              value: double.tryParse(driver.position) ?? 0,
+              prefix: '#',
+              style: TextStyle(
+                color: colors.f1RedBright,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+              duration: Duration(milliseconds: 600),
             ),
-            duration: Duration(milliseconds: 600),
-          ),
           SizedBox(width: 12),
           Hero(
             tag: 'driver-logo-${driver.driverId}',
@@ -213,13 +226,24 @@ class DriverStandingCard extends StatelessWidget {
                   tag: 'driver-name-${driver.driverId}',
                   child: Material(
                     color: Colors.transparent,
-                    child: Text(
-                      "${driver.givenName} ${driver.familyName}",
-                      style: TextStyle(
-                        color: onSurface,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      children: [
+                        if (flag != null) ...[
+                          Text(flag, style: TextStyle(fontSize: 14)),
+                          SizedBox(width: 6),
+                        ],
+                        Flexible(
+                          child: Text(
+                            "${driver.givenName} ${driver.familyName}",
+                            style: TextStyle(
+                              color: onSurface,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -370,43 +394,72 @@ class RaceCard extends StatelessWidget {
           : null,
       accentColor: highlight ? colors.f1Red : colors.f1RedBright,
       onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              StatPill(text: "Round ${race.round}"),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  dateLabel,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    StatPill(text: "Round ${race.round}"),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        dateLabel,
+                        style: TextStyle(
+                          color: colors.textMuted,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text(
+                      countryFlag(race.country),
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        race.raceName,
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: highlight ? 18 : 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Text(
+                  "${race.circuitName} - ${race.location}",
                   style: TextStyle(
                     color: colors.textMuted,
                     fontSize: 12,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
+              ],
+            ),
+          ),
+          if (race.circuitId.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: CircuitTrack(
+                circuitId: race.circuitId,
+                width: highlight ? 72 : 56,
+                height: highlight ? 48 : 38,
+                color: colors.f1RedBright.withValues(alpha: 0.6),
+                strokeWidth: 1.8,
               ),
-            ],
-          ),
-          SizedBox(height: 10),
-          Text(
-            race.raceName,
-            style: TextStyle(
-              color: onSurface,
-              fontSize: highlight ? 18 : 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.3,
             ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "${race.circuitName} - ${race.location}",
-            style: TextStyle(
-              color: colors.textMuted,
-              fontSize: 12,
-            ),
-          ),
         ],
       ),
     );

@@ -15,6 +15,7 @@ void main() {
       raceName: 'Monaco Grand Prix',
       date: '2026-05-24',
       time: '13:00:00Z',
+      circuitId: 'monaco',
       circuitName: 'Circuit de Monaco',
       locality: 'Monte-Carlo',
       country: 'Monaco',

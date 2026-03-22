@@ -3,6 +3,7 @@ class Race {
   final String raceName;
   final String date;
   final String? time;
+  final String circuitId;
   final String circuitName;
   final String locality;
   final String country;
@@ -20,6 +21,7 @@ class Race {
     required this.raceName,
     required this.date,
     required this.time,
+    required this.circuitId,
     required this.circuitName,
     required this.locality,
     required this.country,
@@ -43,6 +45,7 @@ class Race {
       raceName: json['raceName'] ?? '',
       date: json['date'] ?? '',
       time: json['time'],
+      circuitId: circuit['circuitId'] ?? '',
       circuitName: circuit['circuitName'] ?? '',
       locality: location['locality'] ?? '',
       country: location['country'] ?? '',
