@@ -9,6 +9,7 @@ import '../utils/date_time_format.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/points_trend_chart.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/skeleton_loaders.dart';
 import '../widgets/team_logo.dart';
 
 class TeamDetailScreen extends StatefulWidget {
@@ -121,11 +122,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                   future: _resultsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: CircularProgressIndicator(color: colors.f1Red),
-                        ),
+                      return Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: ChartSkeleton(),
                       );
                     }
                     if (snapshot.hasError) {

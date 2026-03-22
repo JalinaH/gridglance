@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/head_to_head_points_chart.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/skeleton_loaders.dart';
 
 enum CompareMode { drivers, teams }
 
@@ -97,9 +98,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
         future: _bootstrapFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: colors.f1Red),
-            );
+            return CompareModeSkeleton();
           }
           if (snapshot.hasError || snapshot.data == null) {
             return Center(

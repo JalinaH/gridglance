@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/skeleton_loaders.dart';
 
 class LastRaceResultsScreen extends StatefulWidget {
   final String season;
@@ -67,18 +68,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
       future: _raceFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return GlassCard(
-            child: Row(
-              children: [
-                CircularProgressIndicator(color: colors.f1Red),
-                SizedBox(width: 12),
-                Text(
-                  'Loading last race…',
-                  style: TextStyle(color: colors.textMuted),
-                ),
-              ],
-            ),
-          );
+          return RaceCardSkeleton();
         }
         if (snapshot.hasError) {
           return GlassCard(
@@ -172,10 +162,9 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
       builder: (context, snapshot) {
         final colors = AppColors.of(context);
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(
-              child: CircularProgressIndicator(color: colors.f1Red),
+          return GlassCard(
+            child: Column(
+              children: List.generate(6, (_) => ResultRowSkeleton()),
             ),
           );
         }

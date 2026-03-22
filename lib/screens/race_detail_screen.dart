@@ -15,6 +15,7 @@ import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/share_cards.dart';
+import '../widgets/skeleton_loaders.dart';
 
 class RaceDetailScreen extends StatefulWidget {
   final Race race;
@@ -302,23 +303,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   ),
                 ),
                 SizedBox(height: 10),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colors.f1RedBright,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      "Loading weather...",
-                      style: TextStyle(color: colors.textMuted, fontSize: 12),
-                    ),
-                  ],
-                ),
+                WeatherSkeleton(),
               ],
             );
           }

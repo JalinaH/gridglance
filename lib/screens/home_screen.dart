@@ -12,6 +12,7 @@ import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/skeleton_loaders.dart';
 import '../widgets/team_logo.dart';
 import '../services/widget_update_service.dart';
 import 'compare_mode_screen.dart';
@@ -356,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
       future: _overview,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: colors.f1Red));
+          return HomeScreenSkeleton();
         } else if (snapshot.hasError) {
           return Center(
             child: Text(
