@@ -13,6 +13,7 @@ import '../services/weather_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_time_format.dart';
 import '../widgets/bounce_tap.dart';
+import '../widgets/celebration_overlay.dart';
 import '../widgets/countdown_text.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/season_cards.dart';
@@ -1212,6 +1213,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         }
         _seasonPredictionScore = updatedScore;
       });
+      CelebrationOverlay.show(context, variant: CelebrationType.confetti);
       _showSnackBar(
         isQualifying
             ? 'Qualifying prediction saved.'
@@ -1633,6 +1635,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         setState(() {
           _sessionReminderEnabled[key] = true;
         });
+        CelebrationOverlay.show(context, variant: CelebrationType.pulse);
         _showSnackBar(
           '${session.name} reminder set for ${_leadPresetLabel(leadMinutes)} before start.',
         );
@@ -1748,6 +1751,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         setState(() {
           _weekendDigestEnabled = true;
         });
+        CelebrationOverlay.show(context, variant: CelebrationType.pulse);
         _showSnackBar('Weekend digest enabled.');
         return;
       }

@@ -24,22 +24,44 @@ class CountdownText extends StatefulWidget {
   State<CountdownText> createState() => _CountdownTextState();
 }
 
-class _CountdownTextState extends State<CountdownText> {
+class _CountdownTextState extends State<CountdownText>
+    with SingleTickerProviderStateMixin {
   Timer? _timer;
   Duration _remaining = Duration.zero;
+  bool _wasPositive = true;
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseScale;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 900),
+    );
+    _pulseScale = Tween(begin: 1.0, end: 1.12).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     _remaining = _computeRemaining();
+    _wasPositive = !_remaining.isNegative && _remaining.inMinutes > 0;
     _timer = Timer.periodic(widget.refreshInterval, (_) {
       if (!mounted) {
         return;
       }
+      final prev = _remaining;
       setState(() {
         _remaining = _computeRemaining();
       });
+      _checkZeroCrossing(prev);
     });
+  }
+
+  void _checkZeroCrossing(Duration prev) {
+    final isZeroOrPast = _remaining.isNegative || _remaining.inMinutes <= 0;
+    if (_wasPositive && isZeroOrPast) {
+      _pulseController.repeat(reverse: true);
+    }
+    _wasPositive = !isZeroOrPast;
   }
 
   @override
@@ -48,14 +70,18 @@ class _CountdownTextState extends State<CountdownText> {
     if (oldWidget.target != widget.target ||
         oldWidget.refreshInterval != widget.refreshInterval) {
       _timer?.cancel();
+      _pulseController.reset();
       _remaining = _computeRemaining();
+      _wasPositive = !_remaining.isNegative && _remaining.inMinutes > 0;
       _timer = Timer.periodic(widget.refreshInterval, (_) {
         if (!mounted) {
           return;
         }
+        final prev = _remaining;
         setState(() {
           _remaining = _computeRemaining();
         });
+        _checkZeroCrossing(prev);
       });
     }
   }
@@ -63,6 +89,7 @@ class _CountdownTextState extends State<CountdownText> {
   @override
   void dispose() {
     _timer?.cancel();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -84,7 +111,11 @@ class _CountdownTextState extends State<CountdownText> {
       return SizedBox.shrink();
     }
     final label = _formatCountdown(_remaining);
-    return Text(label, style: widget.style);
+    final text = Text(label, style: widget.style);
+    if (_pulseController.isAnimating) {
+      return ScaleTransition(scale: _pulseScale, child: text);
+    }
+    return text;
   }
 
   String _formatCountdown(Duration duration) {
