@@ -64,18 +64,27 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TeamLogo(teamName: widget.driver.teamName, size: 40),
+                Hero(
+                  tag: 'driver-logo-${widget.driver.driverId}',
+                  child: TeamLogo(teamName: widget.driver.teamName, size: 40),
+                ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${widget.driver.givenName} ${widget.driver.familyName}',
-                        style: TextStyle(
-                          color: onSurface,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      Hero(
+                        tag: 'driver-name-${widget.driver.driverId}',
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(
+                            '${widget.driver.givenName} ${widget.driver.familyName}',
+                            style: TextStyle(
+                              color: onSurface,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 4),

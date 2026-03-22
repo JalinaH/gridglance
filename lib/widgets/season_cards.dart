@@ -169,18 +169,27 @@ class DriverStandingCard extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12),
-          TeamLogo(teamName: driver.teamName, size: 28),
+          Hero(
+            tag: 'driver-logo-${driver.driverId}',
+            child: TeamLogo(teamName: driver.teamName, size: 28),
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "${driver.givenName} ${driver.familyName}",
-                  style: TextStyle(
-                    color: onSurface,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Hero(
+                  tag: 'driver-name-${driver.driverId}',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Text(
+                      "${driver.givenName} ${driver.familyName}",
+                      style: TextStyle(
+                        color: onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
                 Text(
@@ -238,18 +247,27 @@ class ConstructorStandingCard extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12),
-          TeamLogo(teamName: team.teamName, size: 30),
+          Hero(
+            tag: 'team-logo-${team.constructorId}',
+            child: TeamLogo(teamName: team.teamName, size: 30),
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  team.teamName,
-                  style: TextStyle(
-                    color: onSurface,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Hero(
+                  tag: 'team-name-${team.constructorId}',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Text(
+                      team.teamName,
+                      style: TextStyle(
+                        color: onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
                 Text(

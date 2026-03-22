@@ -64,18 +64,27 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TeamLogo(teamName: widget.team.teamName, size: 42),
+                Hero(
+                  tag: 'team-logo-${widget.team.constructorId}',
+                  child: TeamLogo(teamName: widget.team.teamName, size: 42),
+                ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.team.teamName,
-                        style: TextStyle(
-                          color: onSurface,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      Hero(
+                        tag: 'team-name-${widget.team.constructorId}',
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(
+                            widget.team.teamName,
+                            style: TextStyle(
+                              color: onSurface,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 4),
