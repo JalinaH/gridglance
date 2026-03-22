@@ -11,9 +11,12 @@ GridGlance is a Flutter app for following Formula 1 standings and race weekends 
   - Upcoming races
 - Lets users switch seasons (1950 to current year).
 - Includes searchable driver, constructor, and race schedule views.
-- Provides detail pages for drivers and teams, including points trend charts and recent form.
+- Provides detail pages for drivers and teams, including points trend charts, head-to-head comparisons, and recent form.
+- Race Weekend Center with live weather forecasts for upcoming sessions.
+- Predict race podiums and qualifying top 3, with season-long scoring.
+- Share standings and race countdown cards as images.
 - Adds race sessions to the device calendar from race detail screens.
-- Schedules local race-weekend notifications (default: 15 minutes before each session, when permissions are granted).
+- Schedules local race-weekend notifications with configurable lead times, weekend digests, and favorite driver/team result alerts.
 - Supports home-screen widgets on Android and iOS:
   - Driver Standings
   - Team Standings
@@ -22,6 +25,7 @@ GridGlance is a Flutter app for following Formula 1 standings and race weekends 
   - Next Race Countdown
   - Next Session
 - Persists user preferences (theme mode, selected season, favorite driver/team, notification toggles).
+- Polished interactions: haptic feedback, bounce-tap animations, celebratory confetti/pulse overlays, swipe-to-favorite gestures, skeleton loading states, and adaptive responsive layouts.
 
 ## Tech stack
 
@@ -32,6 +36,8 @@ GridGlance is a Flutter app for following Formula 1 standings and race weekends 
 - Widgets: `home_widget`
 - Local persistence: `shared_preferences`
 - Timezone handling: `timezone`
+- Background tasks: `workmanager`
+- Typography: `google_fonts`
 
 ## Data source
 
@@ -44,15 +50,20 @@ Race and standings data is loaded from the Ergast-compatible Jolpica API endpoin
 ```text
 gridglance/
 ├── lib/
-│   ├── data/            # API client
+│   ├── data/            # API client with HTTP response caching
 │   ├── models/          # Domain models (race, standings, results)
-│   ├── screens/         # App screens and flows
-│   ├── services/        # Notifications, widgets, calendar, preferences
-│   ├── theme/           # App theme
-│   ├── utils/           # Formatting/helpers
-│   └── widgets/         # Reusable UI components
-├── android/             # Android app + AppWidget providers/layouts
-├── ios/                 # iOS runner project
+│   ├── screens/         # 14 app screens and flows
+│   ├── services/        # Notifications, predictions, weather, calendar, sharing, preferences
+│   ├── theme/           # AppColors theme extension (dark/light)
+│   ├── utils/           # Formatting, haptics, team assets
+│   └── widgets/         # 16 reusable UI components
+├── android/             # Android app + 6 AppWidget providers
+├── ios/                 # iOS runner + WidgetKit extension
+├── test/
+│   ├── models/          # Race, results, standings model tests
+│   ├── services/        # Notification, prediction, preferences tests
+│   ├── utils/           # Date formatting, team asset tests
+│   └── widgets/         # BounceTap, AnimatedCounter, EmptyState, SwipeAction, Celebration tests
 └── pubspec.yaml
 ```
 
@@ -106,6 +117,17 @@ flutter build ios --release
 - WidgetKit extension target is `GridGlanceWidgets` (iOS 14+).
 - App and widget share data via App Group `group.com.example.gridglance`.
 
-## Current status
+## Testing
 
-- Automated tests are available under `test/` for core models, formatting utilities, and notifications.
+109 automated tests covering:
+
+- **Models** — Race, RaceSession, DriverStanding, ConstructorStanding, and all result types (race, sprint, qualifying)
+- **Services** — NotificationService key generation and ID determinism, NotificationPreferences (session toggles, lead times, weekend digest, favorite alerts), UserPreferences (season, favorite driver/team), PredictionService (scoring, season aggregation, input validation)
+- **Utils** — Date/time formatting (relative labels, localized dates), team logo asset lookup (case-insensitive matching, legacy names, 2026 roster)
+- **Widgets** — BounceTap (scale animation, event pass-through), AnimatedCounter (value animation, formatting, prefix/suffix), EmptyState (icon mapping for all 7 types), SwipeActionWrapper (primary/secondary swipe actions, threshold behavior), CelebrationOverlay (confetti/pulse variants, IgnorePointer)
+
+```bash
+flutter test                 # Run all tests
+flutter test test/models/    # Run model tests only
+flutter test test/widgets/   # Run widget tests only
+```
