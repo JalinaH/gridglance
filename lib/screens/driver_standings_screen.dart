@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/api_service.dart';
 import '../models/driver_standing.dart';
 import '../screens/driver_detail_screen.dart';
 import '../services/share_card_service.dart';
@@ -33,6 +34,16 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
   final GlobalKey _shareCardKey = GlobalKey();
   String _query = '';
   bool _sharingCard = false;
+  late List<DriverStanding> _standings = widget.standings;
+  DateTime? _lastUpdated;
+  bool _isFromCache = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastUpdated = widget.lastUpdated;
+    _isFromCache = widget.isFromCache;
+  }
 
   @override
   void dispose() {
@@ -40,12 +51,24 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
     super.dispose();
   }
 
+  Future<void> _refresh() async {
+    final snapshot = await ApiService().getDriverStandingsSnapshot(
+      season: widget.season,
+    );
+    if (!mounted) return;
+    setState(() {
+      _standings = snapshot.data;
+      _lastUpdated = snapshot.lastUpdated;
+      _isFromCache = snapshot.isFromCache;
+    });
+  }
+
   List<DriverStanding> get _filteredStandings {
     if (_query.isEmpty) {
-      return widget.standings;
+      return _standings;
     }
     final query = _query.toLowerCase();
-    return widget.standings.where((driver) {
+    return _standings.where((driver) {
       final name = '${driver.givenName} ${driver.familyName}'.toLowerCase();
       final team = driver.teamName.toLowerCase();
       return name.contains(query) ||
@@ -77,7 +100,7 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
           ],
         ),
       ),
-      body: widget.standings.isEmpty
+      body: _standings.isEmpty
           ? Center(
               child: Text(
                 "No driver standings available.",
@@ -128,15 +151,15 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
                     ),
                   ),
                 ),
-                if (widget.lastUpdated != null)
+                if (_lastUpdated != null)
                   Padding(
                     padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        widget.isFromCache
-                            ? '${formatLastUpdatedAgo(widget.lastUpdated!)} • Offline cache'
-                            : formatLastUpdatedAgo(widget.lastUpdated!),
+                        _isFromCache
+                            ? '${formatLastUpdatedAgo(_lastUpdated!)} • Offline cache'
+                            : formatLastUpdatedAgo(_lastUpdated!),
                         style: TextStyle(color: colors.textMuted, fontSize: 11),
                       ),
                     ),
@@ -169,28 +192,32 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
                             style: TextStyle(color: colors.textMuted),
                           ),
                         )
-                      : ListView.builder(
-                          padding: EdgeInsets.only(bottom: 24),
-                          physics: BouncingScrollPhysics(),
-                          itemCount: standings.length,
-                          itemBuilder: (context, index) {
-                            return Reveal(
-                              index: index,
-                              child: DriverStandingCard(
-                                driver: standings[index],
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => DriverDetailScreen(
-                                        driver: standings[index],
-                                        season: widget.season,
+                      : RefreshIndicator(
+                          onRefresh: _refresh,
+                          color: colors.f1Red,
+                          child: ListView.builder(
+                            padding: EdgeInsets.only(bottom: 24),
+                            physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            itemCount: standings.length,
+                            itemBuilder: (context, index) {
+                              return Reveal(
+                                index: index,
+                                child: DriverStandingCard(
+                                  driver: standings[index],
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => DriverDetailScreen(
+                                          driver: standings[index],
+                                          season: widget.season,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
                         ),
                 ),
               ],

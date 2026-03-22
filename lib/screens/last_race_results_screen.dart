@@ -17,18 +17,28 @@ class LastRaceResultsScreen extends StatefulWidget {
 }
 
 class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
-  late final Future<SessionResults?> _raceFuture;
-  late final Future<SessionResults?> _qualifyingFuture;
-  late final Future<SessionResults?> _sprintFuture;
+  late Future<SessionResults?> _raceFuture;
+  late Future<SessionResults?> _qualifyingFuture;
+  late Future<SessionResults?> _sprintFuture;
   SessionType _selected = SessionType.race;
 
   @override
   void initState() {
     super.initState();
+    _fetchResults();
+  }
+
+  void _fetchResults() {
     final api = ApiService();
     _raceFuture = api.getLastRaceResults(season: widget.season);
     _qualifyingFuture = api.getLastQualifyingResults(season: widget.season);
     _sprintFuture = api.getLastSprintResults(season: widget.season);
+  }
+
+  Future<void> _refresh() async {
+    _fetchResults();
+    setState(() {});
+    await Future.wait([_raceFuture, _qualifyingFuture, _sprintFuture]);
   }
 
   @override
@@ -47,17 +57,21 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
           ],
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.only(bottom: 24),
-        physics: BouncingScrollPhysics(),
-        children: [
-          _buildRaceHeader(),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: _buildSegmentedControl(),
-          ),
-          _buildResultsBody(),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        color: colors.f1Red,
+        child: ListView(
+          padding: EdgeInsets.only(bottom: 24),
+          physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          children: [
+            _buildRaceHeader(),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: _buildSegmentedControl(),
+            ),
+            _buildResultsBody(),
+          ],
+        ),
       ),
     );
   }

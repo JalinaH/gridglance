@@ -72,11 +72,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _refresh() {
+  Future<void> _refresh() async {
+    final future = ApiService().getSeasonOverview(season: _season);
     setState(() {
-      _overview = ApiService().getSeasonOverview(season: _season);
+      _overview = future;
       _didUpdateWidget = false;
     });
+    await future;
   }
 
   List<String> _seasonOptions() {
@@ -406,9 +408,12 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
 
-        return ListView(
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          color: colors.f1Red,
+          child: ListView(
           padding: EdgeInsets.only(bottom: 24),
-          physics: BouncingScrollPhysics(),
+          physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           children: [
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -604,6 +609,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
+        ),
         );
       },
     );
