@@ -10,6 +10,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
 import '../widgets/points_trend_chart.dart';
 import '../widgets/season_cards.dart';
+import '../widgets/car_image.dart';
 import '../widgets/skeleton_loaders.dart';
 import '../widgets/team_logo.dart';
 
@@ -58,40 +59,53 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         physics: BouncingScrollPhysics(),
         children: [
           GlassCard(
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Hero(
-                  tag: 'team-logo-${widget.team.constructorId}',
-                  child: TeamLogo(teamName: widget.team.teamName, size: 42),
+                CarImage(
+                  teamName: widget.team.teamName,
+                  constructorId: widget.team.constructorId,
+                  width: double.infinity,
+                  height: 80,
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Hero(
-                        tag: 'team-name-${widget.team.constructorId}',
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Text(
-                            widget.team.teamName,
-                            style: TextStyle(
-                              color: onSurface,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Hero(
+                      tag: 'team-logo-${widget.team.constructorId}',
+                      child: TeamLogo(teamName: widget.team.teamName, size: 42),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Hero(
+                            tag: 'team-name-${widget.team.constructorId}',
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Text(
+                                widget.team.teamName,
+                                style: TextStyle(
+                                  color: onSurface,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Constructor standings',
+                            style: TextStyle(
+                              color: colors.textMuted,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Constructor standings',
-                        style: TextStyle(color: colors.textMuted, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -117,6 +131,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                 ),
               ],
             ),
+            ],
+          ),
           ),
           GlassCard(
             child: Column(

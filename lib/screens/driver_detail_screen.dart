@@ -12,7 +12,9 @@ import '../widgets/points_trend_chart.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/animated_counter.dart';
 import '../widgets/skeleton_loaders.dart';
-import '../widgets/team_logo.dart';
+import '../widgets/driver_number_badge.dart';
+import '../widgets/driver_photo.dart';
+import '../utils/country_flags.dart';
 
 class DriverDetailScreen extends StatefulWidget {
   final DriverStanding driver;
@@ -66,9 +68,12 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Hero(
-                  tag: 'driver-logo-${widget.driver.driverId}',
-                  child: TeamLogo(teamName: widget.driver.teamName, size: 40),
+                DriverPhoto(
+                  driverId: widget.driver.driverId,
+                  teamName: widget.driver.teamName,
+                  initials:
+                      '${widget.driver.givenName.isNotEmpty ? widget.driver.givenName[0] : ''}${widget.driver.familyName.isNotEmpty ? widget.driver.familyName[0] : ''}',
+                  size: 52,
                 ),
                 SizedBox(width: 12),
                 Expanded(
@@ -90,9 +95,26 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                         ),
                       ),
                       SizedBox(height: 4),
-                      Text(
-                        widget.driver.teamName,
-                        style: TextStyle(color: colors.textMuted, fontSize: 13),
+                      Row(
+                        children: [
+                          if (widget.driver.nationality != null) ...[
+                            Text(
+                              countryFlag(widget.driver.nationality!),
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            SizedBox(width: 6),
+                          ],
+                          Flexible(
+                            child: Text(
+                              widget.driver.teamName,
+                              style: TextStyle(
+                                color: colors.textMuted,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 8),
                       Wrap(
@@ -101,9 +123,10 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                         children: [
                           if (widget.driver.permanentNumber != null &&
                               widget.driver.permanentNumber!.isNotEmpty)
-                            _metaChip(
-                              colors,
-                              'No. ${widget.driver.permanentNumber}',
+                            DriverNumberBadge(
+                              number: widget.driver.permanentNumber!,
+                              teamName: widget.driver.teamName,
+                              size: 30,
                             ),
                           if (widget.driver.code != null &&
                               widget.driver.code!.isNotEmpty)
