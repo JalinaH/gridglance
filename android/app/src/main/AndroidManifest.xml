@@ -95,6 +95,18 @@
                 android:resource="@xml/next_session_widget_info" />
         </receiver>
         <receiver
+            android:name=".RaceWeekendWidgetProvider"
+            android:exported="true"
+            android:label="Race Weekend"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/race_weekend_widget_info" />
+        </receiver>
+        <receiver
             android:name=".FavoriteTeamWidgetProvider"
             android:exported="true"
             android:label="Favorite Team"

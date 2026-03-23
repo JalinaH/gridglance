@@ -33,6 +33,12 @@ class WidgetUpdateService {
       'NextSessionWidgetProvider';
   static const String androidQualifiedNextSessionWidgetProvider =
       'com.gridglance.app.NextSessionWidgetProvider';
+  static const String androidRaceWeekendWidgetProvider =
+      'RaceWeekendWidgetProvider';
+  static const String androidQualifiedRaceWeekendWidgetProvider =
+      'com.gridglance.app.RaceWeekendWidgetProvider';
+  static const String iOSRaceWeekendWidgetKind =
+      'GridGlanceRaceWeekendWidget';
   static const String iOSAppGroupId = 'group.com.gridglance.app';
   static const String iOSDriverWidgetKind = 'GridGlanceDriverStandingsWidget';
   static const String iOSTeamWidgetKind = 'GridGlanceTeamStandingsWidget';
@@ -58,6 +64,8 @@ class WidgetUpdateService {
       'next_race_widget_transparent';
   static const String _nextSessionWidgetTransparentKey =
       'next_session_widget_transparent';
+  static const String _raceWeekendWidgetTransparentKey =
+      'race_weekend_widget_transparent';
   static const String _favoriteDriverDefaultTransparentKey =
       '${_favoriteDriverDefaultKey}_transparent';
   static const String _favoriteTeamDefaultTransparentKey =
@@ -249,6 +257,95 @@ class WidgetUpdateService {
     }
 
     await _refreshNextSessionWidget();
+  }
+
+  /// Combined Race Weekend widget — shows race info + all sessions + countdown.
+  static Future<void> updateRaceWeekend(
+    List<Race> races, {
+    Race? nextRace,
+    String? season,
+  }) async {
+    final seasonLabel =
+        season ?? _seasonOverride ?? DateTime.now().year.toString();
+    _seasonOverride = seasonLabel;
+    await _saveDps('race_weekend_widget_title', 'Race Weekend');
+    await _saveDps('race_weekend_widget_season', seasonLabel);
+
+    // Find the race whose weekend is next.
+    final target = nextRace ?? (races.isNotEmpty ? races.first : null);
+
+    if (target == null) {
+      await _saveDps('race_weekend_widget_name', 'No upcoming race');
+      await _saveDps('race_weekend_widget_location', 'Season complete');
+      await _saveDps(
+        'race_weekend_widget_countdown',
+        'Awaiting next calendar',
+      );
+      for (int i = 1; i <= 7; i++) {
+        await _saveDps('race_weekend_widget_session_$i', '');
+      }
+      await _saveDps('race_weekend_widget_next_index', '-1');
+    } else {
+      await _saveDps(
+        'race_weekend_widget_name',
+        target.raceName.isEmpty ? 'Race weekend' : target.raceName,
+      );
+      await _saveDps(
+        'race_weekend_widget_location',
+        target.location.isEmpty
+            ? (target.circuitName.isEmpty ? 'Location TBA' : target.circuitName)
+            : target.location,
+      );
+
+      // Build session lines for this race.
+      final allSessions = target.sessions;
+      final now = DateTime.now();
+      int nextIndex = -1;
+
+      for (int i = 0; i < 7; i++) {
+        if (i < allSessions.length) {
+          final session = allSessions[i];
+          final label = _formatSessionLine(
+            _UpcomingSession(race: target, session: session),
+          );
+          await _saveDps('race_weekend_widget_session_${i + 1}', label ?? '');
+
+          // Track the first upcoming session.
+          if (nextIndex == -1) {
+            final start = session.startDateTime;
+            if (start != null && start.isAfter(now)) {
+              nextIndex = i;
+            }
+          }
+        } else {
+          await _saveDps('race_weekend_widget_session_${i + 1}', '');
+        }
+      }
+
+      await _saveDps(
+        'race_weekend_widget_next_index',
+        nextIndex.toString(),
+      );
+
+      // Countdown to the next upcoming session.
+      if (nextIndex >= 0 && nextIndex < allSessions.length) {
+        final nextSession = allSessions[nextIndex];
+        final countdownText =
+            _formatCountdownLabel(nextSession.startDateTime);
+        final sessionName = nextSession.name;
+        await _saveDps(
+          'race_weekend_widget_countdown',
+          '$sessionName • $countdownText',
+        );
+      } else {
+        await _saveDps(
+          'race_weekend_widget_countdown',
+          _formatCountdownLabel(target.startDateTime),
+        );
+      }
+    }
+
+    await _refreshRaceWeekendWidget();
   }
 
   static Future<void> updateFavoriteDrivers(
@@ -545,6 +642,18 @@ class WidgetUpdateService {
       qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
       iOSName: iOSNextSessionWidgetKind,
     );
+  }
+
+  static Future<void> _refreshRaceWeekendWidget() async {
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: androidQualifiedRaceWeekendWidgetProvider,
+      iOSName: iOSRaceWeekendWidgetKind,
+    );
+  }
+
+  static Future<void> setRaceWeekendWidgetTransparent(bool value) async {
+    await _saveDps(_raceWeekendWidgetTransparentKey, value.toString());
+    await _refreshRaceWeekendWidget();
   }
 
   static Future<void> _saveDps(String id, String value) async {

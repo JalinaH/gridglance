@@ -414,6 +414,11 @@ class _HomeScreenState extends State<HomeScreen> {
               overview.raceSchedule,
               season: _season,
             );
+            WidgetUpdateService.updateRaceWeekend(
+              overview.raceSchedule,
+              nextRace: overview.nextRace,
+              season: _season,
+            );
           });
         }
 

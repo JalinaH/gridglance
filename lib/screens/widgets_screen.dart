@@ -8,6 +8,8 @@ import '../models/race.dart';
 import '../services/widget_update_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/team_assets.dart';
+import '../utils/country_flags.dart';
+import '../widgets/circuit_track.dart';
 import '../widgets/empty_state.dart';
 
 class WidgetsScreen extends StatefulWidget {
@@ -36,6 +38,9 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   bool _teamWidgetTransparent = false;
   bool _favoriteDriverTransparent = false;
   bool _favoriteTeamTransparent = false;
+  bool _addingRaceWeekend = false;
+  String? _raceWeekendStatusMessage;
+  bool _raceWeekendWidgetTransparent = false;
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
   _WidgetPreviewData? _previewData;
@@ -285,6 +290,46 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       if (mounted) {
         setState(() {
           _addingNextSession = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _addRaceWeekendWidget() async {
+    setState(() {
+      _addingRaceWeekend = true;
+      _raceWeekendStatusMessage = null;
+    });
+
+    try {
+      final data = await _ensurePreviewData();
+      await WidgetUpdateService.updateRaceWeekend(
+        data.raceSchedule,
+        nextRace: data.nextRace,
+        season: data.season,
+      );
+      await _requestPinWidget(
+        qualifiedAndroidName:
+            WidgetUpdateService.androidQualifiedRaceWeekendWidgetProvider,
+        onStatus: (message) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _raceWeekendStatusMessage = message;
+          });
+        },
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _raceWeekendStatusMessage = "Failed to request widget";
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _addingRaceWeekend = false;
         });
       }
     }
@@ -666,6 +711,32 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               isAdding: _addingNextSession,
               onAction: _addingNextSession ? null : _addNextSessionWidget,
               statusMessage: _nextSessionStatusMessage,
+            ),
+            _buildWidgetCard(
+              context,
+              preview: _RaceWeekendPreview(
+                seasonLabel: seasonLabel,
+                race: data?.nextRace,
+                raceSchedule: data?.raceSchedule,
+                isLoading: isLoading,
+                hasError: hasError,
+              ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _raceWeekendWidgetTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _raceWeekendWidgetTransparent = value;
+                  });
+                  await WidgetUpdateService.setRaceWeekendWidgetTransparent(
+                    value,
+                  );
+                },
+              ),
+              actionLabel: _primaryActionLabel,
+              isAdding: _addingRaceWeekend,
+              onAction: _addingRaceWeekend ? null : _addRaceWeekendWidget,
+              statusMessage: _raceWeekendStatusMessage,
             ),
             _buildWidgetCard(
               context,
@@ -1804,6 +1875,327 @@ class _NextSessionPreview extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _RaceWeekendPreview extends StatelessWidget {
+  final String seasonLabel;
+  final Race? race;
+  final List<Race>? raceSchedule;
+  final bool isLoading;
+  final bool hasError;
+
+  const _RaceWeekendPreview({
+    required this.seasonLabel,
+    required this.race,
+    required this.raceSchedule,
+    required this.isLoading,
+    required this.hasError,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final raceName = _raceName;
+    final location = _location;
+    final sessionLines = _sessionLines;
+    final countdownLine = _countdownLine;
+    final nextIndex = _nextSessionIndex;
+
+    return AspectRatio(
+      aspectRatio: 16 / 14,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [colors.backgroundAlt, colors.surface],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
+              blurRadius: 10,
+              offset: Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -20,
+              top: -24,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      colors.f1RedBright.withValues(
+                        alpha: isDark ? 0.28 : 0.15,
+                      ),
+                      colors.f1Red.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        height: 3,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [colors.f1Red, colors.f1RedBright],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'RACE WEEKEND',
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      Spacer(),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.surfaceAlt.withValues(
+                            alpha: isDark ? 0.9 : 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: colors.border),
+                        ),
+                        child: Text(
+                          seasonLabel,
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  // Race name + track
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                if (race != null) ...[
+                                  Text(
+                                    countryFlag(race!.country),
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                  SizedBox(width: 6),
+                                ],
+                                Flexible(
+                                  child: Text(
+                                    raceName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: onSurface,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              location,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: colors.textMuted,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (race != null && race!.circuitId.isNotEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: CircuitTrack(
+                            circuitId: race!.circuitId,
+                            width: 52,
+                            height: 36,
+                            color: colors.f1RedBright.withValues(alpha: 0.5),
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  // Countdown
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceAlt.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Text(
+                      countdownLine,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: onSurface,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  // Session list
+                  ...List.generate(sessionLines.length, (i) {
+                    final isNext = i == nextIndex;
+                    return Padding(
+                      padding: EdgeInsets.only(top: i == 0 ? 0 : 3),
+                      child: Row(
+                        children: [
+                          if (isNext)
+                            Container(
+                              width: 3,
+                              height: 10,
+                              margin: EdgeInsets.only(right: 5),
+                              decoration: BoxDecoration(
+                                color: colors.f1Red,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          Expanded(
+                            child: Text(
+                              sessionLines[i],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: isNext ? onSurface : colors.textMuted,
+                                fontSize: 10,
+                                fontWeight: isNext
+                                    ? FontWeight.w700
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String get _raceName {
+    if (hasError) return 'Failed to load';
+    if (isLoading) return 'Loading...';
+    if (race == null) return 'No upcoming race';
+    return race!.raceName.isEmpty ? 'Race weekend' : race!.raceName;
+  }
+
+  String get _location {
+    if (hasError) return 'Check connection';
+    if (isLoading) return 'Please wait';
+    if (race == null) return 'Season complete';
+    return race!.location.isEmpty
+        ? (race!.circuitName.isEmpty ? 'Location TBA' : race!.circuitName)
+        : race!.location;
+  }
+
+  String get _countdownLine {
+    if (hasError) return 'Retry from app';
+    if (isLoading) return 'Calculating...';
+    if (race == null) return 'Awaiting next calendar';
+    final sessions = race!.sessions;
+    final now = DateTime.now();
+    for (final session in sessions) {
+      final start = session.startDateTime;
+      if (start != null && start.isAfter(now)) {
+        final remaining = start.difference(now);
+        final label = _shortCountdown(remaining);
+        return '${session.name} \u2022 $label';
+      }
+    }
+    return 'Weekend in progress';
+  }
+
+  List<String> get _sessionLines {
+    if (race == null) return [];
+    return race!.sessions.map((s) {
+      final dt = s.startDateTime;
+      if (dt == null) return s.name;
+      final local = dt.toLocal();
+      final month = _monthAbbr(local.month);
+      final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+      final minute = local.minute.toString().padLeft(2, '0');
+      final meridiem = local.hour >= 12 ? 'PM' : 'AM';
+      final dayName = _dayAbbr(local.weekday);
+      return '${s.name} \u2022 $dayName $month ${local.day} \u2022 $hour:$minute $meridiem';
+    }).toList();
+  }
+
+  int get _nextSessionIndex {
+    if (race == null) return -1;
+    final now = DateTime.now();
+    final sessions = race!.sessions;
+    for (int i = 0; i < sessions.length; i++) {
+      final start = sessions[i].startDateTime;
+      if (start != null && start.isAfter(now)) return i;
+    }
+    return -1;
+  }
+
+  static String _shortCountdown(Duration d) {
+    if (d.inDays > 0) return 'Starts in ${d.inDays}d ${d.inHours % 24}h';
+    if (d.inHours > 0) return 'Starts in ${d.inHours}h ${d.inMinutes % 60}m';
+    return 'Starts in ${d.inMinutes}m';
+  }
+
+  static String _monthAbbr(int m) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return (m >= 1 && m <= 12) ? months[m - 1] : '---';
+  }
+
+  static String _dayAbbr(int wd) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return (wd >= 1 && wd <= 7) ? days[wd - 1] : '---';
   }
 }
 
