@@ -20,20 +20,15 @@ class WidgetsScreen extends StatefulWidget {
 }
 
 class _WidgetsScreenState extends State<WidgetsScreen> {
-  bool _addingNextRace = false;
-  bool _addingNextSession = false;
   bool _addingDriver = false;
   bool _addingTeam = false;
-  String? _nextRaceStatusMessage;
-  String? _nextSessionStatusMessage;
   String? _driverStatusMessage;
   String? _teamStatusMessage;
   bool _addingFavoriteDriver = false;
   bool _addingFavoriteTeam = false;
   String? _favoriteDriverStatusMessage;
   String? _favoriteTeamStatusMessage;
-  bool _nextRaceWidgetTransparent = false;
-  bool _nextSessionWidgetTransparent = false;
+
   bool _driverWidgetTransparent = false;
   bool _teamWidgetTransparent = false;
   bool _favoriteDriverTransparent = false;
@@ -122,10 +117,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }
 
   Future<void> _loadTransparency() async {
-    final nextRaceTransparent =
-        await WidgetUpdateService.getNextRaceWidgetTransparent();
-    final nextSessionTransparent =
-        await WidgetUpdateService.getNextSessionWidgetTransparent();
+
     final driverTransparent =
         await WidgetUpdateService.getDriverWidgetTransparent();
     final teamTransparent =
@@ -138,8 +130,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       return;
     }
     setState(() {
-      _nextRaceWidgetTransparent = nextRaceTransparent;
-      _nextSessionWidgetTransparent = nextSessionTransparent;
+
       _driverWidgetTransparent = driverTransparent;
       _teamWidgetTransparent = teamTransparent;
       _favoriteDriverTransparent = favoriteDriverTransparent;
@@ -176,45 +167,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       qualifiedAndroidName: qualifiedAndroidName,
     );
     onStatus('Widget add request sent');
-  }
-
-  Future<void> _addNextRaceWidget() async {
-    setState(() {
-      _addingNextRace = true;
-      _nextRaceStatusMessage = null;
-    });
-
-    try {
-      final data = await _ensurePreviewData();
-      await WidgetUpdateService.updateNextRaceCountdown(
-        data.nextRace,
-        season: data.season,
-      );
-      await _requestPinWidget(
-        qualifiedAndroidName:
-            WidgetUpdateService.androidQualifiedNextRaceCountdownWidgetProvider,
-        onStatus: (message) {
-          if (!mounted) {
-            return;
-          }
-          setState(() {
-            _nextRaceStatusMessage = message;
-          });
-        },
-      );
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _nextRaceStatusMessage = "Failed to request widget";
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _addingNextRace = false;
-        });
-      }
-    }
   }
 
   Future<void> _addDriverWidget() async {
@@ -256,44 +208,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
   }
 
-  Future<void> _addNextSessionWidget() async {
-    setState(() {
-      _addingNextSession = true;
-      _nextSessionStatusMessage = null;
-    });
 
-    try {
-      final data = await _ensurePreviewData();
-      await WidgetUpdateService.updateNextSessionWidget(
-        data.raceSchedule,
-        season: data.season,
-      );
-      await _requestPinWidget(
-        qualifiedAndroidName:
-            WidgetUpdateService.androidQualifiedNextSessionWidgetProvider,
-        onStatus: (message) {
-          if (!mounted) {
-            return;
-          }
-          setState(() {
-            _nextSessionStatusMessage = message;
-          });
-        },
-      );
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _nextSessionStatusMessage = "Failed to request widget";
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _addingNextSession = false;
-        });
-      }
-    }
-  }
 
   Future<void> _addRaceWeekendWidget() async {
     setState(() {
@@ -577,16 +492,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
           isLoading: isLoading,
           hasError: hasError,
         );
-        final nextRacePreview = _nextRacePreview(
-          data?.nextRace,
-          isLoading: isLoading,
-          hasError: hasError,
-        );
-        final nextSessionPreview = _nextSessionPreview(
-          data?.raceSchedule,
-          isLoading: isLoading,
-          hasError: hasError,
-        );
+
 
         return ListView(
           padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -620,124 +526,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 ),
               ),
             ],
-            _buildWidgetCard(
-              context,
-              preview: _StandingsListPreview(
-                seasonLabel: seasonLabel,
-                title: 'Driver Standings',
-                subtitle: 'Top 3 drivers',
-                entries: driverStandings,
-              ),
-              option: _buildTransparencyToggle(
-                context,
-                value: _driverWidgetTransparent,
-                onChanged: (value) async {
-                  setState(() {
-                    _driverWidgetTransparent = value;
-                  });
-                  await WidgetUpdateService.setDriverWidgetTransparent(value);
-                },
-              ),
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingDriver,
-              onAction: _addingDriver ? null : _addDriverWidget,
-              statusMessage: _driverStatusMessage,
-            ),
-            _buildWidgetCard(
-              context,
-              preview: _StandingsListPreview(
-                seasonLabel: seasonLabel,
-                title: 'Team Standings',
-                subtitle: 'Top 3 teams',
-                entries: teamStandings,
-              ),
-              option: _buildTransparencyToggle(
-                context,
-                value: _teamWidgetTransparent,
-                onChanged: (value) async {
-                  setState(() {
-                    _teamWidgetTransparent = value;
-                  });
-                  await WidgetUpdateService.setTeamWidgetTransparent(value);
-                },
-              ),
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingTeam,
-              onAction: _addingTeam ? null : _addTeamWidget,
-              statusMessage: _teamStatusMessage,
-            ),
-            _buildWidgetCard(
-              context,
-              preview: _NextRaceCountdownPreview(
-                seasonLabel: seasonLabel,
-                preview: nextRacePreview,
-                title: 'Next Race',
-              ),
-              option: _buildTransparencyToggle(
-                context,
-                value: _nextRaceWidgetTransparent,
-                onChanged: (value) async {
-                  setState(() {
-                    _nextRaceWidgetTransparent = value;
-                  });
-                  await WidgetUpdateService.setNextRaceWidgetTransparent(value);
-                },
-              ),
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingNextRace,
-              onAction: _addingNextRace ? null : _addNextRaceWidget,
-              statusMessage: _nextRaceStatusMessage,
-            ),
-            _buildWidgetCard(
-              context,
-              preview: _NextSessionPreview(
-                seasonLabel: seasonLabel,
-                preview: nextSessionPreview,
-                title: 'Next Session',
-              ),
-              option: _buildTransparencyToggle(
-                context,
-                value: _nextSessionWidgetTransparent,
-                onChanged: (value) async {
-                  setState(() {
-                    _nextSessionWidgetTransparent = value;
-                  });
-                  await WidgetUpdateService.setNextSessionWidgetTransparent(
-                    value,
-                  );
-                },
-              ),
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingNextSession,
-              onAction: _addingNextSession ? null : _addNextSessionWidget,
-              statusMessage: _nextSessionStatusMessage,
-            ),
-            _buildWidgetCard(
-              context,
-              preview: _RaceWeekendPreview(
-                seasonLabel: seasonLabel,
-                race: data?.nextRace,
-                raceSchedule: data?.raceSchedule,
-                isLoading: isLoading,
-                hasError: hasError,
-              ),
-              option: _buildTransparencyToggle(
-                context,
-                value: _raceWeekendWidgetTransparent,
-                onChanged: (value) async {
-                  setState(() {
-                    _raceWeekendWidgetTransparent = value;
-                  });
-                  await WidgetUpdateService.setRaceWeekendWidgetTransparent(
-                    value,
-                  );
-                },
-              ),
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingRaceWeekend,
-              onAction: _addingRaceWeekend ? null : _addRaceWeekendWidget,
-              statusMessage: _raceWeekendStatusMessage,
-            ),
             _buildWidgetCard(
               context,
               preview: _DriverStandingsPreview(
@@ -786,6 +574,79 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               isAdding: _addingFavoriteTeam,
               onAction: _addingFavoriteTeam ? null : _addFavoriteTeamWidget,
               statusMessage: _favoriteTeamStatusMessage,
+            ),
+            _buildWidgetCard(
+              context,
+              preview: _StandingsListPreview(
+                seasonLabel: seasonLabel,
+                title: 'Driver Standings',
+                subtitle: 'Top 3 drivers',
+                entries: driverStandings,
+              ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _driverWidgetTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _driverWidgetTransparent = value;
+                  });
+                  await WidgetUpdateService.setDriverWidgetTransparent(value);
+                },
+              ),
+              actionLabel: _primaryActionLabel,
+              isAdding: _addingDriver,
+              onAction: _addingDriver ? null : _addDriverWidget,
+              statusMessage: _driverStatusMessage,
+            ),
+            _buildWidgetCard(
+              context,
+              preview: _StandingsListPreview(
+                seasonLabel: seasonLabel,
+                title: 'Team Standings',
+                subtitle: 'Top 3 teams',
+                entries: teamStandings,
+              ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _teamWidgetTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _teamWidgetTransparent = value;
+                  });
+                  await WidgetUpdateService.setTeamWidgetTransparent(value);
+                },
+              ),
+              actionLabel: _primaryActionLabel,
+              isAdding: _addingTeam,
+              onAction: _addingTeam ? null : _addTeamWidget,
+              statusMessage: _teamStatusMessage,
+            ),
+
+            _buildWidgetCard(
+              context,
+              preview: _RaceWeekendPreview(
+                seasonLabel: seasonLabel,
+                race: data?.nextRace,
+                raceSchedule: data?.raceSchedule,
+                isLoading: isLoading,
+                hasError: hasError,
+              ),
+              option: _buildTransparencyToggle(
+                context,
+                value: _raceWeekendWidgetTransparent,
+                onChanged: (value) async {
+                  setState(() {
+                    _raceWeekendWidgetTransparent = value;
+                  });
+                  await WidgetUpdateService.setRaceWeekendWidgetTransparent(
+                    value,
+                  );
+                },
+              ),
+              actionLabel: _primaryActionLabel,
+              isAdding: _addingRaceWeekend,
+              onAction: _addingRaceWeekend ? null : _addRaceWeekendWidget,
+              statusMessage: _raceWeekendStatusMessage,
             ),
           ],
         );
@@ -857,92 +718,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     );
   }
 
-  _NextRacePreviewData _nextRacePreview(
-    Race? race, {
-    required bool isLoading,
-    required bool hasError,
-  }) {
-    if (hasError) {
-      return _NextRacePreviewData(
-        name: "Failed to load",
-        location: "Check connection",
-        startLabel: "Time unavailable",
-        countdownLabel: "Retry from app",
-      );
-    }
-    if (isLoading) {
-      return _NextRacePreviewData(
-        name: "Loading next race...",
-        location: "Please wait",
-        startLabel: "Fetching schedule",
-        countdownLabel: "Calculating countdown",
-      );
-    }
-    if (race == null) {
-      return _NextRacePreviewData(
-        name: "No upcoming race",
-        location: "Season complete",
-        startLabel: "Time unavailable",
-        countdownLabel: "Awaiting next calendar",
-      );
-    }
-    return _NextRacePreviewData(
-      name: race.raceName.isEmpty ? 'Race weekend' : race.raceName,
-      location: race.location.isEmpty
-          ? (race.circuitName.isEmpty ? 'Location TBA' : race.circuitName)
-          : race.location,
-      startLabel: _formatRaceStartLabel(race.startDateTime),
-      countdownLabel: _formatRaceCountdownLabel(race.startDateTime),
-    );
-  }
 
-  _NextSessionPreviewData _nextSessionPreview(
-    List<Race>? races, {
-    required bool isLoading,
-    required bool hasError,
-  }) {
-    if (hasError) {
-      return _NextSessionPreviewData(
-        name: "Failed to load",
-        raceName: "Check connection",
-        countdownLabel: "Retry from app",
-        line1: "No additional sessions",
-        line2: "Check again soon",
-      );
-    }
-    if (isLoading) {
-      return _NextSessionPreviewData(
-        name: "Loading next session...",
-        raceName: "Please wait",
-        countdownLabel: "Calculating countdown",
-        line1: "No additional sessions",
-        line2: "Check again soon",
-      );
-    }
-    final sessions = _collectUpcomingSessions(races ?? const <Race>[]);
-    if (sessions.isEmpty) {
-      return _NextSessionPreviewData(
-        name: "No upcoming session",
-        raceName: "Schedule unavailable",
-        countdownLabel: "Check again later",
-        line1: "No additional sessions",
-        line2: "Waiting for updates",
-      );
-    }
-
-    final current = sessions[0];
-    final nextOne = sessions.length > 1 ? sessions[1] : null;
-    final nextTwo = sessions.length > 2 ? sessions[2] : null;
-    return _NextSessionPreviewData(
-      name: current.session.name,
-      raceName: current.race.raceName.isEmpty
-          ? 'Race weekend'
-          : current.race.raceName,
-      countdownLabel: _formatRaceCountdownLabel(current.session.startDateTime),
-      line1: _formatPreviewSessionLine(nextOne) ?? 'No additional sessions',
-      line2: _formatPreviewSessionLine(nextTwo) ?? 'Check again soon',
-    );
-  }
 
   List<_PreviewEntry> _driverStandingsPreview(
     List<DriverStanding>? standings, {
@@ -1061,87 +837,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     return '${number.toUpperCase()} ${code.toUpperCase()}';
   }
 
-  String _formatRaceStartLabel(DateTime? dateTime) {
-    if (dateTime == null) {
-      return 'Time TBA';
-    }
-    final local = dateTime.toLocal();
-    final month = _monthLabel(local.month);
-    final minute = local.minute.toString().padLeft(2, '0');
-    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
-    final meridiem = local.hour >= 12 ? 'PM' : 'AM';
-    return '$month ${local.day} • $hour:$minute $meridiem';
-  }
 
-  String _formatRaceCountdownLabel(DateTime? dateTime) {
-    if (dateTime == null) {
-      return 'Time TBA';
-    }
-    final remaining = dateTime.difference(DateTime.now());
-    if (remaining.isNegative) {
-      return 'Weekend in progress';
-    }
-    if (remaining.inMinutes <= 0) {
-      return 'Starting now';
-    }
-    final days = remaining.inDays;
-    final hours = remaining.inHours % 24;
-    final minutes = remaining.inMinutes % 60;
-    if (days > 0) {
-      return 'Starts in ${days}d ${hours}h';
-    }
-    if (remaining.inHours > 0) {
-      return 'Starts in ${remaining.inHours}h ${minutes}m';
-    }
-    return 'Starts in ${minutes}m';
-  }
-
-  String _monthLabel(int month) {
-    const months = <String>[
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    if (month < 1 || month > 12) {
-      return '---';
-    }
-    return months[month - 1];
-  }
-
-  List<_UpcomingPreviewSession> _collectUpcomingSessions(List<Race> races) {
-    final now = DateTime.now();
-    final sessions = <_UpcomingPreviewSession>[];
-    for (final race in races) {
-      for (final session in race.sessions) {
-        final start = session.startDateTime;
-        if (start == null || !start.isAfter(now)) {
-          continue;
-        }
-        sessions.add(_UpcomingPreviewSession(race: race, session: session));
-      }
-    }
-    sessions.sort(
-      (a, b) => a.session.startDateTime!.compareTo(b.session.startDateTime!),
-    );
-    return sessions;
-  }
-
-  String? _formatPreviewSessionLine(_UpcomingPreviewSession? item) {
-    if (item == null) {
-      return null;
-    }
-    final dateLabel = _formatRaceStartLabel(item.session.startDateTime);
-    return '${item.session.name} • $dateLabel';
-  }
 
   Widget _buildWidgetCard(
     BuildContext context, {
@@ -1508,375 +1204,7 @@ class _TeamStandingsPreview extends StatelessWidget {
   }
 }
 
-class _NextRaceCountdownPreview extends StatelessWidget {
-  final String seasonLabel;
-  final _NextRacePreviewData preview;
-  final String title;
 
-  const _NextRaceCountdownPreview({
-    required this.seasonLabel,
-    required this.preview,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final isDark = theme.brightness == Brightness.dark;
-    return AspectRatio(
-      aspectRatio: 18 / 10,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [colors.backgroundAlt, colors.surface],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
-              blurRadius: 10,
-              offset: Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -24,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      colors.f1RedBright.withValues(
-                        alpha: isDark ? 0.28 : 0.15,
-                      ),
-                      colors.f1Red.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -24,
-              bottom: -36,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surfaceAlt.withValues(alpha: 0.45),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        height: 3,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [colors.f1Red, colors.f1RedBright],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        title.toUpperCase(),
-                        style: TextStyle(
-                          color: onSurface,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      Spacer(),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceAlt.withValues(
-                            alpha: isDark ? 0.9 : 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Text(
-                          seasonLabel,
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    preview.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: onSurface,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    preview.location,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: colors.textMuted, fontSize: 11),
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: colors.surfaceAlt.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          preview.startLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 3),
-                        Text(
-                          preview.countdownLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: onSurface,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NextSessionPreview extends StatelessWidget {
-  final String seasonLabel;
-  final _NextSessionPreviewData preview;
-  final String title;
-
-  const _NextSessionPreview({
-    required this.seasonLabel,
-    required this.preview,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final isDark = theme.brightness == Brightness.dark;
-    return AspectRatio(
-      aspectRatio: 18 / 10,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [colors.backgroundAlt, colors.surface],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
-              blurRadius: 10,
-              offset: Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -24,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      colors.f1RedBright.withValues(
-                        alpha: isDark ? 0.28 : 0.15,
-                      ),
-                      colors.f1Red.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -24,
-              bottom: -36,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surfaceAlt.withValues(alpha: 0.45),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        height: 3,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [colors.f1Red, colors.f1RedBright],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        title.toUpperCase(),
-                        style: TextStyle(
-                          color: onSurface,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      Spacer(),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceAlt.withValues(
-                            alpha: isDark ? 0.9 : 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Text(
-                          seasonLabel,
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    preview.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: onSurface,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    preview.raceName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: colors.textMuted, fontSize: 11),
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: colors.surfaceAlt.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Text(
-                      preview.countdownLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: onSurface,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    preview.line1,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: onSurface,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: 3),
-                  Text(
-                    preview.line2,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: colors.textMuted, fontSize: 10),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _RaceWeekendPreview extends StatelessWidget {
   final String seasonLabel;
@@ -2219,7 +1547,7 @@ class _StandingsListPreview extends StatelessWidget {
     final onSurface = theme.colorScheme.onSurface;
     final isDark = theme.brightness == Brightness.dark;
     return AspectRatio(
-      aspectRatio: 18 / 10,
+      aspectRatio: 18 / 11,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -2327,23 +1655,31 @@ class _StandingsListPreview extends StatelessWidget {
                     style: TextStyle(color: colors.textMuted, fontSize: 11),
                   ),
                   SizedBox(height: 8),
-                  _StandingsRow(
-                    position: "1",
-                    name: entries[0].name,
-                    points: entries[0].points,
-                    highlight: true,
-                  ),
-                  SizedBox(height: 6),
-                  _StandingsRow(
-                    position: "2",
-                    name: entries[1].name,
-                    points: entries[1].points,
-                  ),
-                  SizedBox(height: 6),
-                  _StandingsRow(
-                    position: "3",
-                    name: entries[2].name,
-                    points: entries[2].points,
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _StandingsRow(
+                          position: "1",
+                          name: entries[0].name,
+                          points: entries[0].points,
+                          highlight: true,
+                        ),
+                        SizedBox(height: 6),
+                        _StandingsRow(
+                          position: "2",
+                          name: entries[1].name,
+                          points: entries[1].points,
+                        ),
+                        SizedBox(height: 6),
+                        _StandingsRow(
+                          position: "3",
+                          name: entries[2].name,
+                          points: entries[2].points,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -2496,42 +1832,7 @@ class _TeamPreviewData {
   });
 }
 
-class _NextRacePreviewData {
-  final String name;
-  final String location;
-  final String startLabel;
-  final String countdownLabel;
 
-  const _NextRacePreviewData({
-    required this.name,
-    required this.location,
-    required this.startLabel,
-    required this.countdownLabel,
-  });
-}
-
-class _NextSessionPreviewData {
-  final String name;
-  final String raceName;
-  final String countdownLabel;
-  final String line1;
-  final String line2;
-
-  const _NextSessionPreviewData({
-    required this.name,
-    required this.raceName,
-    required this.countdownLabel,
-    required this.line1,
-    required this.line2,
-  });
-}
-
-class _UpcomingPreviewSession {
-  final Race race;
-  final RaceSession session;
-
-  const _UpcomingPreviewSession({required this.race, required this.session});
-}
 
 class _DriverPreviewRow extends StatelessWidget {
   final _DriverPreviewData preview;
