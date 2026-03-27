@@ -37,8 +37,7 @@ class WidgetUpdateService {
       'RaceWeekendWidgetProvider';
   static const String androidQualifiedRaceWeekendWidgetProvider =
       'com.gridglance.app.RaceWeekendWidgetProvider';
-  static const String iOSRaceWeekendWidgetKind =
-      'GridGlanceRaceWeekendWidget';
+  static const String iOSRaceWeekendWidgetKind = 'GridGlanceRaceWeekendWidget';
   static const String iOSAppGroupId = 'group.com.gridglance.app';
   static const String iOSDriverWidgetKind = 'GridGlanceDriverStandingsWidget';
   static const String iOSTeamWidgetKind = 'GridGlanceTeamStandingsWidget';
@@ -277,10 +276,7 @@ class WidgetUpdateService {
     if (target == null) {
       await _saveDps('race_weekend_widget_name', 'No upcoming race');
       await _saveDps('race_weekend_widget_location', 'Season complete');
-      await _saveDps(
-        'race_weekend_widget_countdown',
-        'Awaiting next calendar',
-      );
+      await _saveDps('race_weekend_widget_countdown', 'Awaiting next calendar');
       for (int i = 1; i <= 7; i++) {
         await _saveDps('race_weekend_widget_session_$i', '');
       }
@@ -322,16 +318,12 @@ class WidgetUpdateService {
         }
       }
 
-      await _saveDps(
-        'race_weekend_widget_next_index',
-        nextIndex.toString(),
-      );
+      await _saveDps('race_weekend_widget_next_index', nextIndex.toString());
 
       // Countdown to the next upcoming session.
       if (nextIndex >= 0 && nextIndex < allSessions.length) {
         final nextSession = allSessions[nextIndex];
-        final countdownText =
-            _formatCountdownLabel(nextSession.startDateTime);
+        final countdownText = _formatCountdownLabel(nextSession.startDateTime);
         final sessionName = nextSession.name;
         await _saveDps(
           'race_weekend_widget_countdown',

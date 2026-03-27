@@ -106,33 +106,33 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                         ],
                       ),
                     ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    StatPill(
-                      text: _positionLabel(widget.team.position),
-                      color: colors.f1Red,
-                      animateValue: double.tryParse(widget.team.position),
-                      animatePrefix: 'P',
-                    ),
-                    SizedBox(height: 6),
-                    StatPill(
-                      text: '${widget.team.points} PTS',
-                      animateValue: double.tryParse(widget.team.points),
-                      animateSuffix: ' PTS',
-                    ),
-                    SizedBox(height: 6),
-                    StatPill(
-                      text: '${widget.team.wins} W',
-                      animateValue: double.tryParse(widget.team.wins),
-                      animateSuffix: ' W',
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        StatPill(
+                          text: _positionLabel(widget.team.position),
+                          color: colors.f1Red,
+                          animateValue: double.tryParse(widget.team.position),
+                          animatePrefix: 'P',
+                        ),
+                        SizedBox(height: 6),
+                        StatPill(
+                          text: '${widget.team.points} PTS',
+                          animateValue: double.tryParse(widget.team.points),
+                          animateSuffix: ' PTS',
+                        ),
+                        SizedBox(height: 6),
+                        StatPill(
+                          text: '${widget.team.wins} W',
+                          animateValue: double.tryParse(widget.team.wins),
+                          animateSuffix: ' W',
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
             ),
-            ],
-          ),
           ),
           GlassCard(
             child: Column(

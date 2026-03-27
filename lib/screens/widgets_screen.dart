@@ -6,6 +6,7 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../services/widget_update_service.dart';
+import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
 import '../utils/team_assets.dart';
 import '../utils/country_flags.dart';
@@ -36,6 +37,8 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   bool _addingRaceWeekend = false;
   String? _raceWeekendStatusMessage;
   bool _raceWeekendWidgetTransparent = false;
+  String? _favoriteDriverId;
+  String? _favoriteTeamId;
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
   _WidgetPreviewData? _previewData;
@@ -43,6 +46,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFavoriteIds();
     _previewFuture = _loadPreviewData();
     _previewFuture.then((value) {
       if (!mounted) {
@@ -53,6 +57,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       });
     });
     _loadTransparency();
+  }
+
+  Future<void> _loadFavoriteIds() async {
+    final driverId = await UserPreferences.getFavoriteDriverId();
+    final teamId = await UserPreferences.getFavoriteTeamId();
+    if (!mounted) return;
+    setState(() {
+      _favoriteDriverId = driverId;
+      _favoriteTeamId = teamId;
+    });
   }
 
   Future<_WidgetPreviewData> _loadPreviewData() async {
@@ -117,7 +131,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }
 
   Future<void> _loadTransparency() async {
-
     final driverTransparent =
         await WidgetUpdateService.getDriverWidgetTransparent();
     final teamTransparent =
@@ -130,7 +143,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       return;
     }
     setState(() {
-
       _driverWidgetTransparent = driverTransparent;
       _teamWidgetTransparent = teamTransparent;
       _favoriteDriverTransparent = favoriteDriverTransparent;
@@ -207,8 +219,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       }
     }
   }
-
-
 
   Future<void> _addRaceWeekendWidget() async {
     setState(() {
@@ -493,7 +503,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
           hasError: hasError,
         );
 
-
         return ListView(
           padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
@@ -675,7 +684,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         points: "",
       );
     }
-    final driver = (standings ?? []).isEmpty ? null : standings!.first;
+    DriverStanding? driver;
+    if (_favoriteDriverId != null &&
+        _favoriteDriverId!.isNotEmpty &&
+        standings != null) {
+      driver = standings.cast<DriverStanding?>().firstWhere(
+        (d) => d!.driverId == _favoriteDriverId,
+        orElse: () => null,
+      );
+    }
+    driver ??= (standings ?? []).isEmpty ? null : standings!.first;
     if (driver == null) {
       return _DriverPreviewData(
         name: "Standings",
@@ -707,7 +725,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     if (isLoading) {
       return _TeamPreviewData(name: "Loading...", points: "", position: "--");
     }
-    final team = (standings ?? []).isEmpty ? null : standings!.first;
+    ConstructorStanding? team;
+    if (_favoriteTeamId != null &&
+        _favoriteTeamId!.isNotEmpty &&
+        standings != null) {
+      team = standings.cast<ConstructorStanding?>().firstWhere(
+        (t) => t!.constructorId == _favoriteTeamId,
+        orElse: () => null,
+      );
+    }
+    team ??= (standings ?? []).isEmpty ? null : standings!.first;
     if (team == null) {
       return _TeamPreviewData(name: "Standings", points: "", position: "--");
     }
@@ -717,8 +744,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       position: team.position,
     );
   }
-
-
 
   List<_PreviewEntry> _driverStandingsPreview(
     List<DriverStanding>? standings, {
@@ -836,8 +861,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               : '---');
     return '${number.toUpperCase()} ${code.toUpperCase()}';
   }
-
-
 
   Widget _buildWidgetCard(
     BuildContext context, {
@@ -1204,8 +1227,6 @@ class _TeamStandingsPreview extends StatelessWidget {
   }
 }
 
-
-
 class _RaceWeekendPreview extends StatelessWidget {
   final String seasonLabel;
   final Race? race;
@@ -1515,8 +1536,18 @@ class _RaceWeekendPreview extends StatelessWidget {
 
   static String _monthAbbr(int m) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return (m >= 1 && m <= 12) ? months[m - 1] : '---';
   }
@@ -1547,7 +1578,7 @@ class _StandingsListPreview extends StatelessWidget {
     final onSurface = theme.colorScheme.onSurface;
     final isDark = theme.brightness == Brightness.dark;
     return AspectRatio(
-      aspectRatio: 18 / 11,
+      aspectRatio: 18 / 13,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -1603,6 +1634,7 @@ class _StandingsListPreview extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header row
                   Row(
                     children: [
                       Container(
@@ -1649,42 +1681,164 @@ class _StandingsListPreview extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 6),
                   Text(
                     subtitle,
                     style: TextStyle(color: colors.textMuted, fontSize: 11),
                   ),
                   SizedBox(height: 8),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _StandingsRow(
-                          position: "1",
-                          name: entries[0].name,
-                          points: entries[0].points,
-                          highlight: true,
-                        ),
-                        SizedBox(height: 6),
-                        _StandingsRow(
-                          position: "2",
-                          name: entries[1].name,
-                          points: entries[1].points,
-                        ),
-                        SizedBox(height: 6),
-                        _StandingsRow(
-                          position: "3",
-                          name: entries[2].name,
-                          points: entries[2].points,
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Podium section
+                  Expanded(child: _buildPodium(context, colors, onSurface)),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPodium(BuildContext context, AppColors colors, Color onSurface) {
+    final second = entries.length > 1 ? entries[1] : null;
+    final first = entries.isNotEmpty ? entries[0] : null;
+    final third = entries.length > 2 ? entries[2] : null;
+
+    return Column(
+      children: [
+        // Names & points row: 2nd · 1st (raised) · 3rd
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: second != null
+                    ? _podiumLabel(second, 2, colors, onSurface)
+                    : SizedBox.shrink(),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: first != null
+                      ? _podiumLabel(first, 1, colors, onSurface)
+                      : SizedBox.shrink(),
+                ),
+              ),
+              Expanded(
+                child: third != null
+                    ? _podiumLabel(third, 3, colors, onSurface)
+                    : SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 4),
+        // Podium blocks
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: _podiumBlock(2, colors, height: 30)),
+            Expanded(child: _podiumBlock(1, colors, height: 42)),
+            Expanded(child: _podiumBlock(3, colors, height: 20)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _podiumLabel(
+    _PreviewEntry entry,
+    int position,
+    AppColors colors,
+    Color onSurface,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Position badge
+        Container(
+          width: 18,
+          height: 18,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: position == 1
+                ? colors.f1Red.withValues(alpha: 0.95)
+                : colors.surfaceAlt,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            '$position',
+            style: TextStyle(
+              color: position == 1 ? Colors.white : colors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        SizedBox(height: 4),
+        // Name
+        Text(
+          entry.name.split(' ').last.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: onSurface,
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
+          ),
+        ),
+        SizedBox(height: 2),
+        // Points
+        if (entry.points.isNotEmpty)
+          Text(
+            entry.points,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _podiumBlock(
+    int position,
+    AppColors colors, {
+    required double height,
+  }) {
+    final positionColors = {
+      1: colors.f1Red,
+      2: colors.textMuted,
+      3: Color(0xFFCD7F32),
+    };
+    final blockColor = positionColors[position] ?? colors.surfaceAlt;
+
+    return Container(
+      height: height,
+      margin: EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            blockColor.withValues(alpha: 0.4),
+            blockColor.withValues(alpha: 0.15),
+          ],
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(6)),
+        border: Border.all(color: blockColor.withValues(alpha: 0.3)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$position',
+        style: TextStyle(
+          color: blockColor,
+          fontSize: height * 0.4,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
@@ -1831,8 +1985,6 @@ class _TeamPreviewData {
     required this.position,
   });
 }
-
-
 
 class _DriverPreviewRow extends StatelessWidget {
   final _DriverPreviewData preview;

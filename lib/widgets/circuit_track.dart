@@ -51,10 +51,7 @@ class CircuitTrack extends StatelessWidget {
             );
           }
           // Placeholder when no SVG exists yet.
-          return _CircuitPlaceholder(
-            color: trackColor,
-            circuitId: circuitId,
-          );
+          return _CircuitPlaceholder(color: trackColor, circuitId: circuitId);
         },
       ),
     );
@@ -89,9 +86,7 @@ class _CircuitPlaceholder extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surfaceAlt.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Center(
         child: Icon(

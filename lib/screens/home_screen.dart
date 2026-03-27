@@ -915,15 +915,9 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Expanded(
-              child: _podiumBlock(second, 2, colors, height: 40),
-            ),
-            Expanded(
-              child: _podiumBlock(first, 1, colors, height: 56),
-            ),
-            Expanded(
-              child: _podiumBlock(third, 3, colors, height: 28),
-            ),
+            Expanded(child: _podiumBlock(second, 2, colors, height: 40)),
+            Expanded(child: _podiumBlock(first, 1, colors, height: 56)),
+            Expanded(child: _podiumBlock(third, 3, colors, height: 28)),
           ],
         ),
       ],
@@ -955,8 +949,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (flag != null)
-              Text(flag, style: TextStyle(fontSize: 10)),
+            if (flag != null) Text(flag, style: TextStyle(fontSize: 10)),
             if (flag != null) SizedBox(width: 3),
             Flexible(
               child: Text(
@@ -1013,9 +1006,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-        border: Border.all(
-          color: blockColor.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: blockColor.withValues(alpha: 0.3)),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -1037,6 +1028,11 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    if (teams.length >= 3) {
+      return _buildTeamPodium(teams[0], teams[1], teams[2]);
+    }
+
+    // Fallback for <3 teams.
     return Column(
       children: teams
           .map(
@@ -1049,6 +1045,130 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
           .toList(),
+    );
+  }
+
+  Widget _buildTeamPodium(
+    ConstructorStanding first,
+    ConstructorStanding second,
+    ConstructorStanding third,
+  ) {
+    final colors = AppColors.of(context);
+    return Column(
+      children: [
+        // Team logos row: 2nd · 1st (raised) · 3rd
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: _podiumTeam(second, 2, colors)),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 18),
+                child: _podiumTeam(first, 1, colors),
+              ),
+            ),
+            Expanded(child: _podiumTeam(third, 3, colors)),
+          ],
+        ),
+        SizedBox(height: 8),
+        // Podium blocks
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: _teamPodiumBlock(second, 2, colors, height: 40)),
+            Expanded(child: _teamPodiumBlock(first, 1, colors, height: 56)),
+            Expanded(child: _teamPodiumBlock(third, 3, colors, height: 28)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _podiumTeam(ConstructorStanding team, int position, AppColors colors) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: position == 1 ? 56 : 44,
+          height: position == 1 ? 56 : 44,
+          decoration: BoxDecoration(
+            color: colors.surfaceAlt,
+            shape: BoxShape.circle,
+            border: Border.all(color: colors.border),
+          ),
+          child: Center(
+            child: TeamLogo(
+              teamName: team.teamName,
+              size: position == 1 ? 28 : 22,
+            ),
+          ),
+        ),
+        SizedBox(height: 6),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            team.teamName.toUpperCase(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        SizedBox(height: 2),
+        Text(
+          "${team.points} PTS",
+          style: TextStyle(
+            color: colors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _teamPodiumBlock(
+    ConstructorStanding team,
+    int position,
+    AppColors colors, {
+    required double height,
+  }) {
+    final positionColors = {
+      1: colors.f1Red,
+      2: colors.textMuted,
+      3: Color(0xFFCD7F32),
+    };
+    final blockColor = positionColors[position] ?? colors.surfaceAlt;
+
+    return Container(
+      height: height,
+      margin: EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            blockColor.withValues(alpha: 0.4),
+            blockColor.withValues(alpha: 0.15),
+          ],
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+        border: Border.all(color: blockColor.withValues(alpha: 0.3)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$position',
+        style: TextStyle(
+          color: blockColor,
+          fontSize: height * 0.4,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
     );
   }
 

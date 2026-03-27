@@ -44,10 +44,7 @@ class DriverPhoto extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: 0.8),
-            color.withValues(alpha: 0.4),
-          ],
+          colors: [color.withValues(alpha: 0.8), color.withValues(alpha: 0.4)],
         ),
         border: Border.all(
           color: color.withValues(alpha: isDark ? 0.6 : 0.8),
@@ -61,9 +58,7 @@ class DriverPhoto extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipOval(
-        child: _buildImage(colors, color),
-      ),
+      child: ClipOval(child: _buildImage(colors, color)),
     );
   }
 

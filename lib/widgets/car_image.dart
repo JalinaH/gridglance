@@ -45,9 +45,7 @@ class CarImage extends StatelessWidget {
             color.withValues(alpha: isDark ? 0.05 : 0.03),
           ],
         ),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(11),
