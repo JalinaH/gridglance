@@ -300,7 +300,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }
 
   Future<void> _addFavoriteDriverWidget() async {
-    final driver = await _pickFavoriteDriver();
+    DriverStanding? driver;
+    final favoriteDriverId = await UserPreferences.getFavoriteDriverId();
+    if (favoriteDriverId != null) {
+      final data = await _ensurePreviewData();
+      driver = data.drivers.cast<DriverStanding?>().firstWhere(
+        (d) => d!.driverId == favoriteDriverId,
+        orElse: () => null,
+      );
+    }
+    driver ??= await _pickFavoriteDriver();
     if (driver == null) {
       return;
     }
@@ -341,7 +350,23 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }
 
   Future<void> _addFavoriteTeamWidget() async {
-    final selection = await _pickFavoriteTeam();
+    _TeamSelection? selection;
+    final favoriteTeamId = await UserPreferences.getFavoriteTeamId();
+    if (favoriteTeamId != null) {
+      final data = await _ensurePreviewData();
+      final team = data.teams.cast<ConstructorStanding?>().firstWhere(
+        (t) => t!.constructorId == favoriteTeamId,
+        orElse: () => null,
+      );
+      if (team != null) {
+        final teamDrivers = data.drivers
+            .where((d) => d.constructorId == team.constructorId)
+            .take(2)
+            .toList();
+        selection = _TeamSelection(team: team, drivers: teamDrivers);
+      }
+    }
+    selection ??= await _pickFavoriteTeam();
     if (selection == null) {
       return;
     }
