@@ -578,13 +578,13 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 setState(() {
                   _favoriteDriverTransparent = value;
                 });
-                await WidgetUpdateService
-                    .setFavoriteDriverDefaultTransparent(value);
+                await WidgetUpdateService.setFavoriteDriverDefaultTransparent(
+                  value,
+                );
               },
               actionLabel: _primaryActionLabel,
               isAdding: _addingFavoriteDriver,
-              onAction:
-                  _addingFavoriteDriver ? null : _addFavoriteDriverWidget,
+              onAction: _addingFavoriteDriver ? null : _addFavoriteDriverWidget,
               statusMessage: _favoriteDriverStatusMessage,
             ),
             SizedBox(height: 12),
@@ -602,13 +602,13 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 setState(() {
                   _favoriteTeamTransparent = value;
                 });
-                await WidgetUpdateService
-                    .setFavoriteTeamDefaultTransparent(value);
+                await WidgetUpdateService.setFavoriteTeamDefaultTransparent(
+                  value,
+                );
               },
               actionLabel: _primaryActionLabel,
               isAdding: _addingFavoriteTeam,
-              onAction:
-                  _addingFavoriteTeam ? null : _addFavoriteTeamWidget,
+              onAction: _addingFavoriteTeam ? null : _addFavoriteTeamWidget,
               statusMessage: _favoriteTeamStatusMessage,
             ),
             SizedBox(height: 24),
@@ -666,9 +666,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                       setState(() {
                         _teamWidgetTransparent = value;
                       });
-                      await WidgetUpdateService.setTeamWidgetTransparent(
-                        value,
-                      );
+                      await WidgetUpdateService.setTeamWidgetTransparent(value);
                     },
                     actionLabel: _primaryActionLabel,
                     isAdding: _addingTeam,
@@ -710,8 +708,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               },
               actionLabel: _primaryActionLabel,
               isAdding: _addingRaceWeekend,
-              onAction:
-                  _addingRaceWeekend ? null : _addRaceWeekendWidget,
+              onAction: _addingRaceWeekend ? null : _addRaceWeekendWidget,
               statusMessage: _raceWeekendStatusMessage,
             ),
           ],
@@ -1000,10 +997,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Preview
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: preview,
-          ),
+          ClipRRect(borderRadius: BorderRadius.circular(12), child: preview),
           SizedBox(height: compact ? 8 : 12),
           // Controls row
           Row(
@@ -1066,10 +1060,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 12),
                     ),
                     onPressed: onAction,
-                    icon: Icon(
-                      isAdding ? null : Icons.add_rounded,
-                      size: 16,
-                    ),
+                    icon: Icon(isAdding ? null : Icons.add_rounded, size: 16),
                     label: Text(
                       isAdding ? "Adding..." : actionLabel,
                       style: TextStyle(
@@ -1356,7 +1347,12 @@ class _TeamStandingsPreview extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 10),
-                  Expanded(child: _TeamPreviewRow(preview: preview, driverLines: driverLines)),
+                  Expanded(
+                    child: _TeamPreviewRow(
+                      preview: preview,
+                      driverLines: driverLines,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1595,7 +1591,9 @@ class _RaceWeekendPreview extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: isNext ? onSurface : colors.textMuted,
+                                    color: isNext
+                                        ? onSurface
+                                        : colors.textMuted,
                                     fontSize: 10,
                                     fontWeight: isNext
                                         ? FontWeight.w700
