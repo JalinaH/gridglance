@@ -76,7 +76,6 @@ flutter:
     - lib/assets/images/
     - lib/assets/logo/
     - lib/assets/circuits/
-    - lib/assets/drivers/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
