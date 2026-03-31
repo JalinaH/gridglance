@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../services/f1_image_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/team_colors.dart';
 
@@ -54,10 +55,16 @@ class CarImage extends StatelessWidget {
     );
   }
 
+  String? get _resolvedUrl {
+    if (imageUrl != null && imageUrl!.isNotEmpty) return imageUrl;
+    return F1ImageService.instance.carImageUrl(constructorId);
+  }
+
   Widget _buildImage(Color color, AppColors colors) {
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
+    final url = _resolvedUrl;
+    if (url != null && url.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: imageUrl!,
+        imageUrl: url,
         width: width,
         height: height,
         fit: BoxFit.contain,
