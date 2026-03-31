@@ -18,11 +18,7 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
         val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
         val title = prefs.getString("team_widget_title", "Team Standings") ?: "Team Standings"
-        val subtitle = prefs.getString("team_widget_subtitle", "Top 3 teams") ?: "Top 3 teams"
         val season = prefs.getString("team_widget_season", defaultSeason) ?: defaultSeason
-        val team1 = prefs.getString("team_1", "Update from app") ?: "Update from app"
-        val team2 = prefs.getString("team_2", "TBD") ?: "TBD"
-        val team3 = prefs.getString("team_3", "TBD") ?: "TBD"
         val isTransparent = prefs.getString("team_widget_transparent", "false") == "true"
 
         for (appWidgetId in appWidgetIds) {
@@ -34,11 +30,34 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
             }
             views.setInt(R.id.widget_root, "setBackgroundResource", background)
             views.setTextViewText(R.id.widget_title, title)
-            views.setTextViewText(R.id.widget_subtitle, subtitle)
             views.setTextViewText(R.id.widget_season, season)
-            views.setTextViewText(R.id.team_one, team1)
-            views.setTextViewText(R.id.team_two, team2)
-            views.setTextViewText(R.id.team_three, team3)
+
+            // Podium team names and points.
+            views.setTextViewText(
+                R.id.team_one_name,
+                prefs.getString("team_1_name", "P1") ?: "P1",
+            )
+            views.setTextViewText(
+                R.id.team_one_pts,
+                "${prefs.getString("team_1_pts", "0") ?: "0"} pts",
+            )
+            views.setTextViewText(
+                R.id.team_two_name,
+                prefs.getString("team_2_name", "P2") ?: "P2",
+            )
+            views.setTextViewText(
+                R.id.team_two_pts,
+                "${prefs.getString("team_2_pts", "0") ?: "0"} pts",
+            )
+            views.setTextViewText(
+                R.id.team_three_name,
+                prefs.getString("team_3_name", "P3") ?: "P3",
+            )
+            views.setTextViewText(
+                R.id.team_three_pts,
+                "${prefs.getString("team_3_pts", "0") ?: "0"} pts",
+            )
+
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

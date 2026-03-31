@@ -25,9 +25,17 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         val countdown = prefs.getString("race_weekend_widget_countdown", "Waiting for schedule") ?: "Waiting for schedule"
         val isTransparent = prefs.getString("race_weekend_widget_transparent", "false") == "true"
 
-        val sessionIds = arrayOf(
+        val sessionTextIds = arrayOf(
             R.id.session_1, R.id.session_2, R.id.session_3,
             R.id.session_4, R.id.session_5, R.id.session_6, R.id.session_7
+        )
+        val sessionRowIds = arrayOf(
+            R.id.session_1_row, R.id.session_2_row, R.id.session_3_row,
+            R.id.session_4_row, R.id.session_5_row, R.id.session_6_row, R.id.session_7_row
+        )
+        val sessionDotIds = arrayOf(
+            R.id.session_1_dot, R.id.session_2_dot, R.id.session_3_dot,
+            R.id.session_4_dot, R.id.session_5_dot, R.id.session_6_dot, R.id.session_7_dot
         )
 
         for (appWidgetId in appWidgetIds) {
@@ -44,24 +52,26 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.race_location, raceLocation)
             views.setTextViewText(R.id.next_session_countdown, countdown)
 
-            for (i in sessionIds.indices) {
+            for (i in sessionTextIds.indices) {
                 val key = "race_weekend_widget_session_${i + 1}"
                 val text = prefs.getString(key, null)
                 if (text != null && text.isNotEmpty()) {
-                    views.setTextViewText(sessionIds[i], text)
-                    views.setViewVisibility(sessionIds[i], View.VISIBLE)
+                    views.setTextViewText(sessionTextIds[i], text)
+                    views.setViewVisibility(sessionRowIds[i], View.VISIBLE)
                 } else {
-                    views.setViewVisibility(sessionIds[i], View.GONE)
+                    views.setViewVisibility(sessionRowIds[i], View.GONE)
                 }
             }
 
-            // Highlight the next session row.
+            // Highlight the next session row with active dot and brighter text.
             val nextIndex = prefs.getString("race_weekend_widget_next_index", "-1")?.toIntOrNull() ?: -1
-            for (i in sessionIds.indices) {
+            for (i in sessionTextIds.indices) {
                 if (i == nextIndex) {
-                    views.setTextColor(sessionIds[i], 0xFFF7F8FA.toInt())
+                    views.setTextColor(sessionTextIds[i], 0xFFF7F8FA.toInt())
+                    views.setInt(sessionDotIds[i], "setBackgroundResource", R.drawable.widget_timeline_dot_active)
                 } else {
-                    views.setTextColor(sessionIds[i], 0xFFDCE1EA.toInt())
+                    views.setTextColor(sessionTextIds[i], 0xFFDCE1EA.toInt())
+                    views.setInt(sessionDotIds[i], "setBackgroundResource", R.drawable.widget_timeline_dot)
                 }
             }
 

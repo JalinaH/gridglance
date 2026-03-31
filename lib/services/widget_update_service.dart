@@ -153,6 +153,22 @@ class WidgetUpdateService {
     await _saveDps('driver_2', _formatDriver(top, 1));
     await _saveDps('driver_3', _formatDriver(top, 2));
 
+    // Store separate fields for podium layout.
+    for (int i = 0; i < 3; i++) {
+      final idx = i + 1;
+      if (i < top.length) {
+        await _saveDps('driver_${idx}_last_name', top[i].familyName.toUpperCase());
+        await _saveDps('driver_${idx}_first_name', top[i].givenName);
+        await _saveDps('driver_${idx}_pts', top[i].points);
+        await _saveDps('driver_${idx}_code', _shortDriverCode(top[i]));
+      } else {
+        await _saveDps('driver_${idx}_last_name', 'TBD');
+        await _saveDps('driver_${idx}_first_name', '');
+        await _saveDps('driver_${idx}_pts', '0');
+        await _saveDps('driver_${idx}_code', '---');
+      }
+    }
+
     // Download headshot images for top 3 drivers.
     for (int i = 0; i < top.length && i < 3; i++) {
       await _saveDriverImage(
@@ -183,6 +199,18 @@ class WidgetUpdateService {
     await _saveDps('team_2', _formatTeam(top, 1));
     await _saveDps('team_3', _formatTeam(top, 2));
 
+    // Store separate fields for podium layout.
+    for (int i = 0; i < 3; i++) {
+      final idx = i + 1;
+      if (i < top.length) {
+        await _saveDps('team_${idx}_name', top[i].teamName);
+        await _saveDps('team_${idx}_pts', top[i].points);
+      } else {
+        await _saveDps('team_${idx}_name', 'TBD');
+        await _saveDps('team_${idx}_pts', '0');
+      }
+    }
+
     await _refreshTeamWidget();
   }
 
@@ -201,6 +229,11 @@ class WidgetUpdateService {
       await _saveDps('next_race_widget_location', 'Season complete');
       await _saveDps('next_race_widget_start', 'Time TBA');
       await _saveDps('next_race_widget_countdown', 'Awaiting next calendar');
+      await _saveDps('next_race_widget_days', '--');
+      await _saveDps('next_race_widget_hours', '--');
+      await _saveDps('next_race_widget_mins', '--');
+      await _saveDps('next_race_widget_round', '');
+      await _saveDps('next_race_widget_circuit', '');
     } else {
       await _saveDps(
         'next_race_widget_name',
@@ -220,6 +253,31 @@ class WidgetUpdateService {
         'next_race_widget_countdown',
         _formatCountdownLabel(race.startDateTime),
       );
+      await _saveDps('next_race_widget_circuit', race.circuitName);
+      await _saveDps('next_race_widget_round', 'R${race.round}');
+
+      // Segmented countdown.
+      final remaining = race.startDateTime != null
+          ? race.startDateTime!.difference(DateTime.now())
+          : Duration.zero;
+      if (remaining.isNegative || remaining.inMinutes <= 0) {
+        await _saveDps('next_race_widget_days', '0');
+        await _saveDps('next_race_widget_hours', '0');
+        await _saveDps('next_race_widget_mins', '0');
+      } else {
+        await _saveDps(
+          'next_race_widget_days',
+          remaining.inDays.toString(),
+        );
+        await _saveDps(
+          'next_race_widget_hours',
+          (remaining.inHours % 24).toString(),
+        );
+        await _saveDps(
+          'next_race_widget_mins',
+          (remaining.inMinutes % 60).toString(),
+        );
+      }
     }
 
     await _refreshNextRaceWidget();

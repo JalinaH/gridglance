@@ -68,7 +68,9 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.driver_name, name)
             views.setTextViewText(R.id.driver_team, team)
             views.setTextViewText(R.id.driver_position, position)
-            views.setTextViewText(R.id.driver_points, points)
+            // Strip "pts" suffix for the stat box — show just the number.
+            val ptsNumber = points.replace(" pts", "").replace("pts", "")
+            views.setTextViewText(R.id.driver_points, ptsNumber)
 
             // Load driver headshot from file saved by Flutter.
             val imagePath = prefs.getString(

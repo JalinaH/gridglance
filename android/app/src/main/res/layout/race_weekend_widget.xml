@@ -55,11 +55,11 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Race name + track image -->
+    <!-- Race name + location -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -75,7 +75,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:text="Australian Grand Prix"
                 android:textColor="#F7F8FA"
                 android:textSize="13sp"
@@ -91,7 +91,7 @@
                 android:maxLines="1"
                 android:text="Melbourne, Australia"
                 android:textColor="#9EA7B5"
-                android:textSize="10sp" />
+                android:textSize="9sp" />
         </LinearLayout>
 
         <ImageView
@@ -104,104 +104,251 @@
     </LinearLayout>
 
     <!-- Next session countdown -->
-    <TextView
-        android:id="@+id/next_session_countdown"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/widget_row_highlight"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:padding="6dp"
-        android:text="Qualifying in 2d 4h"
-        android:textColor="#F7F8FA"
-        android:textSize="12sp"
-        android:textStyle="bold" />
-
-    <!-- Session rows -->
-    <TextView
-        android:id="@+id/session_1"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:text="FP1 · Fri 14 Mar · 11:30 AM"
-        android:textColor="#DCE1EA"
-        android:textSize="10sp" />
+        android:background="@drawable/widget_row_highlight"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="6dp">
 
-    <TextView
-        android:id="@+id/session_2"
+        <TextView
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/widget_timeline_dot_active"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/next_session_countdown"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="Qualifying in 2d 4h"
+            android:textColor="#F7F8FA"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Session timeline rows -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:text="FP2 · Fri 14 Mar · 3:00 PM"
-        android:textColor="#DCE1EA"
-        android:textSize="10sp" />
+        android:layout_marginTop="6dp"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/session_3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:text="FP3 · Sat 15 Mar · 12:30 PM"
-        android:textColor="#DCE1EA"
-        android:textSize="10sp" />
+        <LinearLayout
+            android:id="@+id/session_1_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
 
-    <TextView
-        android:id="@+id/session_4"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:text="QUAL · Sat 15 Mar · 4:00 PM"
-        android:textColor="#DCE1EA"
-        android:textSize="10sp" />
+            <TextView
+                android:id="@+id/session_1_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/widget_timeline_dot"
+                android:text="" />
 
-    <TextView
-        android:id="@+id/session_5"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:text="RACE · Sun 16 Mar · 3:00 PM"
-        android:textColor="#DCE1EA"
-        android:textSize="10sp" />
+            <TextView
+                android:id="@+id/session_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="FP1 · Fri 14 Mar · 11:30 AM"
+                android:textColor="#DCE1EA"
+                android:textSize="10sp" />
+        </LinearLayout>
 
-    <TextView
-        android:id="@+id/session_6"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:textColor="#DCE1EA"
-        android:textSize="10sp"
-        android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/session_2_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
 
-    <TextView
-        android:id="@+id/session_7"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:textColor="#DCE1EA"
-        android:textSize="10sp"
-        android:visibility="gone" />
+            <TextView
+                android:id="@+id/session_2_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/widget_timeline_dot"
+                android:text="" />
 
+            <TextView
+                android:id="@+id/session_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="FP2 · Fri 14 Mar · 3:00 PM"
+                android:textColor="#DCE1EA"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/session_3_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
+
+            <TextView
+                android:id="@+id/session_3_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/widget_timeline_dot"
+                android:text="" />
+
+            <TextView
+                android:id="@+id/session_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="FP3 · Sat 15 Mar · 12:30 PM"
+                android:textColor="#DCE1EA"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/session_4_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
+
+            <TextView
+                android:id="@+id/session_4_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/widget_timeline_dot"
+                android:text="" />
+
+            <TextView
+                android:id="@+id/session_4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="QUAL · Sat 15 Mar · 4:00 PM"
+                android:textColor="#DCE1EA"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/session_5_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
+
+            <TextView
+                android:id="@+id/session_5_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/widget_timeline_dot"
+                android:text="" />
+
+            <TextView
+                android:id="@+id/session_5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="RACE · Sun 16 Mar · 3:00 PM"
+                android:textColor="#DCE1EA"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/session_6_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/session_6_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/widget_timeline_dot"
+                android:text="" />
+
+            <TextView
+                android:id="@+id/session_6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textColor="#DCE1EA"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/session_7_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/session_7_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/widget_timeline_dot"
+                android:text="" />
+
+            <TextView
+                android:id="@+id/session_7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textColor="#DCE1EA"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

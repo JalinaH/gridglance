@@ -25,19 +25,35 @@ private struct GridGlanceProvider: TimelineProvider {
       "driver_widget_subtitle": "Top 3 drivers",
       "driver_widget_season": "\(Calendar.current.component(.year, from: Date()))",
       "driver_1": "Max Verstappen - 0 pts",
+      "driver_1_last_name": "VERSTAPPEN",
+      "driver_1_pts": "0",
       "driver_2": "Lando Norris - 0 pts",
+      "driver_2_last_name": "NORRIS",
+      "driver_2_pts": "0",
       "driver_3": "Charles Leclerc - 0 pts",
+      "driver_3_last_name": "LECLERC",
+      "driver_3_pts": "0",
       "team_widget_title": "Team Standings",
       "team_widget_subtitle": "Top 3 teams",
       "team_widget_season": "\(Calendar.current.component(.year, from: Date()))",
       "team_1": "Red Bull - 0 pts",
+      "team_1_name": "Red Bull",
+      "team_1_pts": "0",
       "team_2": "Ferrari - 0 pts",
+      "team_2_name": "Ferrari",
+      "team_2_pts": "0",
       "team_3": "Mercedes - 0 pts",
+      "team_3_name": "Mercedes",
+      "team_3_pts": "0",
       "next_race_widget_title": "Next Race",
       "next_race_widget_name": "Race weekend",
       "next_race_widget_location": "Location TBA",
       "next_race_widget_start": "Time TBA",
       "next_race_widget_countdown": "Starts soon",
+      "next_race_widget_days": "--",
+      "next_race_widget_hours": "--",
+      "next_race_widget_mins": "--",
+      "next_race_widget_round": "",
       "next_session_widget_title": "Next Session",
       "next_session_widget_name": "Practice 1",
       "next_session_widget_race": "Race weekend",
@@ -80,9 +96,20 @@ private struct GridGlanceProvider: TimelineProvider {
   }
 }
 
+// MARK: - Shared Components
+
+private let f1Red = Color(red: 0.88, green: 0.02, blue: 0.0)
+private let f1RedLight = Color(red: 1.0, green: 0.23, blue: 0.19)
+private let silverColor = Color(red: 0.62, green: 0.65, blue: 0.71)
+private let bronzeColor = Color(red: 0.80, green: 0.50, blue: 0.20)
+private let surfaceAlt = Color(red: 0.11, green: 0.14, blue: 0.19)
+private let borderColor = Color(red: 0.14, green: 0.17, blue: 0.23)
+private let textMuted = Color.white.opacity(0.55)
+
 private struct DriverPhotoView: View {
   let image: UIImage?
   let size: CGFloat
+  var borderColor: Color = .white.opacity(0.3)
 
   var body: some View {
     if let uiImage = image {
@@ -91,29 +118,37 @@ private struct DriverPhotoView: View {
         .aspectRatio(contentMode: .fill)
         .frame(width: size, height: size)
         .clipShape(Circle())
-        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+        .overlay(Circle().stroke(borderColor, lineWidth: 1.5))
     } else {
       Circle()
-        .fill(Color.white.opacity(0.1))
+        .fill(surfaceAlt)
         .frame(width: size, height: size)
-        .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+        .overlay(Circle().stroke(borderColor, lineWidth: 1.5))
     }
   }
 }
 
 private struct WidgetHeader: View {
   let title: String
-  let subtitle: String
+  let trailing: String
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 2) {
+    HStack(spacing: 6) {
+      RoundedRectangle(cornerRadius: 1.5)
+        .fill(LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing))
+        .frame(width: 28, height: 3)
       Text(title)
-        .font(.headline)
-        .lineLimit(1)
-      Text(subtitle)
-        .font(.caption2)
-        .foregroundColor(.white.opacity(0.8))
-        .lineLimit(1)
+        .font(.system(size: 10, weight: .bold, design: .default))
+        .textCase(.uppercase)
+        .tracking(0.5)
+      Spacer()
+      Text(trailing)
+        .font(.system(size: 9, weight: .bold))
+        .foregroundColor(.white.opacity(0.6))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(surfaceAlt)
+        .cornerRadius(6)
     }
   }
 }
@@ -132,8 +167,8 @@ private struct WidgetSurface<Content: View>: View {
         .containerBackground(for: .widget) {
           LinearGradient(
             colors: [
-              Color(red: 0.12, green: 0.12, blue: 0.14),
-              Color(red: 0.18, green: 0.08, blue: 0.09)
+              Color(red: 0.07, green: 0.09, blue: 0.13),
+              Color(red: 0.08, green: 0.10, blue: 0.15)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -145,8 +180,8 @@ private struct WidgetSurface<Content: View>: View {
         .background(
           LinearGradient(
             colors: [
-              Color(red: 0.12, green: 0.12, blue: 0.14),
-              Color(red: 0.18, green: 0.08, blue: 0.09)
+              Color(red: 0.07, green: 0.09, blue: 0.13),
+              Color(red: 0.08, green: 0.10, blue: 0.15)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -156,56 +191,194 @@ private struct WidgetSurface<Content: View>: View {
   }
 }
 
+// MARK: - Podium Components
+
+private struct PodiumBlock: View {
+  let position: Int
+  let height: CGFloat
+
+  private var color: Color {
+    switch position {
+    case 1: return f1Red
+    case 2: return silverColor
+    default: return bronzeColor
+    }
+  }
+
+  var body: some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: 6, style: .continuous)
+        .fill(
+          LinearGradient(
+            colors: [color.opacity(0.35), color.opacity(0.12)],
+            startPoint: .top,
+            endPoint: .bottom
+          )
+        )
+        .overlay(
+          RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .stroke(color.opacity(0.35), lineWidth: 1)
+        )
+      Text("\(position)")
+        .font(.system(size: height * 0.35, weight: .black))
+        .foregroundColor(color)
+    }
+    .frame(height: height)
+  }
+}
+
+// MARK: - Driver Standings (Podium)
+
 private struct DriverStandingsWidgetView: View {
   let entry: GridGlanceEntry
 
   var body: some View {
     WidgetSurface {
-      VStack(alignment: .leading, spacing: 8) {
+      VStack(alignment: .leading, spacing: 0) {
         WidgetHeader(
           title: entry.text("driver_widget_title", fallback: "Driver Standings"),
-          subtitle: "Season \(entry.text("driver_widget_season", fallback: "--"))"
+          trailing: entry.text("driver_widget_season", fallback: "--")
         )
-        driverRow(entry.text("driver_1", fallback: "Update from app"), imageKey: "driver_1_image", bold: true)
-        driverRow(entry.text("driver_2", fallback: "TBD"), imageKey: "driver_2_image", bold: false)
-        driverRow(entry.text("driver_3", fallback: "TBD"), imageKey: "driver_3_image", bold: false)
+        .foregroundColor(.white)
+
+        Spacer(minLength: 4)
+
+        // Podium: driver photos + names + blocks
+        HStack(alignment: .bottom, spacing: 4) {
+          // 2nd place
+          VStack(spacing: 3) {
+            DriverPhotoView(image: entry.image("driver_2_image"), size: 32)
+            Text(entry.text("driver_2_last_name", fallback: "P2"))
+              .font(.system(size: 8, weight: .bold, design: .default))
+              .tracking(0.3)
+              .lineLimit(1)
+            Text("\(entry.text("driver_2_pts", fallback: "0")) pts")
+              .font(.system(size: 7))
+              .foregroundColor(textMuted)
+            PodiumBlock(position: 2, height: 32)
+          }
+          .frame(maxWidth: .infinity)
+
+          // 1st place
+          VStack(spacing: 3) {
+            DriverPhotoView(image: entry.image("driver_1_image"), size: 40, borderColor: f1Red.opacity(0.6))
+            Text(entry.text("driver_1_last_name", fallback: "P1"))
+              .font(.system(size: 9, weight: .bold, design: .default))
+              .tracking(0.3)
+              .lineLimit(1)
+            Text("\(entry.text("driver_1_pts", fallback: "0")) pts")
+              .font(.system(size: 7, weight: .semibold))
+              .foregroundColor(.white.opacity(0.7))
+            PodiumBlock(position: 1, height: 44)
+          }
+          .frame(maxWidth: .infinity)
+
+          // 3rd place
+          VStack(spacing: 3) {
+            DriverPhotoView(image: entry.image("driver_3_image"), size: 32)
+            Text(entry.text("driver_3_last_name", fallback: "P3"))
+              .font(.system(size: 8, weight: .bold, design: .default))
+              .tracking(0.3)
+              .lineLimit(1)
+            Text("\(entry.text("driver_3_pts", fallback: "0")) pts")
+              .font(.system(size: 7))
+              .foregroundColor(textMuted)
+            PodiumBlock(position: 3, height: 22)
+          }
+          .frame(maxWidth: .infinity)
+        }
       }
       .foregroundColor(.white)
     }
   }
-
-  private func driverRow(_ text: String, imageKey: String, bold: Bool) -> some View {
-    HStack(spacing: 6) {
-      DriverPhotoView(image: entry.image(imageKey), size: 20)
-      Text(text)
-        .font(bold ? .subheadline.weight(.semibold) : .caption)
-        .lineLimit(1)
-    }
-  }
 }
+
+// MARK: - Team Standings (Podium)
 
 private struct TeamStandingsWidgetView: View {
   let entry: GridGlanceEntry
 
   var body: some View {
     WidgetSurface {
-      VStack(alignment: .leading, spacing: 8) {
+      VStack(alignment: .leading, spacing: 0) {
         WidgetHeader(
           title: entry.text("team_widget_title", fallback: "Team Standings"),
-          subtitle: "Season \(entry.text("team_widget_season", fallback: "--"))"
+          trailing: entry.text("team_widget_season", fallback: "--")
         )
-        Text(entry.text("team_1", fallback: "Update from app"))
-          .font(.subheadline.weight(.semibold))
-          .lineLimit(1)
-        Text(entry.text("team_2", fallback: "TBD"))
-          .font(.caption)
-          .lineLimit(1)
-        Text(entry.text("team_3", fallback: "TBD"))
-          .font(.caption)
-          .lineLimit(1)
+        .foregroundColor(.white)
+
+        Spacer(minLength: 6)
+
+        HStack(alignment: .bottom, spacing: 4) {
+          // 2nd
+          VStack(spacing: 4) {
+            Text(entry.text("team_2_name", fallback: "P2"))
+              .font(.system(size: 9, weight: .bold))
+              .multilineTextAlignment(.center)
+              .lineLimit(2)
+            Text("\(entry.text("team_2_pts", fallback: "0")) pts")
+              .font(.system(size: 7))
+              .foregroundColor(textMuted)
+            PodiumBlock(position: 2, height: 32)
+          }
+          .frame(maxWidth: .infinity)
+
+          // 1st
+          VStack(spacing: 4) {
+            Text(entry.text("team_1_name", fallback: "P1"))
+              .font(.system(size: 10, weight: .bold))
+              .multilineTextAlignment(.center)
+              .lineLimit(2)
+            Text("\(entry.text("team_1_pts", fallback: "0")) pts")
+              .font(.system(size: 8, weight: .semibold))
+              .foregroundColor(.white.opacity(0.7))
+            PodiumBlock(position: 1, height: 44)
+          }
+          .frame(maxWidth: .infinity)
+
+          // 3rd
+          VStack(spacing: 4) {
+            Text(entry.text("team_3_name", fallback: "P3"))
+              .font(.system(size: 9, weight: .bold))
+              .multilineTextAlignment(.center)
+              .lineLimit(2)
+            Text("\(entry.text("team_3_pts", fallback: "0")) pts")
+              .font(.system(size: 7))
+              .foregroundColor(textMuted)
+            PodiumBlock(position: 3, height: 22)
+          }
+          .frame(maxWidth: .infinity)
+        }
       }
       .foregroundColor(.white)
     }
+  }
+}
+
+// MARK: - Next Race (Countdown Segments)
+
+private struct CountdownBox: View {
+  let value: String
+  let label: String
+
+  var body: some View {
+    VStack(spacing: 2) {
+      Text(value)
+        .font(.system(size: 18, weight: .bold))
+        .foregroundColor(.white)
+      Text(label)
+        .font(.system(size: 7, weight: .bold))
+        .foregroundColor(textMuted)
+        .textCase(.uppercase)
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.vertical, 6)
+    .background(surfaceAlt)
+    .cornerRadius(8)
+    .overlay(
+      RoundedRectangle(cornerRadius: 8)
+        .stroke(f1Red.opacity(0.2), lineWidth: 1)
+    )
   }
 }
 
@@ -214,118 +387,284 @@ private struct NextRaceWidgetView: View {
 
   var body: some View {
     WidgetSurface {
-      VStack(alignment: .leading, spacing: 8) {
-        WidgetHeader(
-          title: entry.text("next_race_widget_title", fallback: "Next Race"),
-          subtitle: "Season \(entry.text("next_race_widget_season", fallback: "--"))"
-        )
+      VStack(alignment: .leading, spacing: 0) {
+        HStack {
+          WidgetHeader(
+            title: entry.text("next_race_widget_title", fallback: "Next Race"),
+            trailing: entry.text("next_race_widget_round", fallback: "")
+          )
+        }
+        .foregroundColor(.white)
+
+        Spacer(minLength: 6)
+
         Text(entry.text("next_race_widget_name", fallback: "No upcoming race"))
-          .font(.subheadline.weight(.semibold))
+          .font(.system(size: 13, weight: .bold))
           .lineLimit(1)
+
         Text(entry.text("next_race_widget_location", fallback: "Location TBA"))
-          .font(.caption)
+          .font(.system(size: 9))
+          .foregroundColor(textMuted)
           .lineLimit(1)
+          .padding(.top, 1)
+
         Text(entry.text("next_race_widget_start", fallback: "Time TBA"))
-          .font(.caption2)
-          .foregroundColor(.white.opacity(0.8))
+          .font(.system(size: 8))
+          .foregroundColor(textMuted)
           .lineLimit(1)
-        Text(entry.text("next_race_widget_countdown", fallback: "Awaiting next calendar"))
-          .font(.caption2.weight(.semibold))
-          .lineLimit(1)
+
+        Spacer(minLength: 6)
+
+        // Countdown boxes
+        HStack(spacing: 4) {
+          CountdownBox(
+            value: entry.text("next_race_widget_days", fallback: "--"),
+            label: "Days"
+          )
+          Text(":")
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(f1Red.opacity(0.3))
+          CountdownBox(
+            value: entry.text("next_race_widget_hours", fallback: "--"),
+            label: "Hrs"
+          )
+          Text(":")
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(f1Red.opacity(0.3))
+          CountdownBox(
+            value: entry.text("next_race_widget_mins", fallback: "--"),
+            label: "Min"
+          )
+        }
       }
       .foregroundColor(.white)
     }
   }
 }
+
+// MARK: - Next Session (Badge Style)
 
 private struct NextSessionWidgetView: View {
   let entry: GridGlanceEntry
 
   var body: some View {
     WidgetSurface {
-      VStack(alignment: .leading, spacing: 8) {
+      VStack(alignment: .leading, spacing: 0) {
         WidgetHeader(
           title: entry.text("next_session_widget_title", fallback: "Next Session"),
-          subtitle: "Season \(entry.text("next_session_widget_season", fallback: "--"))"
+          trailing: entry.text("next_session_widget_season", fallback: "--")
         )
+        .foregroundColor(.white)
+
+        Spacer(minLength: 6)
+
+        // Session badge
         Text(entry.text("next_session_widget_name", fallback: "No upcoming session"))
-          .font(.subheadline.weight(.semibold))
-          .lineLimit(1)
+          .font(.system(size: 11, weight: .bold))
+          .foregroundColor(.white)
+          .padding(.horizontal, 8)
+          .padding(.vertical, 3)
+          .background(
+            LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing)
+          )
+          .cornerRadius(4)
+
         Text(entry.text("next_session_widget_race", fallback: "Schedule unavailable"))
-          .font(.caption)
+          .font(.system(size: 11, weight: .semibold))
+          .foregroundColor(.white.opacity(0.85))
           .lineLimit(1)
+          .padding(.top, 6)
+
+        // Countdown
         Text(entry.text("next_session_widget_countdown", fallback: "Check again later"))
-          .font(.caption2.weight(.semibold))
+          .font(.system(size: 12, weight: .bold))
+          .foregroundColor(.white)
           .lineLimit(1)
-        Text(entry.text("next_session_widget_line1", fallback: "No additional sessions"))
-          .font(.caption2)
-          .lineLimit(1)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(8)
+          .background(surfaceAlt)
+          .cornerRadius(8)
+          .overlay(
+            RoundedRectangle(cornerRadius: 8)
+              .stroke(borderColor, lineWidth: 1)
+          )
+          .padding(.top, 6)
+
+        Spacer(minLength: 4)
+
+        // Upcoming
+        VStack(alignment: .leading, spacing: 4) {
+          HStack(spacing: 6) {
+            Circle()
+              .fill(Color(red: 0.17, green: 0.21, blue: 0.27))
+              .frame(width: 5, height: 5)
+            Text(entry.text("next_session_widget_line1", fallback: "No additional sessions"))
+              .font(.system(size: 9))
+              .foregroundColor(.white.opacity(0.7))
+              .lineLimit(1)
+          }
+          HStack(spacing: 6) {
+            Circle()
+              .fill(Color(red: 0.17, green: 0.21, blue: 0.27))
+              .frame(width: 5, height: 5)
+            Text(entry.text("next_session_widget_line2", fallback: "Check again soon"))
+              .font(.system(size: 9))
+              .foregroundColor(textMuted)
+              .lineLimit(1)
+          }
+        }
       }
       .foregroundColor(.white)
     }
   }
 }
+
+// MARK: - Favorite Driver (Hero Card)
 
 private struct FavoriteDriverWidgetView: View {
   let entry: GridGlanceEntry
 
+  private var pointsNumber: String {
+    entry.text("favorite_driver_default_points", fallback: "-- pts")
+      .replacingOccurrences(of: " pts", with: "")
+      .replacingOccurrences(of: "pts", with: "")
+  }
+
   var body: some View {
     WidgetSurface {
-      VStack(alignment: .leading, spacing: 8) {
-        WidgetHeader(
-          title: "Favorite Driver",
-          subtitle: "Season \(entry.text("favorite_driver_default_season", fallback: "--"))"
-        )
-        HStack(spacing: 10) {
-          DriverPhotoView(image: entry.image("favorite_driver_default_image"), size: 36)
-          VStack(alignment: .leading, spacing: 2) {
+      HStack(spacing: 0) {
+        // Accent stripe
+        RoundedRectangle(cornerRadius: 2)
+          .fill(LinearGradient(colors: [f1Red, f1RedLight], startPoint: .top, endPoint: .bottom))
+          .frame(width: 4)
+
+        HStack(spacing: 12) {
+          // Driver photo
+          DriverPhotoView(
+            image: entry.image("favorite_driver_default_image"),
+            size: 52,
+            borderColor: f1Red.opacity(0.5)
+          )
+
+          VStack(alignment: .leading, spacing: 0) {
+            // Season
+            Text(entry.text("favorite_driver_default_season", fallback: "--"))
+              .font(.system(size: 8, weight: .bold))
+              .foregroundColor(.white.opacity(0.5))
+              .padding(.horizontal, 6)
+              .padding(.vertical, 2)
+              .background(surfaceAlt)
+              .cornerRadius(4)
+
             Text(entry.text("favorite_driver_default_name", fallback: "Set favorite driver"))
-              .font(.subheadline.weight(.semibold))
+              .font(.system(size: 14, weight: .bold))
               .lineLimit(1)
+              .padding(.top, 3)
+
             Text(entry.text("favorite_driver_default_team", fallback: ""))
-              .font(.caption)
+              .font(.system(size: 9))
+              .foregroundColor(textMuted)
               .lineLimit(1)
+              .padding(.top, 1)
+
+            // Stat boxes
+            HStack(spacing: 6) {
+              StatBox(label: "POS", value: entry.text("favorite_driver_default_position", fallback: "--"))
+              StatBox(label: "PTS", value: pointsNumber)
+            }
+            .padding(.top, 6)
           }
         }
-        HStack(spacing: 8) {
-          Text("P\(entry.text("favorite_driver_default_position", fallback: "--"))")
-          Text(entry.text("favorite_driver_default_points", fallback: "-- pts"))
-        }
-        .font(.caption2.weight(.semibold))
+        .padding(.leading, 12)
       }
       .foregroundColor(.white)
     }
   }
 }
+
+private struct StatBox: View {
+  let label: String
+  let value: String
+
+  var body: some View {
+    VStack(spacing: 1) {
+      Text(label)
+        .font(.system(size: 7, weight: .bold))
+        .foregroundColor(textMuted)
+      Text(value)
+        .font(.system(size: 15, weight: .bold))
+        .foregroundColor(.white)
+    }
+    .frame(width: 48, height: 36)
+    .background(surfaceAlt)
+    .cornerRadius(8)
+    .overlay(
+      RoundedRectangle(cornerRadius: 8)
+        .stroke(borderColor, lineWidth: 1)
+    )
+  }
+}
+
+// MARK: - Favorite Team (Hero Card)
 
 private struct FavoriteTeamWidgetView: View {
   let entry: GridGlanceEntry
 
+  private var pointsNumber: String {
+    entry.text("favorite_team_default_points", fallback: "-- pts")
+      .replacingOccurrences(of: " pts", with: "")
+      .replacingOccurrences(of: "pts", with: "")
+  }
+
   var body: some View {
     WidgetSurface {
-      VStack(alignment: .leading, spacing: 8) {
-        WidgetHeader(
-          title: "Favorite Team",
-          subtitle: "Season \(entry.text("favorite_team_default_season", fallback: "--"))"
-        )
-        Text(entry.text("favorite_team_default_name", fallback: "Set favorite team"))
-          .font(.subheadline.weight(.semibold))
+      HStack(spacing: 0) {
+        // Accent stripe
+        RoundedRectangle(cornerRadius: 2)
+          .fill(LinearGradient(colors: [f1Red, f1RedLight], startPoint: .top, endPoint: .bottom))
+          .frame(width: 4)
+
+        VStack(alignment: .leading, spacing: 0) {
+          // Season
+          Text(entry.text("favorite_team_default_season", fallback: "--"))
+            .font(.system(size: 8, weight: .bold))
+            .foregroundColor(.white.opacity(0.5))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(surfaceAlt)
+            .cornerRadius(4)
+
+          Text(entry.text("favorite_team_default_name", fallback: "Set favorite team"))
+            .font(.system(size: 14, weight: .bold))
+            .lineLimit(1)
+            .padding(.top, 3)
+
+          // Drivers
+          Text(
+            "\(entry.text("favorite_team_default_driver1", fallback: "TBD"))  \(entry.text("favorite_team_default_driver2", fallback: "TBD"))"
+          )
+          .font(.system(size: 9))
+          .foregroundColor(textMuted)
           .lineLimit(1)
-        HStack(spacing: 8) {
-          Text("P\(entry.text("favorite_team_default_position", fallback: "--"))")
-          Text(entry.text("favorite_team_default_points", fallback: "-- pts"))
+          .padding(.top, 1)
+
+          // Stats
+          HStack(spacing: 6) {
+            StatBox(label: "POS", value: entry.text("favorite_team_default_position", fallback: "--"))
+            StatBox(label: "PTS", value: pointsNumber)
+          }
+          .padding(.top, 6)
         }
-        .font(.caption2.weight(.semibold))
-        Text(
-          "\(entry.text("favorite_team_default_driver1", fallback: "TBD"))  \(entry.text("favorite_team_default_driver2", fallback: "TBD"))"
-        )
-        .font(.caption)
-        .lineLimit(1)
+        .padding(.leading, 12)
+
+        Spacer()
       }
       .foregroundColor(.white)
     }
   }
 }
+
+// MARK: - Widget Declarations
 
 struct GridGlanceDriverStandingsWidget: Widget {
   let kind: String = "GridGlanceDriverStandingsWidget"
@@ -335,7 +674,7 @@ struct GridGlanceDriverStandingsWidget: Widget {
       DriverStandingsWidgetView(entry: entry)
     }
     .configurationDisplayName("Driver Standings")
-    .description("Top 3 Formula 1 drivers.")
+    .description("Top 3 Formula 1 drivers on a podium.")
     .supportedFamilies([.systemMedium])
   }
 }
@@ -348,7 +687,7 @@ struct GridGlanceTeamStandingsWidget: Widget {
       TeamStandingsWidgetView(entry: entry)
     }
     .configurationDisplayName("Team Standings")
-    .description("Top 3 Formula 1 teams.")
+    .description("Top 3 Formula 1 teams on a podium.")
     .supportedFamilies([.systemMedium])
   }
 }
@@ -361,7 +700,7 @@ struct GridGlanceNextRaceWidget: Widget {
       NextRaceWidgetView(entry: entry)
     }
     .configurationDisplayName("Next Race Countdown")
-    .description("Upcoming race and start countdown.")
+    .description("Upcoming race with countdown timer.")
     .supportedFamilies([.systemSmall, .systemMedium])
   }
 }

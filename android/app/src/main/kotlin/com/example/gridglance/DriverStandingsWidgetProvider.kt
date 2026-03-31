@@ -20,11 +20,7 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
         val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
         val title = prefs.getString("driver_widget_title", "Driver Standings") ?: "Driver Standings"
-        val subtitle = prefs.getString("driver_widget_subtitle", "Top 3 drivers") ?: "Top 3 drivers"
         val season = prefs.getString("driver_widget_season", defaultSeason) ?: defaultSeason
-        val driver1 = prefs.getString("driver_1", "Update from app") ?: "Update from app"
-        val driver2 = prefs.getString("driver_2", "TBD") ?: "TBD"
-        val driver3 = prefs.getString("driver_3", "TBD") ?: "TBD"
         val isTransparent = prefs.getString("driver_widget_transparent", "false") == "true"
 
         for (appWidgetId in appWidgetIds) {
@@ -36,11 +32,33 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
             }
             views.setInt(R.id.widget_root, "setBackgroundResource", background)
             views.setTextViewText(R.id.widget_title, title)
-            views.setTextViewText(R.id.widget_subtitle, subtitle)
             views.setTextViewText(R.id.widget_season, season)
-            views.setTextViewText(R.id.driver_one, driver1)
-            views.setTextViewText(R.id.driver_two, driver2)
-            views.setTextViewText(R.id.driver_three, driver3)
+
+            // Podium driver names and points.
+            views.setTextViewText(
+                R.id.driver_one_name,
+                prefs.getString("driver_1_last_name", "P1") ?: "P1",
+            )
+            views.setTextViewText(
+                R.id.driver_one_pts,
+                "${prefs.getString("driver_1_pts", "0") ?: "0"} pts",
+            )
+            views.setTextViewText(
+                R.id.driver_two_name,
+                prefs.getString("driver_2_last_name", "P2") ?: "P2",
+            )
+            views.setTextViewText(
+                R.id.driver_two_pts,
+                "${prefs.getString("driver_2_pts", "0") ?: "0"} pts",
+            )
+            views.setTextViewText(
+                R.id.driver_three_name,
+                prefs.getString("driver_3_last_name", "P3") ?: "P3",
+            )
+            views.setTextViewText(
+                R.id.driver_three_pts,
+                "${prefs.getString("driver_3_pts", "0") ?: "0"} pts",
+            )
 
             // Load driver headshot images.
             val photoIds = arrayOf(R.id.driver_one_photo, R.id.driver_two_photo, R.id.driver_three_photo)

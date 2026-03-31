@@ -67,9 +67,11 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             views.setInt(R.id.widget_root, "setBackgroundResource", background)
             views.setTextViewText(R.id.widget_season, season)
             views.setTextViewText(R.id.team_name, name)
-            views.setTextViewText(R.id.team_points, points)
-            views.setTextViewText(R.id.team_position, position)
             views.setTextViewText(R.id.team_drivers, "$driver1  $driver2")
+            views.setTextViewText(R.id.team_position, position)
+            // Strip "pts" suffix for the stat box.
+            val ptsNumber = points.replace(" pts", "").replace("pts", "")
+            views.setTextViewText(R.id.team_points, ptsNumber)
             views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
