@@ -10,6 +10,12 @@ private struct GridGlanceEntry: TimelineEntry {
   func text(_ key: String, fallback: String) -> String {
     values[key] ?? fallback
   }
+
+  /// Loads an image from a file path stored in the entry values.
+  func image(_ key: String) -> UIImage? {
+    guard let path = values[key], !path.isEmpty else { return nil }
+    return UIImage(contentsOfFile: path)
+  }
 }
 
 private struct GridGlanceProvider: TimelineProvider {
@@ -71,6 +77,27 @@ private struct GridGlanceProvider: TimelineProvider {
       }
     }
     return GridGlanceEntry(date: Date(), values: values)
+  }
+}
+
+private struct DriverPhotoView: View {
+  let image: UIImage?
+  let size: CGFloat
+
+  var body: some View {
+    if let uiImage = image {
+      Image(uiImage: uiImage)
+        .resizable()
+        .aspectRatio(contentMode: .fill)
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+    } else {
+      Circle()
+        .fill(Color.white.opacity(0.1))
+        .frame(width: size, height: size)
+        .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+    }
   }
 }
 
@@ -139,17 +166,20 @@ private struct DriverStandingsWidgetView: View {
           title: entry.text("driver_widget_title", fallback: "Driver Standings"),
           subtitle: "Season \(entry.text("driver_widget_season", fallback: "--"))"
         )
-        Text(entry.text("driver_1", fallback: "Update from app"))
-          .font(.subheadline.weight(.semibold))
-          .lineLimit(1)
-        Text(entry.text("driver_2", fallback: "TBD"))
-          .font(.caption)
-          .lineLimit(1)
-        Text(entry.text("driver_3", fallback: "TBD"))
-          .font(.caption)
-          .lineLimit(1)
+        driverRow(entry.text("driver_1", fallback: "Update from app"), imageKey: "driver_1_image", bold: true)
+        driverRow(entry.text("driver_2", fallback: "TBD"), imageKey: "driver_2_image", bold: false)
+        driverRow(entry.text("driver_3", fallback: "TBD"), imageKey: "driver_3_image", bold: false)
       }
       .foregroundColor(.white)
+    }
+  }
+
+  private func driverRow(_ text: String, imageKey: String, bold: Bool) -> some View {
+    HStack(spacing: 6) {
+      DriverPhotoView(image: entry.image(imageKey), size: 20)
+      Text(text)
+        .font(bold ? .subheadline.weight(.semibold) : .caption)
+        .lineLimit(1)
     }
   }
 }
@@ -246,12 +276,17 @@ private struct FavoriteDriverWidgetView: View {
           title: "Favorite Driver",
           subtitle: "Season \(entry.text("favorite_driver_default_season", fallback: "--"))"
         )
-        Text(entry.text("favorite_driver_default_name", fallback: "Set favorite driver"))
-          .font(.subheadline.weight(.semibold))
-          .lineLimit(1)
-        Text(entry.text("favorite_driver_default_team", fallback: ""))
-          .font(.caption)
-          .lineLimit(1)
+        HStack(spacing: 10) {
+          DriverPhotoView(image: entry.image("favorite_driver_default_image"), size: 36)
+          VStack(alignment: .leading, spacing: 2) {
+            Text(entry.text("favorite_driver_default_name", fallback: "Set favorite driver"))
+              .font(.subheadline.weight(.semibold))
+              .lineLimit(1)
+            Text(entry.text("favorite_driver_default_team", fallback: ""))
+              .font(.caption)
+              .lineLimit(1)
+          }
+        }
         HStack(spacing: 8) {
           Text("P\(entry.text("favorite_driver_default_position", fallback: "--"))")
           Text(entry.text("favorite_driver_default_points", fallback: "-- pts"))

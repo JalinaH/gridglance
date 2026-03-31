@@ -90,6 +90,15 @@
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
+            <ImageView
+                android:id="@+id/driver_one_photo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/widget_driver_photo"
+                android:contentDescription="Driver photo"
+                android:scaleType="centerCrop" />
+
             <TextView
                 android:id="@+id/driver_one"
                 android:layout_width="0dp"
@@ -124,6 +133,15 @@
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
+            <ImageView
+                android:id="@+id/driver_two_photo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/widget_driver_photo"
+                android:contentDescription="Driver photo"
+                android:scaleType="centerCrop" />
+
             <TextView
                 android:id="@+id/driver_two"
                 android:layout_width="0dp"
@@ -157,6 +175,15 @@
                 android:textColor="#B8C0CC"
                 android:textSize="11sp"
                 android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/driver_three_photo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/widget_driver_photo"
+                android:contentDescription="Driver photo"
+                android:scaleType="centerCrop" />
 
             <TextView
                 android:id="@+id/driver_three"

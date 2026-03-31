@@ -64,6 +64,27 @@ import workmanager
       case "getWidgetData":
         let fallback = args["defaultValue"] as? String
         result(defaults.string(forKey: id) ?? fallback)
+      case "saveWidgetImage":
+        guard let data = args["bytes"] as? FlutterStandardTypedData else {
+          result(FlutterError(code: "INVALID_ARGS", message: "Missing bytes", details: nil))
+          return
+        }
+        guard let containerURL = FileManager.default.containerURL(
+          forSecurityApplicationGroupIdentifier: self.widgetAppGroupId
+        ) else {
+          result(FlutterError(code: "NO_GROUP", message: "App group unavailable", details: nil))
+          return
+        }
+        let imagesDir = containerURL.appendingPathComponent("widget_images")
+        try? FileManager.default.createDirectory(at: imagesDir, withIntermediateDirectories: true)
+        let fileURL = imagesDir.appendingPathComponent("\(id).png")
+        do {
+          try data.data.write(to: fileURL)
+          defaults.set(fileURL.path, forKey: id)
+          result(fileURL.path)
+        } catch {
+          result(FlutterError(code: "WRITE_FAILED", message: error.localizedDescription, details: nil))
+        }
       default:
         result(FlutterMethodNotImplemented)
       }

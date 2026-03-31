@@ -5,8 +5,10 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.RemoteViews
+import java.io.File
 import java.util.Calendar
 
 class FavoriteDriverWidgetProvider : AppWidgetProvider() {
@@ -67,6 +69,22 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.driver_team, team)
             views.setTextViewText(R.id.driver_position, position)
             views.setTextViewText(R.id.driver_points, points)
+
+            // Load driver headshot from file saved by Flutter.
+            val imagePath = prefs.getString(
+                "${prefix}image",
+                prefs.getString("${fallbackPrefix}image", null),
+            )
+            if (imagePath != null) {
+                val file = File(imagePath)
+                if (file.exists()) {
+                    val bitmap = BitmapFactory.decodeFile(imagePath)
+                    if (bitmap != null) {
+                        views.setImageViewBitmap(R.id.driver_photo, bitmap)
+                    }
+                }
+            }
+
             views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
