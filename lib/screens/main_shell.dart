@@ -199,7 +199,7 @@ class _MainShellState extends State<MainShell> {
     final colors = AppColors.of(context);
     final onSurface = theme.colorScheme.onSurface;
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    const barHeight = 35.0;
+    const barHeight = 56.0;
     return ClipRRect(
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       child: Container(
@@ -288,14 +288,14 @@ class _MainShellState extends State<MainShell> {
             Icon(
               selected ? selectedIcon : icon,
               color: selected ? activeColor : inactiveColor,
-              size: 28,
+              size: 24,
             ),
-            SizedBox(height: 4),
+            SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
                 color: selected ? textColor : inactiveColor,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 letterSpacing: 0.3,
               ),
