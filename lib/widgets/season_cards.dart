@@ -419,7 +419,6 @@ class RaceCard extends StatelessWidget {
                 width: highlight ? 72 : 56,
                 height: highlight ? 48 : 38,
                 color: colors.f1RedBright.withValues(alpha: 0.6),
-                strokeWidth: 1.8,
               ),
             ),
         ],

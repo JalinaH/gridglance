@@ -16,7 +16,10 @@ import '../widgets/reveal.dart';
 import '../widgets/season_cards.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/skeleton_loaders.dart';
+import '../widgets/driver_number_badge.dart';
+import '../widgets/driver_photo.dart';
 import '../widgets/team_logo.dart';
+import '../utils/country_flags.dart';
 import '../services/widget_update_service.dart';
 import 'compare_mode_screen.dart';
 import 'constructor_standings_screen.dart';
@@ -409,6 +412,11 @@ class _HomeScreenState extends State<HomeScreen> {
             );
             WidgetUpdateService.updateNextSessionWidget(
               overview.raceSchedule,
+              season: _season,
+            );
+            WidgetUpdateService.updateRaceWeekend(
+              overview.raceSchedule,
+              nextRace: overview.nextRace,
               season: _season,
             );
           });
@@ -860,6 +868,11 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    if (drivers.length >= 3) {
+      return _buildPodium(drivers[0], drivers[1], drivers[2]);
+    }
+
+    // Fallback for <3 drivers.
     return Column(
       children: drivers
           .map(
@@ -875,6 +888,138 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildPodium(
+    DriverStanding first,
+    DriverStanding second,
+    DriverStanding third,
+  ) {
+    final colors = AppColors.of(context);
+    return Column(
+      children: [
+        // ── Driver photos row: 2nd · 1st (raised) · 3rd ──
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: _podiumDriver(second, 2, colors)),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 18),
+                child: _podiumDriver(first, 1, colors),
+              ),
+            ),
+            Expanded(child: _podiumDriver(third, 3, colors)),
+          ],
+        ),
+        SizedBox(height: 8),
+        // ── Podium blocks ──
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: _podiumBlock(second, 2, colors, height: 40)),
+            Expanded(child: _podiumBlock(first, 1, colors, height: 56)),
+            Expanded(child: _podiumBlock(third, 3, colors, height: 28)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _podiumDriver(DriverStanding driver, int position, AppColors colors) {
+    final flag = driver.nationality != null
+        ? countryFlag(driver.nationality!)
+        : null;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DriverPhoto(
+          driverId: driver.driverId,
+          teamName: driver.teamName,
+          initials:
+              '${driver.givenName.isNotEmpty ? driver.givenName[0] : ''}${driver.familyName.isNotEmpty ? driver.familyName[0] : ''}',
+          size: position == 1 ? 56 : 44,
+        ),
+        SizedBox(height: 6),
+        if (driver.permanentNumber != null)
+          DriverNumberBadge(
+            number: driver.permanentNumber!,
+            teamName: driver.teamName,
+            size: position == 1 ? 28 : 24,
+          ),
+        SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (flag != null) Text(flag, style: TextStyle(fontSize: 10)),
+            if (flag != null) SizedBox(width: 3),
+            Flexible(
+              child: Text(
+                driver.familyName.toUpperCase(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 2),
+        Text(
+          "${driver.points} PTS",
+          style: TextStyle(
+            color: colors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _podiumBlock(
+    DriverStanding driver,
+    int position,
+    AppColors colors, {
+    required double height,
+  }) {
+    final positionColors = {
+      1: colors.f1Red,
+      2: colors.textMuted,
+      3: Color(0xFFCD7F32),
+    };
+    final blockColor = positionColors[position] ?? colors.surfaceAlt;
+
+    return Container(
+      height: height,
+      margin: EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            blockColor.withValues(alpha: 0.4),
+            blockColor.withValues(alpha: 0.15),
+          ],
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+        border: Border.all(color: blockColor.withValues(alpha: 0.3)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$position',
+        style: TextStyle(
+          color: blockColor,
+          fontSize: height * 0.4,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTeamSummary(List<ConstructorStanding> teams) {
     if (teams.isEmpty) {
       return _buildEmptyState(
@@ -883,6 +1028,11 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    if (teams.length >= 3) {
+      return _buildTeamPodium(teams[0], teams[1], teams[2]);
+    }
+
+    // Fallback for <3 teams.
     return Column(
       children: teams
           .map(
@@ -895,6 +1045,130 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
           .toList(),
+    );
+  }
+
+  Widget _buildTeamPodium(
+    ConstructorStanding first,
+    ConstructorStanding second,
+    ConstructorStanding third,
+  ) {
+    final colors = AppColors.of(context);
+    return Column(
+      children: [
+        // Team logos row: 2nd · 1st (raised) · 3rd
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: _podiumTeam(second, 2, colors)),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 18),
+                child: _podiumTeam(first, 1, colors),
+              ),
+            ),
+            Expanded(child: _podiumTeam(third, 3, colors)),
+          ],
+        ),
+        SizedBox(height: 8),
+        // Podium blocks
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: _teamPodiumBlock(second, 2, colors, height: 40)),
+            Expanded(child: _teamPodiumBlock(first, 1, colors, height: 56)),
+            Expanded(child: _teamPodiumBlock(third, 3, colors, height: 28)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _podiumTeam(ConstructorStanding team, int position, AppColors colors) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: position == 1 ? 56 : 44,
+          height: position == 1 ? 56 : 44,
+          decoration: BoxDecoration(
+            color: colors.surfaceAlt,
+            shape: BoxShape.circle,
+            border: Border.all(color: colors.border),
+          ),
+          child: Center(
+            child: TeamLogo(
+              teamName: team.teamName,
+              size: position == 1 ? 28 : 22,
+            ),
+          ),
+        ),
+        SizedBox(height: 6),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            team.teamName.toUpperCase(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        SizedBox(height: 2),
+        Text(
+          "${team.points} PTS",
+          style: TextStyle(
+            color: colors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _teamPodiumBlock(
+    ConstructorStanding team,
+    int position,
+    AppColors colors, {
+    required double height,
+  }) {
+    final positionColors = {
+      1: colors.f1Red,
+      2: colors.textMuted,
+      3: Color(0xFFCD7F32),
+    };
+    final blockColor = positionColors[position] ?? colors.surfaceAlt;
+
+    return Container(
+      height: height,
+      margin: EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            blockColor.withValues(alpha: 0.4),
+            blockColor.withValues(alpha: 0.15),
+          ],
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+        border: Border.all(color: blockColor.withValues(alpha: 0.3)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$position',
+        style: TextStyle(
+          color: blockColor,
+          fontSize: height * 0.4,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
     );
   }
 

@@ -127,142 +127,142 @@ class _ConstructorStandingsScreenState
             ),
           ],
         ),
-      ),
-      body: _standings.isEmpty
-          ? Center(
-              child: EmptyState(
-                message: "No team standings available.",
-                type: EmptyStateType.standings,
-              ),
-            )
-          : Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Shareable standings card',
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 12,
-                          ),
-                        ),
+        actions: [
+          BounceTap(
+            child: IconButton(
+              onPressed: _sharingCard ? null : _shareStandingsCard,
+              icon: _sharingCard
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colors.f1RedBright,
                       ),
-                      BounceTap(
-                        child: TextButton.icon(
-                          onPressed: _sharingCard ? null : _shareStandingsCard,
-                          icon: _sharingCard
-                              ? SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: colors.f1RedBright,
-                                  ),
-                                )
-                              : Icon(Icons.ios_share, size: 16),
-                          label: Text(
-                            _sharingCard ? 'Sharing...' : 'Share image',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, 2, 16, 8),
-                  child: RepaintBoundary(
-                    key: _shareCardKey,
-                    child: ConstructorStandingsShareCard(
-                      standings: _shareStandings,
-                      season: widget.season,
-                    ),
-                  ),
-                ),
-                if (_lastUpdated != null)
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        _isFromCache
-                            ? '${formatLastUpdatedAgo(_lastUpdated!)} • Offline cache'
-                            : formatLastUpdatedAgo(_lastUpdated!),
-                        style: TextStyle(color: colors.textMuted, fontSize: 11),
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
-                  child: CompactSearchField(
-                    controller: _controller,
-                    hintText: 'Search teams',
-                    onChanged: (value) {
-                      setState(() {
-                        _query = value.trim();
-                      });
-                    },
-                    onClear: _query.isEmpty
-                        ? null
-                        : () {
-                            _controller.clear();
-                            setState(() {
-                              _query = '';
-                            });
-                          },
-                  ),
-                ),
-                Expanded(
-                  child: standings.isEmpty
-                      ? Center(
-                          child: Text(
-                            "No matching teams.",
-                            style: TextStyle(color: colors.textMuted),
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: _refresh,
-                          color: colors.f1Red,
-                          child: AdaptiveCardList(
-                            padding: EdgeInsets.only(bottom: 24),
-                            physics: AlwaysScrollableScrollPhysics(
-                              parent: BouncingScrollPhysics(),
-                            ),
-                            itemCount: standings.length,
-                            itemBuilder: (context, index) {
-                              final team = standings[index];
-                              final isFav =
-                                  _favoriteTeamId == team.constructorId;
-                              return Reveal(
-                                index: index,
-                                child: SwipeActionWrapper(
-                                  icon: isFav ? Icons.star : Icons.star_border,
-                                  label: isFav ? 'Unfavorite' : 'Favorite',
-                                  backgroundColor: isFav ? Colors.orange : null,
-                                  onSwipe: () => _toggleFavoriteTeam(team),
-                                  child: ConstructorStandingCard(
-                                    team: team,
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => TeamDetailScreen(
-                                            team: team,
-                                            season: widget.season,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                ),
-              ],
+                    )
+                  : Icon(Icons.ios_share, size: 20),
+              tooltip: 'Share standings',
             ),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Off-screen share card (painted but invisible; needed for capture)
+          Positioned(
+            left: -9999,
+            top: -9999,
+            child: RepaintBoundary(
+              key: _shareCardKey,
+              child: SizedBox(
+                width: 400,
+                child: ConstructorStandingsShareCard(
+                  standings: _shareStandings,
+                  season: widget.season,
+                ),
+              ),
+            ),
+          ),
+          _standings.isEmpty
+              ? Center(
+                  child: EmptyState(
+                    message: "No team standings available.",
+                    type: EmptyStateType.standings,
+                  ),
+                )
+              : Column(
+                  children: [
+                    if (_lastUpdated != null)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _isFromCache
+                                ? '${formatLastUpdatedAgo(_lastUpdated!)} • Offline cache'
+                                : formatLastUpdatedAgo(_lastUpdated!),
+                            style: TextStyle(
+                              color: colors.textMuted,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
+                      child: CompactSearchField(
+                        controller: _controller,
+                        hintText: 'Search teams',
+                        onChanged: (value) {
+                          setState(() {
+                            _query = value.trim();
+                          });
+                        },
+                        onClear: _query.isEmpty
+                            ? null
+                            : () {
+                                _controller.clear();
+                                setState(() {
+                                  _query = '';
+                                });
+                              },
+                      ),
+                    ),
+                    Expanded(
+                      child: standings.isEmpty
+                          ? Center(
+                              child: Text(
+                                "No matching teams.",
+                                style: TextStyle(color: colors.textMuted),
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _refresh,
+                              color: colors.f1Red,
+                              child: AdaptiveCardList(
+                                padding: EdgeInsets.only(bottom: 24),
+                                physics: AlwaysScrollableScrollPhysics(
+                                  parent: BouncingScrollPhysics(),
+                                ),
+                                itemCount: standings.length,
+                                itemBuilder: (context, index) {
+                                  final team = standings[index];
+                                  final isFav =
+                                      _favoriteTeamId == team.constructorId;
+                                  return Reveal(
+                                    index: index,
+                                    child: SwipeActionWrapper(
+                                      icon: isFav
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      label: isFav ? 'Unfavorite' : 'Favorite',
+                                      backgroundColor: isFav
+                                          ? Colors.orange
+                                          : null,
+                                      onSwipe: () => _toggleFavoriteTeam(team),
+                                      child: ConstructorStandingCard(
+                                        team: team,
+                                        onTap: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) => TeamDetailScreen(
+                                                team: team,
+                                                season: widget.season,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+        ],
+      ),
     );
   }
 
