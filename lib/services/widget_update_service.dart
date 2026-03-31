@@ -766,7 +766,11 @@ class WidgetUpdateService {
     List<DriverStanding> drivers,
   ) async {
     final color = teamColor(teamName);
-    final hex = color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
+    final hex = color
+        .toARGB32()
+        .toRadixString(16)
+        .padLeft(8, '0')
+        .toUpperCase();
     await _saveDps('${prefix}team_color', '#$hex');
     for (int i = 0; i < 2; i++) {
       final idx = i + 1;

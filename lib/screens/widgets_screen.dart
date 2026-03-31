@@ -913,9 +913,9 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         _favoriteTeamId!.isNotEmpty &&
         teams != null) {
       topTeam = teams.cast<ConstructorStanding?>().firstWhere(
-            (t) => t!.constructorId == _favoriteTeamId,
-            orElse: () => null,
-          );
+        (t) => t!.constructorId == _favoriteTeamId,
+        orElse: () => null,
+      );
     }
     topTeam ??= (teams ?? []).isEmpty ? null : teams!.first;
     if (topTeam == null || drivers == null) {
