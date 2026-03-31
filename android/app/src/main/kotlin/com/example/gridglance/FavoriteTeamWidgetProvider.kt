@@ -5,8 +5,10 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.RemoteViews
+import java.io.File
 import java.util.Calendar
 
 class FavoriteTeamWidgetProvider : AppWidgetProvider() {
@@ -72,6 +74,22 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             // Strip "pts" suffix for the stat box.
             val ptsNumber = points.replace(" pts", "").replace("pts", "")
             views.setTextViewText(R.id.team_points, ptsNumber)
+
+            // Load team car image from file saved by Flutter.
+            val carImagePath = prefs.getString(
+                "${prefix}car_image",
+                prefs.getString("${fallbackPrefix}car_image", null),
+            )
+            if (carImagePath != null) {
+                val file = File(carImagePath)
+                if (file.exists()) {
+                    val bitmap = BitmapFactory.decodeFile(carImagePath)
+                    if (bitmap != null) {
+                        views.setImageViewBitmap(R.id.team_car, bitmap)
+                    }
+                }
+            }
+
             views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

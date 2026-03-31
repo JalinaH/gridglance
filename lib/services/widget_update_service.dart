@@ -493,6 +493,10 @@ class WidgetUpdateService {
         _formatDriverLine(teamDrivers, 1),
       );
       await _saveDps(_favoriteTeamKey(widgetId, 'season'), seasonLabel);
+      await _saveCarImage(
+        _favoriteTeamKey(widgetId, 'car_image'),
+        team.constructorId,
+      );
     }
 
     await _refreshFavoriteTeamWidget();
@@ -540,6 +544,10 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps('${_favoriteTeamDefaultKey}_season', season);
+    await _saveCarImage(
+      '${_favoriteTeamDefaultKey}_car_image',
+      team.constructorId,
+    );
     await _refreshFavoriteTeamWidget();
   }
 
@@ -603,6 +611,10 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps(_favoriteTeamKey(widgetId, 'season'), season);
+    await _saveCarImage(
+      _favoriteTeamKey(widgetId, 'car_image'),
+      team.constructorId,
+    );
     await _refreshFavoriteTeamWidget();
   }
 
@@ -741,6 +753,26 @@ class WidgetUpdateService {
       permanentNumber: permanentNumber,
       code: code,
     );
+    if (url == null) return;
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+          'id': imageKey,
+          'bytes': Uint8List.fromList(response.bodyBytes),
+        });
+      }
+    } catch (_) {
+      // Image download failure is non-fatal — widget falls back to placeholder.
+    }
+  }
+
+  /// Downloads a team car image and saves it to native widget storage.
+  static Future<void> _saveCarImage(
+    String imageKey,
+    String constructorId,
+  ) async {
+    final url = F1ImageService.instance.carImageUrl(constructorId);
     if (url == null) return;
     try {
       final response = await http.get(Uri.parse(url));
