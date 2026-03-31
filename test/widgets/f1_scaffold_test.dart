@@ -4,19 +4,14 @@ import 'package:gridglance/theme/app_theme.dart';
 import 'package:gridglance/widgets/f1_scaffold.dart';
 
 Widget _wrapWithTheme(Widget child) {
-  return MaterialApp(
-    theme: AppTheme.dark(),
-    home: child,
-  );
+  return MaterialApp(theme: AppTheme.dark(), home: child);
 }
 
 void main() {
   group('F1Scaffold', () {
     testWidgets('renders body content', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          F1Scaffold(body: Text('Hello F1')),
-        ),
+        _wrapWithTheme(F1Scaffold(body: Text('Hello F1'))),
       );
 
       expect(find.text('Hello F1'), findsOneWidget);
@@ -37,18 +32,14 @@ void main() {
 
     testWidgets('renders without an AppBar when not provided', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          F1Scaffold(body: Text('No AppBar')),
-        ),
+        _wrapWithTheme(F1Scaffold(body: Text('No AppBar'))),
       );
 
       expect(find.text('No AppBar'), findsOneWidget);
       expect(find.byType(AppBar), findsNothing);
     });
 
-    testWidgets('renders floating action button when provided', (
-      tester,
-    ) async {
+    testWidgets('renders floating action button when provided', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
           F1Scaffold(
@@ -69,10 +60,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          F1Scaffold(
-            body: Text('Constrained'),
-            maxContentWidth: 600,
-          ),
+          F1Scaffold(body: Text('Constrained'), maxContentWidth: 600),
         ),
       );
 
@@ -84,9 +72,7 @@ void main() {
 
     testWidgets('uses transparent scaffold background', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          F1Scaffold(body: Text('Transparent')),
-        ),
+        _wrapWithTheme(F1Scaffold(body: Text('Transparent'))),
       );
 
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
@@ -111,9 +97,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          F1Scaffold(body: Text('Background')),
-        ),
+        _wrapWithTheme(F1Scaffold(body: Text('Background'))),
       );
 
       // F1Scaffold uses a Stack with _F1Background

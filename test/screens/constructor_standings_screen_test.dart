@@ -6,34 +6,31 @@ import 'package:gridglance/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 List<ConstructorStanding> _sampleStandings() => [
-      ConstructorStanding(
-        position: '1',
-        points: '700',
-        wins: '15',
-        teamName: 'Red Bull',
-        constructorId: 'red_bull',
-      ),
-      ConstructorStanding(
-        position: '2',
-        points: '550',
-        wins: '8',
-        teamName: 'Mercedes',
-        constructorId: 'mercedes',
-      ),
-      ConstructorStanding(
-        position: '3',
-        points: '480',
-        wins: '5',
-        teamName: 'Ferrari',
-        constructorId: 'ferrari',
-      ),
-    ];
+  ConstructorStanding(
+    position: '1',
+    points: '700',
+    wins: '15',
+    teamName: 'Red Bull',
+    constructorId: 'red_bull',
+  ),
+  ConstructorStanding(
+    position: '2',
+    points: '550',
+    wins: '8',
+    teamName: 'Mercedes',
+    constructorId: 'mercedes',
+  ),
+  ConstructorStanding(
+    position: '3',
+    points: '480',
+    wins: '5',
+    teamName: 'Ferrari',
+    constructorId: 'ferrari',
+  ),
+];
 
 Widget _wrapWithTheme(Widget child) {
-  return MaterialApp(
-    theme: AppTheme.dark(),
-    home: child,
-  );
+  return MaterialApp(theme: AppTheme.dark(), home: child);
 }
 
 void main() {

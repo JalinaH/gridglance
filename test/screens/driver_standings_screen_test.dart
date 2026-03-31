@@ -6,52 +6,49 @@ import 'package:gridglance/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 List<DriverStanding> _sampleStandings() => [
-      DriverStanding(
-        position: '1',
-        points: '400',
-        wins: '10',
-        givenName: 'Max',
-        familyName: 'Verstappen',
-        teamName: 'Red Bull',
-        driverId: 'max_verstappen',
-        constructorId: 'red_bull',
-        code: 'VER',
-        permanentNumber: '1',
-        nationality: 'Dutch',
-      ),
-      DriverStanding(
-        position: '2',
-        points: '300',
-        wins: '5',
-        givenName: 'Lewis',
-        familyName: 'Hamilton',
-        teamName: 'Mercedes',
-        driverId: 'hamilton',
-        constructorId: 'mercedes',
-        code: 'HAM',
-        permanentNumber: '44',
-        nationality: 'British',
-      ),
-      DriverStanding(
-        position: '3',
-        points: '250',
-        wins: '3',
-        givenName: 'Charles',
-        familyName: 'Leclerc',
-        teamName: 'Ferrari',
-        driverId: 'leclerc',
-        constructorId: 'ferrari',
-        code: 'LEC',
-        permanentNumber: '16',
-        nationality: 'Monegasque',
-      ),
-    ];
+  DriverStanding(
+    position: '1',
+    points: '400',
+    wins: '10',
+    givenName: 'Max',
+    familyName: 'Verstappen',
+    teamName: 'Red Bull',
+    driverId: 'max_verstappen',
+    constructorId: 'red_bull',
+    code: 'VER',
+    permanentNumber: '1',
+    nationality: 'Dutch',
+  ),
+  DriverStanding(
+    position: '2',
+    points: '300',
+    wins: '5',
+    givenName: 'Lewis',
+    familyName: 'Hamilton',
+    teamName: 'Mercedes',
+    driverId: 'hamilton',
+    constructorId: 'mercedes',
+    code: 'HAM',
+    permanentNumber: '44',
+    nationality: 'British',
+  ),
+  DriverStanding(
+    position: '3',
+    points: '250',
+    wins: '3',
+    givenName: 'Charles',
+    familyName: 'Leclerc',
+    teamName: 'Ferrari',
+    driverId: 'leclerc',
+    constructorId: 'ferrari',
+    code: 'LEC',
+    permanentNumber: '16',
+    nationality: 'Monegasque',
+  ),
+];
 
 Widget _wrapWithTheme(Widget child) {
-  return MaterialApp(
-    theme: AppTheme.dark(),
-    home: child,
-  );
+  return MaterialApp(theme: AppTheme.dark(), home: child);
 }
 
 void main() {
@@ -63,10 +60,7 @@ void main() {
     testWidgets('renders title and season', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          DriverStandingsScreen(
-            standings: _sampleStandings(),
-            season: '2025',
-          ),
+          DriverStandingsScreen(standings: _sampleStandings(), season: '2025'),
         ),
       );
       await tester.pump();
@@ -78,10 +72,7 @@ void main() {
     testWidgets('renders search field', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          DriverStandingsScreen(
-            standings: _sampleStandings(),
-            season: '2025',
-          ),
+          DriverStandingsScreen(standings: _sampleStandings(), season: '2025'),
         ),
       );
       await tester.pump();
@@ -93,10 +84,7 @@ void main() {
     testWidgets('displays driver names in the list', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          DriverStandingsScreen(
-            standings: _sampleStandings(),
-            season: '2025',
-          ),
+          DriverStandingsScreen(standings: _sampleStandings(), season: '2025'),
         ),
       );
       await tester.pumpAndSettle();
@@ -108,10 +96,7 @@ void main() {
     testWidgets('search filters drivers', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          DriverStandingsScreen(
-            standings: _sampleStandings(),
-            season: '2025',
-          ),
+          DriverStandingsScreen(standings: _sampleStandings(), season: '2025'),
         ),
       );
       await tester.pumpAndSettle();
@@ -140,10 +125,7 @@ void main() {
     testWidgets('shows no matching message for empty search', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          DriverStandingsScreen(
-            standings: _sampleStandings(),
-            season: '2025',
-          ),
+          DriverStandingsScreen(standings: _sampleStandings(), season: '2025'),
         ),
       );
       await tester.pumpAndSettle();
@@ -190,10 +172,7 @@ void main() {
     testWidgets('has share button in app bar', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          DriverStandingsScreen(
-            standings: _sampleStandings(),
-            season: '2025',
-          ),
+          DriverStandingsScreen(standings: _sampleStandings(), season: '2025'),
         ),
       );
       await tester.pump();

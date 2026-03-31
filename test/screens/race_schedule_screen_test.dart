@@ -5,61 +5,58 @@ import 'package:gridglance/screens/race_schedule_screen.dart';
 import 'package:gridglance/theme/app_theme.dart';
 
 List<Race> _sampleRaces() => [
-      Race(
-        round: '1',
-        raceName: 'Bahrain Grand Prix',
-        date: '2025-03-02',
-        time: '15:00:00Z',
-        circuitId: 'bahrain',
-        circuitName: 'Bahrain International Circuit',
-        locality: 'Sakhir',
-        country: 'Bahrain',
-        practice1: null,
-        practice2: null,
-        practice3: null,
-        qualifying: null,
-        sprintQualifying: null,
-        sprint: null,
-      ),
-      Race(
-        round: '2',
-        raceName: 'Saudi Arabian Grand Prix',
-        date: '2025-03-09',
-        time: '17:00:00Z',
-        circuitId: 'jeddah',
-        circuitName: 'Jeddah Corniche Circuit',
-        locality: 'Jeddah',
-        country: 'Saudi Arabia',
-        practice1: null,
-        practice2: null,
-        practice3: null,
-        qualifying: null,
-        sprintQualifying: null,
-        sprint: null,
-      ),
-      Race(
-        round: '3',
-        raceName: 'Australian Grand Prix',
-        date: '2025-03-16',
-        time: '04:00:00Z',
-        circuitId: 'albert_park',
-        circuitName: 'Albert Park Grand Prix Circuit',
-        locality: 'Melbourne',
-        country: 'Australia',
-        practice1: null,
-        practice2: null,
-        practice3: null,
-        qualifying: null,
-        sprintQualifying: null,
-        sprint: null,
-      ),
-    ];
+  Race(
+    round: '1',
+    raceName: 'Bahrain Grand Prix',
+    date: '2025-03-02',
+    time: '15:00:00Z',
+    circuitId: 'bahrain',
+    circuitName: 'Bahrain International Circuit',
+    locality: 'Sakhir',
+    country: 'Bahrain',
+    practice1: null,
+    practice2: null,
+    practice3: null,
+    qualifying: null,
+    sprintQualifying: null,
+    sprint: null,
+  ),
+  Race(
+    round: '2',
+    raceName: 'Saudi Arabian Grand Prix',
+    date: '2025-03-09',
+    time: '17:00:00Z',
+    circuitId: 'jeddah',
+    circuitName: 'Jeddah Corniche Circuit',
+    locality: 'Jeddah',
+    country: 'Saudi Arabia',
+    practice1: null,
+    practice2: null,
+    practice3: null,
+    qualifying: null,
+    sprintQualifying: null,
+    sprint: null,
+  ),
+  Race(
+    round: '3',
+    raceName: 'Australian Grand Prix',
+    date: '2025-03-16',
+    time: '04:00:00Z',
+    circuitId: 'albert_park',
+    circuitName: 'Albert Park Grand Prix Circuit',
+    locality: 'Melbourne',
+    country: 'Australia',
+    practice1: null,
+    practice2: null,
+    practice3: null,
+    qualifying: null,
+    sprintQualifying: null,
+    sprint: null,
+  ),
+];
 
 Widget _wrapWithTheme(Widget child) {
-  return MaterialApp(
-    theme: AppTheme.dark(),
-    home: child,
-  );
+  return MaterialApp(theme: AppTheme.dark(), home: child);
 }
 
 void main() {
@@ -130,9 +127,7 @@ void main() {
 
     testWidgets('shows empty state when no races', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(
-          RaceScheduleScreen(races: const [], season: '2025'),
-        ),
+        _wrapWithTheme(RaceScheduleScreen(races: const [], season: '2025')),
       );
       await tester.pump();
 

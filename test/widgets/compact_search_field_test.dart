@@ -62,9 +62,7 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('shows clear button when onClear is provided', (
-      tester,
-    ) async {
+    testWidgets('shows clear button when onClear is provided', (tester) async {
       final controller = TextEditingController(text: 'some text');
       await tester.pumpWidget(
         _wrapWithTheme(
@@ -133,10 +131,12 @@ void main() {
       );
 
       final container = tester.widget<Container>(
-        find.ancestor(
-          of: find.byType(TextField),
-          matching: find.byType(Container),
-        ).first,
+        find
+            .ancestor(
+              of: find.byType(TextField),
+              matching: find.byType(Container),
+            )
+            .first,
       );
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.borderRadius, BorderRadius.circular(14));
