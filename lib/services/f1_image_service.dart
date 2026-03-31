@@ -103,10 +103,8 @@ class F1ImageService {
         return; // Cache expired — will fetch fresh data.
       }
 
-      final byNumber =
-          (cached['by_number'] as Map<String, dynamic>?) ?? {};
-      final byCode =
-          (cached['by_code'] as Map<String, dynamic>?) ?? {};
+      final byNumber = (cached['by_number'] as Map<String, dynamic>?) ?? {};
+      final byCode = (cached['by_code'] as Map<String, dynamic>?) ?? {};
 
       _byNumber
         ..clear()
