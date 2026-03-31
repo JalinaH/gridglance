@@ -157,7 +157,10 @@ class WidgetUpdateService {
     for (int i = 0; i < 3; i++) {
       final idx = i + 1;
       if (i < top.length) {
-        await _saveDps('driver_${idx}_last_name', top[i].familyName.toUpperCase());
+        await _saveDps(
+          'driver_${idx}_last_name',
+          top[i].familyName.toUpperCase(),
+        );
         await _saveDps('driver_${idx}_first_name', top[i].givenName);
         await _saveDps('driver_${idx}_pts', top[i].points);
         await _saveDps('driver_${idx}_code', _shortDriverCode(top[i]));
@@ -265,10 +268,7 @@ class WidgetUpdateService {
         await _saveDps('next_race_widget_hours', '0');
         await _saveDps('next_race_widget_mins', '0');
       } else {
-        await _saveDps(
-          'next_race_widget_days',
-          remaining.inDays.toString(),
-        );
+        await _saveDps('next_race_widget_days', remaining.inDays.toString());
         await _saveDps(
           'next_race_widget_hours',
           (remaining.inHours % 24).toString(),
