@@ -70,6 +70,8 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
               children: [
                 DriverPhoto(
                   driverId: widget.driver.driverId,
+                  permanentNumber: widget.driver.permanentNumber,
+                  code: widget.driver.code,
                   teamName: widget.driver.teamName,
                   initials:
                       '${widget.driver.givenName.isNotEmpty ? widget.driver.givenName[0] : ''}${widget.driver.familyName.isNotEmpty ? widget.driver.familyName[0] : ''}',

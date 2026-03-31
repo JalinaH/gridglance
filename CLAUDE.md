@@ -51,3 +51,13 @@ Startup order: WidgetUpdateService → NotificationService → BackgroundTaskSer
 
 - **Android:** Requires INTERNET, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM permissions. Background tasks run every 30 min via workmanager.
 - **iOS:** Uses App Groups (`group.com.gridglance.app`) for widget data sharing. Background modes: fetch + processing.
+
+## Workflow for Bug Fixes & New Features
+
+When given a prompt to fix a bug or implement a new feature, follow this workflow:
+
+1. **Create a feature branch** from the current `dev` branch (e.g., `fix/short-description` or `feature/short-description`).
+2. **Implement the changes** on the feature branch.
+3. **Commit and push** the feature branch to the remote.
+4. **Run tests** (`flutter test`) — if no major tests are failing, **create a PR** targeting the `dev` branch.
+   - If major tests fail, fix them before creating the PR.

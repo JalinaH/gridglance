@@ -933,6 +933,8 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         DriverPhoto(
           driverId: driver.driverId,
+          permanentNumber: driver.permanentNumber,
+          code: driver.code,
           teamName: driver.teamName,
           initials:
               '${driver.givenName.isNotEmpty ? driver.givenName[0] : ''}${driver.familyName.isNotEmpty ? driver.familyName[0] : ''}',
