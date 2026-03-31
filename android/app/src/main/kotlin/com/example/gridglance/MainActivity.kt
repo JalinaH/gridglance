@@ -4,6 +4,7 @@ import android.content.Context
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     private val dpsChannelName = "gridglance/dps"
@@ -73,6 +74,22 @@ class MainActivity : FlutterActivity() {
                         val context = applicationContext.createDeviceProtectedStorageContext()
                         val prefs = context.getSharedPreferences(dpsPrefsName, Context.MODE_PRIVATE)
                         result.success(prefs.getString(id, defaultValue))
+                    }
+                    "saveWidgetImage" -> {
+                        val id = call.argument<String>("id")
+                        val bytes = call.argument<ByteArray>("bytes")
+                        if (id == null || bytes == null) {
+                            result.error("INVALID_ARGS", "Missing id or bytes", null)
+                            return@setMethodCallHandler
+                        }
+                        val context = applicationContext.createDeviceProtectedStorageContext()
+                        val dir = File(context.filesDir, "widget_images")
+                        dir.mkdirs()
+                        val file = File(dir, "$id.png")
+                        file.writeBytes(bytes)
+                        val prefs = context.getSharedPreferences(dpsPrefsName, Context.MODE_PRIVATE)
+                        prefs.edit().putString(id, file.absolutePath).apply()
+                        result.success(file.absolutePath)
                     }
                     else -> result.notImplemented()
                 }

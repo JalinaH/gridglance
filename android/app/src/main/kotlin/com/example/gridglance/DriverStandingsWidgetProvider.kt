@@ -3,8 +3,10 @@ package com.gridglance.app
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.RemoteViews
+import java.io.File
 import java.util.Calendar
 
 class DriverStandingsWidgetProvider : AppWidgetProvider() {
@@ -39,6 +41,22 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.driver_one, driver1)
             views.setTextViewText(R.id.driver_two, driver2)
             views.setTextViewText(R.id.driver_three, driver3)
+
+            // Load driver headshot images.
+            val photoIds = arrayOf(R.id.driver_one_photo, R.id.driver_two_photo, R.id.driver_three_photo)
+            for (i in 1..3) {
+                val imagePath = prefs.getString("driver_${i}_image", null)
+                if (imagePath != null) {
+                    val file = File(imagePath)
+                    if (file.exists()) {
+                        val bitmap = BitmapFactory.decodeFile(imagePath)
+                        if (bitmap != null) {
+                            views.setImageViewBitmap(photoIds[i - 1], bitmap)
+                        }
+                    }
+                }
+            }
+
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

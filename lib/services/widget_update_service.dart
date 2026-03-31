@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:http/http.dart' as http;
 
 import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import 'f1_image_service.dart';
 
 class WidgetUpdateService {
   static const String androidDriverWidgetProvider =
@@ -151,6 +152,15 @@ class WidgetUpdateService {
     await _saveDps('driver_1', _formatDriver(top, 0));
     await _saveDps('driver_2', _formatDriver(top, 1));
     await _saveDps('driver_3', _formatDriver(top, 2));
+
+    // Download headshot images for top 3 drivers.
+    for (int i = 0; i < top.length && i < 3; i++) {
+      await _saveDriverImage(
+        'driver_${i + 1}_image',
+        permanentNumber: top[i].permanentNumber,
+        code: top[i].code,
+      );
+    }
 
     await _refreshDriverWidget();
   }
@@ -373,6 +383,11 @@ class WidgetUpdateService {
         '${driver.points} pts',
       );
       await _saveDps(_favoriteDriverKey(widgetId, 'season'), seasonLabel);
+      await _saveDriverImage(
+        _favoriteDriverKey(widgetId, 'image'),
+        permanentNumber: driver.permanentNumber,
+        code: driver.code,
+      );
     }
 
     await _refreshFavoriteDriverWidget();
@@ -438,6 +453,11 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps('${_favoriteDriverDefaultKey}_season', season);
+    await _saveDriverImage(
+      '${_favoriteDriverDefaultKey}_image',
+      permanentNumber: driver.permanentNumber,
+      code: driver.code,
+    );
     await _refreshFavoriteDriverWidget();
   }
 
@@ -492,6 +512,11 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps(_favoriteDriverKey(widgetId, 'season'), season);
+    await _saveDriverImage(
+      _favoriteDriverKey(widgetId, 'image'),
+      permanentNumber: driver.permanentNumber,
+      code: driver.code,
+    );
     await _refreshFavoriteDriverWidget();
   }
 
@@ -646,6 +671,30 @@ class WidgetUpdateService {
   static Future<void> setRaceWeekendWidgetTransparent(bool value) async {
     await _saveDps(_raceWeekendWidgetTransparentKey, value.toString());
     await _refreshRaceWeekendWidget();
+  }
+
+  /// Downloads a driver headshot and saves it to native widget storage.
+  static Future<void> _saveDriverImage(
+    String imageKey, {
+    String? permanentNumber,
+    String? code,
+  }) async {
+    final url = F1ImageService.instance.driverHeadshotUrl(
+      permanentNumber: permanentNumber,
+      code: code,
+    );
+    if (url == null) return;
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+          'id': imageKey,
+          'bytes': Uint8List.fromList(response.bodyBytes),
+        });
+      }
+    } catch (_) {
+      // Image download failure is non-fatal — widget falls back to placeholder.
+    }
   }
 
   static Future<void> _saveDps(String id, String value) async {

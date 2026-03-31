@@ -9,6 +9,7 @@ import '../utils/haptics.dart';
 import 'animated_counter.dart';
 import 'circuit_track.dart';
 import 'driver_number_badge.dart';
+import 'driver_photo.dart';
 import 'team_logo.dart';
 
 class GlassCard extends StatelessWidget {
@@ -195,7 +196,15 @@ class DriverStandingCard extends StatelessWidget {
           SizedBox(width: 12),
           Hero(
             tag: 'driver-logo-${driver.driverId}',
-            child: TeamLogo(teamName: driver.teamName, size: 28),
+            child: DriverPhoto(
+              driverId: driver.driverId,
+              permanentNumber: driver.permanentNumber,
+              code: driver.code,
+              teamName: driver.teamName,
+              initials:
+                  '${driver.givenName.isNotEmpty ? driver.givenName[0] : ''}${driver.familyName.isNotEmpty ? driver.familyName[0] : ''}',
+              size: 34,
+            ),
           ),
           SizedBox(width: 12),
           Expanded(
