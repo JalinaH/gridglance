@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.util.Log
 import android.widget.RemoteViews
 import java.io.File
@@ -34,12 +35,6 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             val points = prefs.getString("${prefix}points",
                 prefs.getString("${fallbackPrefix}points", "-- pts")
             ) ?: "-- pts"
-            val driver1 = prefs.getString("${prefix}driver1",
-                prefs.getString("${fallbackPrefix}driver1", "TBD")
-            ) ?: "TBD"
-            val driver2 = prefs.getString("${prefix}driver2",
-                prefs.getString("${fallbackPrefix}driver2", "TBD")
-            ) ?: "TBD"
             val season = prefs.getString("${prefix}season",
                 prefs.getString("${fallbackPrefix}season", defaultSeason)
             ) ?: defaultSeason
@@ -47,6 +42,37 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
                 "${prefix}transparent",
                 prefs.getString("${fallbackPrefix}transparent", "false"),
             ) == "true"
+
+            // Team color for accent and text tinting.
+            val teamColorHex = prefs.getString(
+                "${prefix}team_color",
+                prefs.getString("${fallbackPrefix}team_color", "#FFE10600"),
+            ) ?: "#FFE10600"
+            val teamColor = try {
+                Color.parseColor(teamColorHex)
+            } catch (_: Exception) {
+                Color.parseColor("#E10600")
+            }
+
+            // Driver details.
+            val d1Name = prefs.getString("${prefix}d1_name",
+                prefs.getString("${fallbackPrefix}d1_name", "TBD")
+            ) ?: "TBD"
+            val d1Number = prefs.getString("${prefix}d1_number",
+                prefs.getString("${fallbackPrefix}d1_number", "--")
+            ) ?: "--"
+            val d1Code = prefs.getString("${prefix}d1_code",
+                prefs.getString("${fallbackPrefix}d1_code", "---")
+            ) ?: "---"
+            val d2Name = prefs.getString("${prefix}d2_name",
+                prefs.getString("${fallbackPrefix}d2_name", "TBD")
+            ) ?: "TBD"
+            val d2Number = prefs.getString("${prefix}d2_number",
+                prefs.getString("${fallbackPrefix}d2_number", "--")
+            ) ?: "--"
+            val d2Code = prefs.getString("${prefix}d2_code",
+                prefs.getString("${fallbackPrefix}d2_code", "---")
+            ) ?: "---"
 
             val intent = Intent(context, MainActivity::class.java).apply {
                 action = "com.gridglance.app.WIDGET_CLICK"
@@ -69,13 +95,27 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             views.setInt(R.id.widget_root, "setBackgroundResource", background)
             views.setTextViewText(R.id.widget_season, season)
             views.setTextViewText(R.id.team_name, name)
-            views.setTextViewText(R.id.team_drivers, "$driver1  $driver2")
             views.setTextViewText(R.id.team_position, position)
-            // Strip "pts" suffix for the stat box.
             val ptsNumber = points.replace(" pts", "").replace("pts", "")
             views.setTextViewText(R.id.team_points, ptsNumber)
 
-            // Load team car image from file saved by Flutter.
+            // Driver details with team-colored text.
+            views.setTextViewText(R.id.driver1_number, d1Number)
+            views.setTextViewText(R.id.driver1_name, d1Name)
+            views.setTextViewText(R.id.driver1_code, d1Code)
+            views.setTextViewText(R.id.driver2_number, d2Number)
+            views.setTextViewText(R.id.driver2_name, d2Name)
+            views.setTextViewText(R.id.driver2_code, d2Code)
+
+            // Apply team color to driver names, numbers, and accent bar.
+            views.setTextColor(R.id.driver1_name, teamColor)
+            views.setTextColor(R.id.driver1_number, teamColor)
+            views.setTextColor(R.id.driver2_name, teamColor)
+            views.setTextColor(R.id.driver2_number, teamColor)
+            views.setTextColor(R.id.team_name, teamColor)
+            views.setInt(R.id.team_color_bar, "setBackgroundColor", teamColor)
+
+            // Load team car image.
             val carImagePath = prefs.getString(
                 "${prefix}car_image",
                 prefs.getString("${fallbackPrefix}car_image", null),

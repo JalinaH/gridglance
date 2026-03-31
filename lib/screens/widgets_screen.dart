@@ -908,12 +908,21 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     if (hasError || isLoading) {
       return "-- ---  -- ---";
     }
-    final topTeam = (teams ?? []).isEmpty ? null : teams!.first;
+    ConstructorStanding? topTeam;
+    if (_favoriteTeamId != null &&
+        _favoriteTeamId!.isNotEmpty &&
+        teams != null) {
+      topTeam = teams.cast<ConstructorStanding?>().firstWhere(
+            (t) => t!.constructorId == _favoriteTeamId,
+            orElse: () => null,
+          );
+    }
+    topTeam ??= (teams ?? []).isEmpty ? null : teams!.first;
     if (topTeam == null || drivers == null) {
       return "-- ---  -- ---";
     }
     final teamDrivers = drivers
-        .where((driver) => driver.constructorId == topTeam.constructorId)
+        .where((driver) => driver.constructorId == topTeam!.constructorId)
         .take(2)
         .toList();
     if (teamDrivers.isEmpty) {

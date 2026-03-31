@@ -8,6 +8,7 @@ import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../utils/team_colors.dart';
 import 'f1_image_service.dart';
 
 class WidgetUpdateService {
@@ -493,6 +494,11 @@ class WidgetUpdateService {
         _formatDriverLine(teamDrivers, 1),
       );
       await _saveDps(_favoriteTeamKey(widgetId, 'season'), seasonLabel);
+      await _saveTeamDetails(
+        _favoriteTeamKey(widgetId, ''),
+        team.teamName,
+        teamDrivers,
+      );
       await _saveCarImage(
         _favoriteTeamKey(widgetId, 'car_image'),
         team.constructorId,
@@ -544,6 +550,11 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps('${_favoriteTeamDefaultKey}_season', season);
+    await _saveTeamDetails(
+      '${_favoriteTeamDefaultKey}_',
+      team.teamName,
+      drivers,
+    );
     await _saveCarImage(
       '${_favoriteTeamDefaultKey}_car_image',
       team.constructorId,
@@ -611,6 +622,11 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps(_favoriteTeamKey(widgetId, 'season'), season);
+    await _saveTeamDetails(
+      _favoriteTeamKey(widgetId, ''),
+      team.teamName,
+      drivers,
+    );
     await _saveCarImage(
       _favoriteTeamKey(widgetId, 'car_image'),
       team.constructorId,
@@ -741,6 +757,30 @@ class WidgetUpdateService {
   static Future<void> setRaceWeekendWidgetTransparent(bool value) async {
     await _saveDps(_raceWeekendWidgetTransparentKey, value.toString());
     await _refreshRaceWeekendWidget();
+  }
+
+  /// Saves team color hex and individual driver details for the favorite team widget.
+  static Future<void> _saveTeamDetails(
+    String prefix,
+    String teamName,
+    List<DriverStanding> drivers,
+  ) async {
+    final color = teamColor(teamName);
+    final hex = color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
+    await _saveDps('${prefix}team_color', '#$hex');
+    for (int i = 0; i < 2; i++) {
+      final idx = i + 1;
+      if (i < drivers.length) {
+        final d = drivers[i];
+        await _saveDps('${prefix}d${idx}_name', d.familyName.toUpperCase());
+        await _saveDps('${prefix}d${idx}_number', d.permanentNumber ?? '--');
+        await _saveDps('${prefix}d${idx}_code', _shortDriverCode(d));
+      } else {
+        await _saveDps('${prefix}d${idx}_name', 'TBD');
+        await _saveDps('${prefix}d${idx}_number', '--');
+        await _saveDps('${prefix}d${idx}_code', '---');
+      }
+    }
   }
 
   /// Downloads a driver headshot and saves it to native widget storage.
