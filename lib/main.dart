@@ -9,6 +9,7 @@ import 'screens/widget_config_screen.dart';
 import 'services/background_task_service.dart';
 import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
+import 'services/f1_image_service.dart';
 import 'services/widget_update_service.dart';
 import 'theme/app_theme.dart';
 
@@ -17,6 +18,7 @@ Future<void> main() async {
   await WidgetUpdateService.ensureHomeWidgetSetup();
   await NotificationService.init();
   await BackgroundTaskService.initializeAndSchedule();
+  await F1ImageService.instance.init();
   runApp(const MyApp());
 }
 

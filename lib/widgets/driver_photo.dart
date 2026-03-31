@@ -1,20 +1,25 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../services/f1_image_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/team_colors.dart';
 
 /// Displays a driver headshot with a team-colour accent ring.
 ///
 /// ### Image sources (choose one)
+/// - **Auto-resolve**: if [permanentNumber] or [code] is provided the widget
+///   looks up the headshot URL from [F1ImageService] automatically.
+/// - **Network URL**: pass [imageUrl] to load from a CDN / API.
 /// - **Local asset**: place PNGs in `lib/assets/drivers/{driverId}.png`
 ///   and pass [driverId] only — the widget loads the asset automatically.
-/// - **Network URL**: pass [imageUrl] to load from a CDN / API.
-/// - **Fallback**: if neither is available the widget shows the driver's
+/// - **Fallback**: if none of the above resolve the widget shows the driver's
 ///   initials over a team-colour gradient.
 class DriverPhoto extends StatelessWidget {
   final String driverId;
   final String? imageUrl;
+  final String? permanentNumber;
+  final String? code;
   final String teamName;
   final String initials;
   final double size;
@@ -23,6 +28,8 @@ class DriverPhoto extends StatelessWidget {
     super.key,
     required this.driverId,
     this.imageUrl,
+    this.permanentNumber,
+    this.code,
     required this.teamName,
     required this.initials,
     this.size = 48,
@@ -62,11 +69,20 @@ class DriverPhoto extends StatelessWidget {
     );
   }
 
+  String? get _resolvedUrl {
+    if (imageUrl != null && imageUrl!.isNotEmpty) return imageUrl;
+    return F1ImageService.instance.driverHeadshotUrl(
+      permanentNumber: permanentNumber,
+      code: code,
+    );
+  }
+
   Widget _buildImage(AppColors colors, Color color) {
-    // 1. Try network URL if provided.
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
+    final url = _resolvedUrl;
+    // 1. Try network URL (explicit or auto-resolved from F1ImageService).
+    if (url != null && url.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: imageUrl!,
+        imageUrl: url,
         width: size,
         height: size,
         fit: BoxFit.cover,
