@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.util.Log
 import android.widget.RemoteViews
 import java.io.File
@@ -45,6 +46,25 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
                 prefs.getString("${fallbackPrefix}transparent", "false"),
             ) == "true"
 
+            // Team color.
+            val teamColorHex = prefs.getString(
+                "${prefix}team_color",
+                prefs.getString("${fallbackPrefix}team_color", "#FFE10600"),
+            ) ?: "#FFE10600"
+            val teamColor = try {
+                Color.parseColor(teamColorHex)
+            } catch (_: Exception) {
+                Color.parseColor("#E10600")
+            }
+
+            // Driver details.
+            val lastName = prefs.getString("${prefix}last_name",
+                prefs.getString("${fallbackPrefix}last_name", "")
+            ) ?: ""
+            val driverNumber = prefs.getString("${prefix}number",
+                prefs.getString("${fallbackPrefix}number", "--")
+            ) ?: "--"
+
             val intent = Intent(context, MainActivity::class.java).apply {
                 action = "com.gridglance.app.WIDGET_CLICK"
                 putExtra("widget_type", "favorite_driver")
@@ -68,11 +88,21 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.driver_name, name)
             views.setTextViewText(R.id.driver_team, team)
             views.setTextViewText(R.id.driver_position, position)
-            // Strip "pts" suffix for the stat box — show just the number.
+            views.setTextViewText(R.id.driver_last_name, lastName)
+            views.setTextViewText(R.id.driver_number, driverNumber)
+
+            // Strip "pts" suffix for the stat badge.
             val ptsNumber = points.replace(" pts", "").replace("pts", "")
             views.setTextViewText(R.id.driver_points, ptsNumber)
 
-            // Load driver headshot from file saved by Flutter.
+            // Apply team color to accent bar, name overlay, number badge, and stats.
+            views.setInt(R.id.team_color_bar, "setBackgroundColor", teamColor)
+            views.setTextColor(R.id.driver_last_name, teamColor)
+            views.setTextColor(R.id.driver_number, teamColor)
+            views.setTextColor(R.id.driver_position, teamColor)
+            views.setTextColor(R.id.driver_points, teamColor)
+
+            // Load driver headshot.
             val imagePath = prefs.getString(
                 "${prefix}image",
                 prefs.getString("${fallbackPrefix}image", null),

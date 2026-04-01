@@ -519,7 +519,7 @@ private struct NextSessionWidgetView: View {
   }
 }
 
-// MARK: - Favorite Driver (Hero Card)
+// MARK: - Favorite Driver (Split Card)
 
 private struct FavoriteDriverWidgetView: View {
   let entry: GridGlanceEntry
@@ -530,52 +530,102 @@ private struct FavoriteDriverWidgetView: View {
       .replacingOccurrences(of: "pts", with: "")
   }
 
+  private var tColor: Color {
+    parseTeamColor(entry.text("favorite_driver_default_team_color", fallback: "#E10600"))
+  }
+
   var body: some View {
     WidgetSurface {
-      HStack(spacing: 0) {
-        // Accent stripe
-        RoundedRectangle(cornerRadius: 2)
-          .fill(LinearGradient(colors: [f1Red, f1RedLight], startPoint: .top, endPoint: .bottom))
-          .frame(width: 4)
+      VStack(spacing: 0) {
+        // Top half: driver photo + name overlay
+        ZStack(alignment: .topLeading) {
+          if let driverImage = entry.image("favorite_driver_default_image") {
+            Image(uiImage: driverImage)
+              .resizable()
+              .aspectRatio(contentMode: .fit)
+              .padding(4)
+              .frame(maxWidth: .infinity, maxHeight: .infinity)
+          } else {
+            Rectangle()
+              .fill(surfaceAlt)
+          }
 
-        HStack(spacing: 12) {
-          // Driver photo
-          DriverPhotoView(
-            image: entry.image("favorite_driver_default_image"),
-            size: 52,
-            borderColor: f1Red.opacity(0.5)
-          )
-
-          VStack(alignment: .leading, spacing: 0) {
-            // Season
+          // Number badge + last name overlay
+          HStack(spacing: 5) {
+            DriverNumberBadge(
+              number: entry.text("favorite_driver_default_number", fallback: "--"),
+              tint: tColor
+            )
+            Text(entry.text("favorite_driver_default_last_name", fallback: ""))
+              .font(.system(size: 12, weight: .bold, design: .default).italic())
+              .foregroundColor(tColor)
+              .shadow(color: .black.opacity(0.6), radius: 3, y: 1)
+              .lineLimit(1)
+            Spacer()
             Text(entry.text("favorite_driver_default_season", fallback: "--"))
               .font(.system(size: 8, weight: .bold))
               .foregroundColor(.white.opacity(0.5))
-              .padding(.horizontal, 6)
+              .padding(.horizontal, 5)
               .padding(.vertical, 2)
-              .background(surfaceAlt)
+              .background(Color.black.opacity(0.4))
               .cornerRadius(4)
+          }
+          .padding(.horizontal, 10)
+          .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+        // Bottom half: details + stats
+        HStack(spacing: 0) {
+          RoundedRectangle(cornerRadius: 2)
+            .fill(tColor)
+            .frame(width: 4)
+
+          VStack(alignment: .leading, spacing: 0) {
             Text(entry.text("favorite_driver_default_name", fallback: "Set favorite driver"))
-              .font(.system(size: 14, weight: .bold))
+              .font(.system(size: 13, weight: .bold, design: .default))
               .lineLimit(1)
-              .padding(.top, 3)
 
             Text(entry.text("favorite_driver_default_team", fallback: ""))
-              .font(.system(size: 9))
+              .font(.system(size: 8))
               .foregroundColor(textMuted)
               .lineLimit(1)
               .padding(.top, 1)
 
-            // Stat boxes
-            HStack(spacing: 6) {
-              StatBox(label: "POS", value: entry.text("favorite_driver_default_position", fallback: "--"))
-              StatBox(label: "PTS", value: pointsNumber)
+            // Stats — inline team-colored
+            HStack(spacing: 5) {
+              HStack(spacing: 1) {
+                Text("P")
+                  .font(.system(size: 11, weight: .bold, design: .default).italic())
+                  .foregroundColor(textMuted)
+                Text(entry.text("favorite_driver_default_position", fallback: "--"))
+                  .font(.system(size: 15, weight: .bold, design: .default).italic())
+                  .foregroundColor(tColor)
+              }
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(tColor.opacity(0.15))
+              .cornerRadius(6)
+
+              HStack(spacing: 3) {
+                Text(pointsNumber)
+                  .font(.system(size: 15, weight: .bold, design: .default).italic())
+                  .foregroundColor(tColor)
+                Text("PTS")
+                  .font(.system(size: 8, weight: .bold))
+                  .foregroundColor(textMuted)
+              }
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(tColor.opacity(0.15))
+              .cornerRadius(6)
             }
             .padding(.top, 6)
           }
+          .padding(.leading, 8)
+          .padding(.trailing, 4)
         }
-        .padding(.leading, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
       .foregroundColor(.white)
     }
