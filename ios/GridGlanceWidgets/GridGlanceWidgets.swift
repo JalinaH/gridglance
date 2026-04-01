@@ -260,11 +260,10 @@ private struct DriverStandingsWidgetView: View {
 
         Spacer(minLength: 4)
 
-        // Podium: team logos + driver photos + names + blocks
+        // Podium: driver photos + names + blocks
         HStack(alignment: .bottom, spacing: 4) {
           // 2nd place
-          VStack(spacing: 2) {
-            TeamLogoView(image: entry.image("driver_2_team_logo"), size: 14)
+          VStack(spacing: 3) {
             DriverPhotoView(image: entry.image("driver_2_image"), size: 32)
             Text(entry.text("driver_2_last_name", fallback: "P2"))
               .font(.system(size: 8, weight: .bold, design: .default))
@@ -278,8 +277,7 @@ private struct DriverStandingsWidgetView: View {
           .frame(maxWidth: .infinity)
 
           // 1st place
-          VStack(spacing: 2) {
-            TeamLogoView(image: entry.image("driver_1_team_logo"), size: 16)
+          VStack(spacing: 3) {
             DriverPhotoView(image: entry.image("driver_1_image"), size: 40, borderColor: f1Red.opacity(0.6))
             Text(entry.text("driver_1_last_name", fallback: "P1"))
               .font(.system(size: 9, weight: .bold, design: .default))
@@ -293,8 +291,7 @@ private struct DriverStandingsWidgetView: View {
           .frame(maxWidth: .infinity)
 
           // 3rd place
-          VStack(spacing: 2) {
-            TeamLogoView(image: entry.image("driver_3_team_logo"), size: 14)
+          VStack(spacing: 3) {
             DriverPhotoView(image: entry.image("driver_3_image"), size: 32)
             Text(entry.text("driver_3_last_name", fallback: "P3"))
               .font(.system(size: 8, weight: .bold, design: .default))
@@ -331,7 +328,8 @@ private struct TeamStandingsWidgetView: View {
 
         HStack(alignment: .bottom, spacing: 4) {
           // 2nd
-          VStack(spacing: 4) {
+          VStack(spacing: 3) {
+            TeamLogoView(image: entry.image("team_2_logo"), size: 20)
             Text(entry.text("team_2_name", fallback: "P2"))
               .font(.system(size: 9, weight: .bold))
               .multilineTextAlignment(.center)
@@ -344,7 +342,8 @@ private struct TeamStandingsWidgetView: View {
           .frame(maxWidth: .infinity)
 
           // 1st
-          VStack(spacing: 4) {
+          VStack(spacing: 3) {
+            TeamLogoView(image: entry.image("team_1_logo"), size: 24)
             Text(entry.text("team_1_name", fallback: "P1"))
               .font(.system(size: 10, weight: .bold))
               .multilineTextAlignment(.center)
@@ -357,7 +356,8 @@ private struct TeamStandingsWidgetView: View {
           .frame(maxWidth: .infinity)
 
           // 3rd
-          VStack(spacing: 4) {
+          VStack(spacing: 3) {
+            TeamLogoView(image: entry.image("team_3_logo"), size: 20)
             Text(entry.text("team_3_name", fallback: "P3"))
               .font(.system(size: 9, weight: .bold))
               .multilineTextAlignment(.center)

@@ -60,9 +60,8 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
                 "${prefs.getString("driver_3_pts", "0") ?: "0"} pts",
             )
 
-            // Load driver headshot images and team logos.
+            // Load driver headshot images.
             val photoIds = arrayOf(R.id.driver_one_photo, R.id.driver_two_photo, R.id.driver_three_photo)
-            val logoIds = arrayOf(R.id.driver_one_team_logo, R.id.driver_two_team_logo, R.id.driver_three_team_logo)
             for (i in 1..3) {
                 val imagePath = prefs.getString("driver_${i}_image", null)
                 if (imagePath != null) {
@@ -71,16 +70,6 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
                         val bitmap = BitmapFactory.decodeFile(imagePath)
                         if (bitmap != null) {
                             views.setImageViewBitmap(photoIds[i - 1], bitmap)
-                        }
-                    }
-                }
-                val logoPath = prefs.getString("driver_${i}_team_logo", null)
-                if (logoPath != null) {
-                    val file = File(logoPath)
-                    if (file.exists()) {
-                        val bitmap = BitmapFactory.decodeFile(logoPath)
-                        if (bitmap != null) {
-                            views.setImageViewBitmap(logoIds[i - 1], bitmap)
                         }
                     }
                 }

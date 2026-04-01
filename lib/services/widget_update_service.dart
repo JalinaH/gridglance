@@ -173,14 +173,13 @@ class WidgetUpdateService {
       }
     }
 
-    // Download headshot images and save team logos for top 3 drivers.
+    // Download headshot images for top 3 drivers.
     for (int i = 0; i < top.length && i < 3; i++) {
       await _saveDriverImage(
         'driver_${i + 1}_image',
         permanentNumber: top[i].permanentNumber,
         code: top[i].code,
       );
-      await _saveTeamLogo('driver_${i + 1}_team_logo', top[i].teamName);
     }
 
     await _refreshDriverWidget();
@@ -204,12 +203,13 @@ class WidgetUpdateService {
     await _saveDps('team_2', _formatTeam(top, 1));
     await _saveDps('team_3', _formatTeam(top, 2));
 
-    // Store separate fields for podium layout.
+    // Store separate fields for podium layout + team logos.
     for (int i = 0; i < 3; i++) {
       final idx = i + 1;
       if (i < top.length) {
         await _saveDps('team_${idx}_name', top[i].teamName);
         await _saveDps('team_${idx}_pts', top[i].points);
+        await _saveTeamLogo('team_${idx}_logo', top[i].teamName);
       } else {
         await _saveDps('team_${idx}_name', 'TBD');
         await _saveDps('team_${idx}_pts', '0');
