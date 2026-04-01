@@ -760,16 +760,28 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }) {
     if (hasError) {
       return _DriverPreviewData(
-        name: "Failed to load", familyName: '', team: "Check connection",
-        position: "--", points: "", driverNumber: '--', driverCode: '---',
-        driverId: '', constructorId: '',
+        name: "Failed to load",
+        familyName: '',
+        team: "Check connection",
+        position: "--",
+        points: "",
+        driverNumber: '--',
+        driverCode: '---',
+        driverId: '',
+        constructorId: '',
       );
     }
     if (isLoading) {
       return _DriverPreviewData(
-        name: "Loading...", familyName: '', team: "Please wait",
-        position: "--", points: "", driverNumber: '--', driverCode: '---',
-        driverId: '', constructorId: '',
+        name: "Loading...",
+        familyName: '',
+        team: "Please wait",
+        position: "--",
+        points: "",
+        driverNumber: '--',
+        driverCode: '---',
+        driverId: '',
+        constructorId: '',
       );
     }
     DriverStanding? driver;
@@ -784,9 +796,15 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     driver ??= (standings ?? []).isEmpty ? null : standings!.first;
     if (driver == null) {
       return _DriverPreviewData(
-        name: "Standings", familyName: '', team: "Coming soon",
-        position: "--", points: "", driverNumber: '--', driverCode: '---',
-        driverId: '', constructorId: '',
+        name: "Standings",
+        familyName: '',
+        team: "Coming soon",
+        position: "--",
+        points: "",
+        driverNumber: '--',
+        driverCode: '---',
+        driverId: '',
+        constructorId: '',
       );
     }
     return _DriverPreviewData(
@@ -796,7 +814,8 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       position: driver.position,
       points: "${driver.points} pts",
       driverNumber: driver.permanentNumber ?? '--',
-      driverCode: driver.code ?? driver.familyName.substring(0, 3).toUpperCase(),
+      driverCode:
+          driver.code ?? driver.familyName.substring(0, 3).toUpperCase(),
       driverId: driver.driverId,
       constructorId: driver.constructorId,
     );
@@ -809,12 +828,18 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }) {
     if (hasError) {
       return _TeamPreviewData(
-        name: "Failed to load", points: "", position: "--", constructorId: '',
+        name: "Failed to load",
+        points: "",
+        position: "--",
+        constructorId: '',
       );
     }
     if (isLoading) {
       return _TeamPreviewData(
-        name: "Loading...", points: "", position: "--", constructorId: '',
+        name: "Loading...",
+        points: "",
+        position: "--",
+        constructorId: '',
       );
     }
     ConstructorStanding? team;
@@ -829,7 +854,10 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     team ??= (standings ?? []).isEmpty ? null : standings!.first;
     if (team == null) {
       return _TeamPreviewData(
-        name: "Standings", points: "", position: "--", constructorId: '',
+        name: "Standings",
+        points: "",
+        position: "--",
+        constructorId: '',
       );
     }
     return _TeamPreviewData(
@@ -947,12 +975,14 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     return drivers
         .where((d) => d.constructorId == topTeam!.constructorId)
         .take(2)
-        .map((d) => _TeamDriverData(
-              number: d.permanentNumber ?? '--',
-              familyName: d.familyName,
-              code: d.code ?? d.familyName.substring(0, 3).toUpperCase(),
-              driverId: d.driverId,
-            ))
+        .map(
+          (d) => _TeamDriverData(
+            number: d.permanentNumber ?? '--',
+            familyName: d.familyName,
+            code: d.code ?? d.familyName.substring(0, 3).toUpperCase(),
+            driverId: d.driverId,
+          ),
+        )
         .toList();
   }
 
@@ -963,7 +993,10 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     required bool hasError,
   }) {
     final data = _teamDriversData(
-      drivers, teams, isLoading: isLoading, hasError: hasError,
+      drivers,
+      teams,
+      isLoading: isLoading,
+      hasError: hasError,
     );
     if (data.isEmpty) return "-- ---  -- ---";
     final line1 = '${data[0].number} ${data[0].code.toUpperCase()}';
@@ -1214,9 +1247,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                           ? preview.driverCode
                           : null,
                       teamName: preview.team,
-                      initials: preview.name.isNotEmpty
-                          ? preview.name[0]
-                          : '?',
+                      initials: preview.name.isNotEmpty ? preview.name[0] : '?',
                     ),
                   ),
                   // Number badge + last name + season overlay
@@ -1282,7 +1313,10 @@ class _DriverStandingsPreview extends StatelessWidget {
                   // Details
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1302,10 +1336,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                             preview.team,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: _textMuted,
-                              fontSize: 9,
-                            ),
+                            style: TextStyle(color: _textMuted, fontSize: 9),
                           ),
                           SizedBox(height: 6),
                           // Stats row: Position + Points
@@ -1458,9 +1489,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                       ),
                     )
                   else
-                    Positioned.fill(
-                      child: Container(color: _surfaceAlt),
-                    ),
+                    Positioned.fill(child: Container(color: _surfaceAlt)),
                   // Team name + season overlay
                   Positioned(
                     left: 10,
@@ -1501,7 +1530,10 @@ class _TeamStandingsPreview extends StatelessWidget {
                   Container(width: 4, color: tColor),
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1509,7 +1541,10 @@ class _TeamStandingsPreview extends StatelessWidget {
                           // Driver rows
                           for (int i = 0; i < 2; i++) ...[
                             if (i > 0) SizedBox(height: 4),
-                            _driverRow(i < drivers.length ? drivers[i] : null, tColor),
+                            _driverRow(
+                              i < drivers.length ? drivers[i] : null,
+                              tColor,
+                            ),
                           ],
                           SizedBox(height: 5),
                           // Stats row
@@ -1752,10 +1787,7 @@ class _RaceWeekendPreview extends StatelessWidget {
                           location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: _textMuted,
-                            fontSize: 10,
-                          ),
+                          style: TextStyle(color: _textMuted, fontSize: 10),
                         ),
                       ],
                     ),
@@ -1830,7 +1862,9 @@ class _RaceWeekendPreview extends StatelessWidget {
                             height: isNext ? 7 : 6,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isNext ? null : _textMuted.withValues(alpha: 0.4),
+                              color: isNext
+                                  ? null
+                                  : _textMuted.withValues(alpha: 0.4),
                               gradient: isNext
                                   ? LinearGradient(colors: [_red, _redBright])
                                   : null,
@@ -1843,9 +1877,7 @@ class _RaceWeekendPreview extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: isNext
-                                    ? _textPrimary
-                                    : _textMuted,
+                                color: isNext ? _textPrimary : _textMuted,
                                 fontSize: 10,
                                 fontWeight: isNext
                                     ? FontWeight.w700
@@ -2146,9 +2178,7 @@ class _StandingsListPreview extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: _surfaceAlt,
-        border: Border.all(
-          color: isP1 ? _red.withValues(alpha: 0.5) : _border,
-        ),
+        border: Border.all(color: isP1 ? _red.withValues(alpha: 0.5) : _border),
       ),
       child: Icon(Icons.person, color: _textMuted, size: size * 0.5),
     );
@@ -2165,10 +2195,7 @@ class _StandingsListPreview extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _surfaceAlt,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: _surfaceAlt),
       child: Icon(Icons.directions_car, color: _textMuted, size: size * 0.5),
     );
   }
@@ -2415,10 +2442,7 @@ class _DriverPhotoRect extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: 0.18),
-            const Color(0xFF1C2430),
-          ],
+          colors: [color.withValues(alpha: 0.18), const Color(0xFF1C2430)],
         ),
       ),
       child: url != null && url.isNotEmpty
