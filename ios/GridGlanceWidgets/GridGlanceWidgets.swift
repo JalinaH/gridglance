@@ -728,10 +728,35 @@ private struct FavoriteTeamWidgetView: View {
             }
             .padding(.top, 4)
 
-            // Stats
+            // Stats — inline team-colored
             HStack(spacing: 5) {
-              StatBox(label: "POS", value: entry.text("favorite_team_default_position", fallback: "--"))
-              StatBox(label: "PTS", value: pointsNumber)
+              // Position
+              HStack(spacing: 1) {
+                Text("P")
+                  .font(.system(size: 11, weight: .bold, design: .default).italic())
+                  .foregroundColor(textMuted)
+                Text(entry.text("favorite_team_default_position", fallback: "--"))
+                  .font(.system(size: 15, weight: .bold, design: .default).italic())
+                  .foregroundColor(tColor)
+              }
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(tColor.opacity(0.15))
+              .cornerRadius(6)
+
+              // Points
+              HStack(spacing: 3) {
+                Text(pointsNumber)
+                  .font(.system(size: 15, weight: .bold, design: .default).italic())
+                  .foregroundColor(tColor)
+                Text("PTS")
+                  .font(.system(size: 8, weight: .bold))
+                  .foregroundColor(textMuted)
+              }
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(tColor.opacity(0.15))
+              .cornerRadius(6)
             }
             .padding(.top, 6)
           }

@@ -190,38 +190,44 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <!-- Position stat -->
                 <LinearLayout
+                    android:id="@+id/pos_box"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/widget_stat_box"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="5dp">
+                    android:background="@drawable/widget_driver_number_bg"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="5dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-condensed"
                         android:includeFontPadding="false"
-                        android:text="POS"
+                        android:text="P"
                         android:textColor="#9EA7B5"
-                        android:textSize="7sp"
-                        android:textStyle="bold" />
+                        android:textSize="11sp"
+                        android:textStyle="bold|italic" />
 
                     <TextView
                         android:id="@+id/team_position"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
+                        android:fontFamily="sans-serif-condensed"
                         android:includeFontPadding="false"
                         android:text="--"
                         android:textColor="#F7F8FA"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:textSize="16sp"
+                        android:textStyle="bold|italic" />
                 </LinearLayout>
 
                 <TextView
@@ -231,32 +237,38 @@
 
                 <!-- Points stat -->
                 <LinearLayout
+                    android:id="@+id/pts_box"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/widget_stat_box"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="5dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:includeFontPadding="false"
-                        android:text="PTS"
-                        android:textColor="#9EA7B5"
-                        android:textSize="7sp"
-                        android:textStyle="bold" />
+                    android:layout_weight="2"
+                    android:background="@drawable/widget_driver_number_bg"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="5dp">
 
                     <TextView
                         android:id="@+id/team_points"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
+                        android:fontFamily="sans-serif-condensed"
                         android:includeFontPadding="false"
                         android:text="--"
                         android:textColor="#F7F8FA"
-                        android:textSize="14sp"
+                        android:textSize="16sp"
+                        android:textStyle="bold|italic" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:fontFamily="sans-serif-condensed"
+                        android:includeFontPadding="false"
+                        android:text="PTS"
+                        android:textColor="#9EA7B5"
+                        android:textSize="9sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>

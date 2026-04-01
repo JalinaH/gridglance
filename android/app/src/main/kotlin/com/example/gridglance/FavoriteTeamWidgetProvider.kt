@@ -107,12 +107,14 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.driver2_name, d2Name)
             views.setTextViewText(R.id.driver2_code, d2Code)
 
-            // Apply team color to driver names, numbers, and accent bar.
+            // Apply team color to driver names, numbers, stats, and accent bar.
             views.setTextColor(R.id.driver1_name, teamColor)
             views.setTextColor(R.id.driver1_number, teamColor)
             views.setTextColor(R.id.driver2_name, teamColor)
             views.setTextColor(R.id.driver2_number, teamColor)
             views.setTextColor(R.id.team_name, teamColor)
+            views.setTextColor(R.id.team_position, teamColor)
+            views.setTextColor(R.id.team_points, teamColor)
             views.setInt(R.id.team_color_bar, "setBackgroundColor", teamColor)
 
             // Load team car image.
