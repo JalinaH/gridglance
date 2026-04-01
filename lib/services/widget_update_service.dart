@@ -812,10 +812,7 @@ class WidgetUpdateService {
   }
 
   /// Saves a team logo from Flutter assets to native widget storage.
-  static Future<void> _saveTeamLogo(
-    String imageKey,
-    String teamName,
-  ) async {
+  static Future<void> _saveTeamLogo(String imageKey, String teamName) async {
     final assetPath = _teamLogoAsset(teamName);
     if (assetPath == null) return;
     try {
@@ -830,7 +827,10 @@ class WidgetUpdateService {
   }
 
   static String? _teamLogoAsset(String teamName) {
-    final key = teamName.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final key = teamName.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
     if (key.isEmpty) return null;
     const logos = {
       'redbull': 'lib/assets/images/red-bull.png',
