@@ -525,10 +525,7 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps('${_favoriteDriverDefaultKey}_season', season);
-    await _saveFavoriteDriverDetails(
-      '${_favoriteDriverDefaultKey}_',
-      driver,
-    );
+    await _saveFavoriteDriverDetails('${_favoriteDriverDefaultKey}_', driver);
     await _saveDriverImage(
       '${_favoriteDriverDefaultKey}_image',
       permanentNumber: driver.permanentNumber,
@@ -597,10 +594,7 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps(_favoriteDriverKey(widgetId, 'season'), season);
-    await _saveFavoriteDriverDetails(
-      _favoriteDriverKey(widgetId, ''),
-      driver,
-    );
+    await _saveFavoriteDriverDetails(_favoriteDriverKey(widgetId, ''), driver);
     await _saveDriverImage(
       _favoriteDriverKey(widgetId, 'image'),
       permanentNumber: driver.permanentNumber,
@@ -777,20 +771,15 @@ class WidgetUpdateService {
     DriverStanding driver,
   ) async {
     final color = teamColor(driver.teamName);
-    final hex = color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
+    final hex = color
+        .toARGB32()
+        .toRadixString(16)
+        .padLeft(8, '0')
+        .toUpperCase();
     await _saveDps('${prefix}team_color', '#$hex');
-    await _saveDps(
-      '${prefix}last_name',
-      driver.familyName.toUpperCase(),
-    );
-    await _saveDps(
-      '${prefix}number',
-      driver.permanentNumber ?? '--',
-    );
-    await _saveDps(
-      '${prefix}code',
-      _shortDriverCode(driver),
-    );
+    await _saveDps('${prefix}last_name', driver.familyName.toUpperCase());
+    await _saveDps('${prefix}number', driver.permanentNumber ?? '--');
+    await _saveDps('${prefix}code', _shortDriverCode(driver));
   }
 
   /// Saves team color hex and individual driver details for the favorite team widget.
