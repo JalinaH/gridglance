@@ -9,6 +9,7 @@ import '../services/widget_update_service.dart';
 import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
 import '../utils/team_assets.dart';
+import '../services/f1_image_service.dart';
 import '../utils/team_colors.dart';
 import '../widgets/car_image.dart';
 import '../widgets/circuit_track.dart';
@@ -1202,28 +1203,22 @@ class _DriverStandingsPreview extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  // Driver photo background
-                  if (preview.driverId.isNotEmpty)
-                    Positioned.fill(
-                      child: DriverPhoto(
-                        driverId: preview.driverId,
-                        permanentNumber: preview.driverNumber != '--'
-                            ? preview.driverNumber
-                            : null,
-                        code: preview.driverCode != '---'
-                            ? preview.driverCode
-                            : null,
-                        teamName: preview.team,
-                        initials: preview.name.isNotEmpty
-                            ? preview.name[0]
-                            : '?',
-                        size: 200,
-                      ),
-                    )
-                  else
-                    Positioned.fill(
-                      child: Container(color: _surfaceAlt),
+                  // Driver photo background (rectangular, like Android widget)
+                  Positioned.fill(
+                    child: _DriverPhotoRect(
+                      driverId: preview.driverId,
+                      permanentNumber: preview.driverNumber != '--'
+                          ? preview.driverNumber
+                          : null,
+                      code: preview.driverCode != '---'
+                          ? preview.driverCode
+                          : null,
+                      teamName: preview.team,
+                      initials: preview.name.isNotEmpty
+                          ? preview.name[0]
+                          : '?',
                     ),
+                  ),
                   // Number badge + last name + season overlay
                   Positioned(
                     left: 10,
@@ -2388,4 +2383,65 @@ class _TeamDriverData {
     required this.code,
     required this.driverId,
   });
+}
+
+/// Rectangular driver photo for the favourite-driver widget preview.
+/// Matches the Android widget's ImageView (scaleType=fitCenter) layout.
+class _DriverPhotoRect extends StatelessWidget {
+  final String driverId;
+  final String? permanentNumber;
+  final String? code;
+  final String teamName;
+  final String initials;
+
+  const _DriverPhotoRect({
+    required this.driverId,
+    this.permanentNumber,
+    this.code,
+    required this.teamName,
+    required this.initials,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = teamColor(teamName);
+    final url = F1ImageService.instance.driverHeadshotUrl(
+      permanentNumber: permanentNumber,
+      code: code,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withValues(alpha: 0.18),
+            const Color(0xFF1C2430),
+          ],
+        ),
+      ),
+      child: url != null && url.isNotEmpty
+          ? Image.network(
+              url,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
+              errorBuilder: (_, _, _) => _placeholder(color),
+            )
+          : _placeholder(color),
+    );
+  }
+
+  Widget _placeholder(Color color) {
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: color.withValues(alpha: 0.5),
+          fontSize: 32,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
 }
