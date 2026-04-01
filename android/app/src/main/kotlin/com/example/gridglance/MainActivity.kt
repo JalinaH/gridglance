@@ -61,7 +61,7 @@ class MainActivity : FlutterActivity() {
                         } else {
                             editor.putString(id, data)
                         }
-                        editor.apply()
+                        editor.commit()
                         result.success(true)
                     }
                     "getWidgetData" -> {
@@ -88,7 +88,7 @@ class MainActivity : FlutterActivity() {
                         val file = File(dir, "$id.png")
                         file.writeBytes(bytes)
                         val prefs = context.getSharedPreferences(dpsPrefsName, Context.MODE_PRIVATE)
-                        prefs.edit().putString(id, file.absolutePath).apply()
+                        prefs.edit().putString(id, file.absolutePath).commit()
                         result.success(file.absolutePath)
                     }
                     else -> result.notImplemented()

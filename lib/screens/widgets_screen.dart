@@ -9,8 +9,11 @@ import '../services/widget_update_service.dart';
 import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
 import '../utils/team_assets.dart';
-import '../utils/country_flags.dart';
+import '../services/f1_image_service.dart';
+import '../utils/team_colors.dart';
+import '../widgets/car_image.dart';
 import '../widgets/circuit_track.dart';
+import '../widgets/driver_photo.dart';
 import '../widgets/empty_state.dart';
 
 class WidgetsScreen extends StatefulWidget {
@@ -512,6 +515,12 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
           isLoading: isLoading,
           hasError: hasError,
         );
+        final favoriteTeamDrivers = _teamDriversData(
+          data?.drivers,
+          data?.teams,
+          isLoading: isLoading,
+          hasError: hasError,
+        );
         final favoriteTeamDriverLines = _teamDriverLines(
           data?.drivers,
           data?.teams,
@@ -620,6 +629,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 seasonLabel: seasonLabel,
                 preview: favoriteTeamPreview,
                 driverLines: favoriteTeamDriverLines,
+                drivers: favoriteTeamDrivers,
                 title: 'Favorite Team',
               ),
               transparentValue: _favoriteTeamTransparent,
@@ -685,6 +695,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                       title: 'Team Standings',
                       subtitle: 'Top 3 teams',
                       entries: teamStandings,
+                      isTeam: true,
                     ),
                     transparentValue: _teamWidgetTransparent,
                     onTransparentChanged: (value) async {
@@ -750,17 +761,27 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     if (hasError) {
       return _DriverPreviewData(
         name: "Failed to load",
+        familyName: '',
         team: "Check connection",
         position: "--",
         points: "",
+        driverNumber: '--',
+        driverCode: '---',
+        driverId: '',
+        constructorId: '',
       );
     }
     if (isLoading) {
       return _DriverPreviewData(
         name: "Loading...",
+        familyName: '',
         team: "Please wait",
         position: "--",
         points: "",
+        driverNumber: '--',
+        driverCode: '---',
+        driverId: '',
+        constructorId: '',
       );
     }
     DriverStanding? driver;
@@ -776,16 +797,27 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     if (driver == null) {
       return _DriverPreviewData(
         name: "Standings",
+        familyName: '',
         team: "Coming soon",
         position: "--",
         points: "",
+        driverNumber: '--',
+        driverCode: '---',
+        driverId: '',
+        constructorId: '',
       );
     }
     return _DriverPreviewData(
       name: "${driver.givenName} ${driver.familyName}",
+      familyName: driver.familyName,
       team: driver.teamName,
       position: driver.position,
       points: "${driver.points} pts",
+      driverNumber: driver.permanentNumber ?? '--',
+      driverCode:
+          driver.code ?? driver.familyName.substring(0, 3).toUpperCase(),
+      driverId: driver.driverId,
+      constructorId: driver.constructorId,
     );
   }
 
@@ -799,10 +831,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         name: "Failed to load",
         points: "",
         position: "--",
+        constructorId: '',
       );
     }
     if (isLoading) {
-      return _TeamPreviewData(name: "Loading...", points: "", position: "--");
+      return _TeamPreviewData(
+        name: "Loading...",
+        points: "",
+        position: "--",
+        constructorId: '',
+      );
     }
     ConstructorStanding? team;
     if (_favoriteTeamId != null &&
@@ -815,12 +853,18 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     team ??= (standings ?? []).isEmpty ? null : standings!.first;
     if (team == null) {
-      return _TeamPreviewData(name: "Standings", points: "", position: "--");
+      return _TeamPreviewData(
+        name: "Standings",
+        points: "",
+        position: "--",
+        constructorId: '',
+      );
     }
     return _TeamPreviewData(
       name: team.teamName,
       points: "${team.points} pts",
       position: team.position,
+      constructorId: team.constructorId,
     );
   }
 
@@ -859,6 +903,10 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       return _PreviewEntry(
         name: "${driver.givenName} ${driver.familyName}",
         points: "${driver.points} pts",
+        driverId: driver.driverId,
+        permanentNumber: driver.permanentNumber,
+        code: driver.code,
+        teamName: driver.teamName,
       );
     });
   }
@@ -895,18 +943,23 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         return _PreviewEntry(name: "TBD", points: "");
       }
       final team = top[index];
-      return _PreviewEntry(name: team.teamName, points: "${team.points} pts");
+      return _PreviewEntry(
+        name: team.teamName,
+        points: "${team.points} pts",
+        teamName: team.teamName,
+        constructorId: team.constructorId,
+      );
     });
   }
 
-  String _teamDriverLines(
+  List<_TeamDriverData> _teamDriversData(
     List<DriverStanding>? drivers,
     List<ConstructorStanding>? teams, {
     required bool isLoading,
     required bool hasError,
   }) {
-    if (hasError || isLoading) {
-      return "-- ---  -- ---";
+    if (hasError || isLoading || drivers == null) {
+      return [];
     }
     ConstructorStanding? topTeam;
     if (_favoriteTeamId != null &&
@@ -918,18 +971,38 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       );
     }
     topTeam ??= (teams ?? []).isEmpty ? null : teams!.first;
-    if (topTeam == null || drivers == null) {
-      return "-- ---  -- ---";
-    }
-    final teamDrivers = drivers
-        .where((driver) => driver.constructorId == topTeam!.constructorId)
+    if (topTeam == null) return [];
+    return drivers
+        .where((d) => d.constructorId == topTeam!.constructorId)
         .take(2)
+        .map(
+          (d) => _TeamDriverData(
+            number: d.permanentNumber ?? '--',
+            familyName: d.familyName,
+            code: d.code ?? d.familyName.substring(0, 3).toUpperCase(),
+            driverId: d.driverId,
+          ),
+        )
         .toList();
-    if (teamDrivers.isEmpty) {
-      return "-- ---  -- ---";
-    }
-    final line1 = _shortDriverLabel(teamDrivers, 0);
-    final line2 = _shortDriverLabel(teamDrivers, 1);
+  }
+
+  String _teamDriverLines(
+    List<DriverStanding>? drivers,
+    List<ConstructorStanding>? teams, {
+    required bool isLoading,
+    required bool hasError,
+  }) {
+    final data = _teamDriversData(
+      drivers,
+      teams,
+      isLoading: isLoading,
+      hasError: hasError,
+    );
+    if (data.isEmpty) return "-- ---  -- ---";
+    final line1 = '${data[0].number} ${data[0].code.toUpperCase()}';
+    final line2 = data.length > 1
+        ? '${data[1].number} ${data[1].code.toUpperCase()}'
+        : '-- ---';
     return "$line1  $line2";
   }
 
@@ -1131,12 +1204,19 @@ class _DriverStandingsPreview extends StatelessWidget {
     required this.title,
   });
 
+  // Widget-style dark colors (always dark to match actual Android widget)
+  static const _bg = Color(0xFF121722);
+  static const _bgAlt = Color(0xFF151B24);
+  static const _surfaceAlt = Color(0xFF1C2430);
+  static const _border = Color(0xFF232C3A);
+  static const _textPrimary = Color(0xFFF7F8FA);
+  static const _textMuted = Color(0xFF9EA7B5);
+  static const _red = Color(0xFFE10600);
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final isDark = theme.brightness == Brightness.dark;
+    final tColor = preview.constructorId.isNotEmpty
+        ? teamColor(preview.team)
+        : _red;
     return AspectRatio(
       aspectRatio: 18 / 10,
       child: Container(
@@ -1144,247 +1224,173 @@ class _DriverStandingsPreview extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [colors.backgroundAlt, colors.surface],
+            colors: [_bg, _bgAlt],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
-              blurRadius: 12,
-              offset: Offset(0, 8),
-            ),
-          ],
+          border: Border.all(color: _border),
         ),
-        child: Stack(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
           children: [
-            Positioned(
-              right: -24,
-              top: -32,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      colors.f1RedBright.withValues(alpha: isDark ? 0.35 : 0.2),
-                      colors.f1Red.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -30,
-              bottom: -40,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surfaceAlt.withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Top half: driver photo + overlay
+            Expanded(
+              child: Stack(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        height: 3,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [colors.f1Red, colors.f1RedBright],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          title.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: onSurface,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceAlt.withValues(
-                            alpha: isDark ? 0.9 : 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Text(
-                          seasonLabel,
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Driver photo background (rectangular, like Android widget)
+                  Positioned.fill(
+                    child: _DriverPhotoRect(
+                      driverId: preview.driverId,
+                      permanentNumber: preview.driverNumber != '--'
+                          ? preview.driverNumber
+                          : null,
+                      code: preview.driverCode != '---'
+                          ? preview.driverCode
+                          : null,
+                      teamName: preview.team,
+                      initials: preview.name.isNotEmpty ? preview.name[0] : '?',
+                    ),
                   ),
-                  SizedBox(height: 10),
-                  Expanded(child: _DriverPreviewRow(preview: preview)),
+                  // Number badge + last name + season overlay
+                  Positioned(
+                    left: 10,
+                    top: 8,
+                    right: 10,
+                    child: Row(
+                      children: [
+                        // Driver number badge
+                        Container(
+                          width: 28,
+                          height: 22,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            preview.driverNumber,
+                            style: TextStyle(
+                              color: _textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            preview.familyName.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              fontStyle: FontStyle.italic,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.8),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        _seasonPill(seasonLabel),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TeamStandingsPreview extends StatelessWidget {
-  final String seasonLabel;
-  final _TeamPreviewData preview;
-  final String driverLines;
-  final String title;
-
-  const _TeamStandingsPreview({
-    required this.seasonLabel,
-    required this.preview,
-    required this.driverLines,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final isDark = theme.brightness == Brightness.dark;
-    return AspectRatio(
-      aspectRatio: 18 / 10,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [colors.backgroundAlt, colors.surface],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
-              blurRadius: 10,
-              offset: Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -24,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      colors.f1RedBright.withValues(
-                        alpha: isDark ? 0.28 : 0.15,
-                      ),
-                      colors.f1Red.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -24,
-              bottom: -36,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surfaceAlt.withValues(alpha: 0.45),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Bottom half: team accent bar + details
+            Expanded(
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        height: 3,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [colors.f1Red, colors.f1RedBright],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          title.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: onSurface,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceAlt.withValues(
-                            alpha: isDark ? 0.9 : 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Text(
-                          seasonLabel,
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
+                  // Team color accent bar
+                  Container(width: 4, color: tColor),
+                  // Details
                   Expanded(
-                    child: _TeamPreviewRow(
-                      preview: preview,
-                      driverLines: driverLines,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            preview.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: 1),
+                          Text(
+                            preview.team,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: _textMuted, fontSize: 9),
+                          ),
+                          SizedBox(height: 6),
+                          // Stats row: Position + Points
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _statBox([
+                                  TextSpan(
+                                    text: 'P',
+                                    style: TextStyle(
+                                      color: _textMuted,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: preview.position,
+                                    style: TextStyle(
+                                      color: _textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                              SizedBox(width: 6),
+                              Expanded(
+                                flex: 2,
+                                child: _statBox([
+                                  TextSpan(
+                                    text: preview.points.replaceAll(' pts', ''),
+                                    style: TextStyle(
+                                      color: _textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' PTS',
+                                    style: TextStyle(
+                                      color: _textMuted,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1393,6 +1399,265 @@ class _TeamStandingsPreview extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  static Widget _seasonPill(String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: _surfaceAlt.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _border),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: _textMuted,
+          fontSize: 8,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  static Widget _statBox(List<TextSpan> spans) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: RichText(text: TextSpan(children: spans)),
+    );
+  }
+}
+
+class _TeamStandingsPreview extends StatelessWidget {
+  final String seasonLabel;
+  final _TeamPreviewData preview;
+  final String driverLines;
+  final List<_TeamDriverData> drivers;
+  final String title;
+
+  const _TeamStandingsPreview({
+    required this.seasonLabel,
+    required this.preview,
+    required this.driverLines,
+    required this.drivers,
+    required this.title,
+  });
+
+  static const _bg = Color(0xFF121722);
+  static const _bgAlt = Color(0xFF151B24);
+  static const _surfaceAlt = Color(0xFF1C2430);
+  static const _border = Color(0xFF232C3A);
+  static const _textPrimary = Color(0xFFF7F8FA);
+  static const _textMuted = Color(0xFF9EA7B5);
+
+  @override
+  Widget build(BuildContext context) {
+    final tColor = preview.constructorId.isNotEmpty
+        ? teamColor(preview.name)
+        : const Color(0xFFE10600);
+    return AspectRatio(
+      aspectRatio: 18 / 10,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [_bg, _bgAlt],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            // Top half: car image + team name overlay
+            Expanded(
+              child: Stack(
+                children: [
+                  if (preview.constructorId.isNotEmpty)
+                    Positioned.fill(
+                      child: CarImage(
+                        teamName: preview.name,
+                        constructorId: preview.constructorId,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    )
+                  else
+                    Positioned.fill(child: Container(color: _surfaceAlt)),
+                  // Team name + season overlay
+                  Positioned(
+                    left: 10,
+                    top: 8,
+                    right: 10,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            preview.name.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.8),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        _DriverStandingsPreview._seasonPill(seasonLabel),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Bottom half: accent bar + driver rows + stats
+            Expanded(
+              child: Row(
+                children: [
+                  Container(width: 4, color: tColor),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Driver rows
+                          for (int i = 0; i < 2; i++) ...[
+                            if (i > 0) SizedBox(height: 4),
+                            _driverRow(
+                              i < drivers.length ? drivers[i] : null,
+                              tColor,
+                            ),
+                          ],
+                          SizedBox(height: 5),
+                          // Stats row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DriverStandingsPreview._statBox([
+                                  TextSpan(
+                                    text: 'P',
+                                    style: TextStyle(
+                                      color: _textMuted,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: preview.position,
+                                    style: TextStyle(
+                                      color: _textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                              SizedBox(width: 6),
+                              Expanded(
+                                flex: 2,
+                                child: _DriverStandingsPreview._statBox([
+                                  TextSpan(
+                                    text: preview.points.replaceAll(' pts', ''),
+                                    style: TextStyle(
+                                      color: _textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' PTS',
+                                    style: TextStyle(
+                                      color: _textMuted,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _driverRow(_TeamDriverData? driver, Color tColor) {
+    final number = driver?.number ?? '--';
+    final name = driver?.familyName.toUpperCase() ?? '---';
+    final code = driver?.code.toUpperCase() ?? '---';
+    return Row(
+      children: [
+        // Number badge
+        Container(
+          width: 26,
+          height: 20,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Text(
+            number,
+            style: TextStyle(
+              color: _textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        Text(
+          code,
+          style: TextStyle(
+            color: _textMuted,
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1412,18 +1677,23 @@ class _RaceWeekendPreview extends StatelessWidget {
     required this.hasError,
   });
 
+  static const _bg = Color(0xFF121722);
+  static const _bgAlt = Color(0xFF151B24);
+  static const _surfaceAlt = Color(0xFF1C2430);
+  static const _border = Color(0xFF232C3A);
+  static const _textPrimary = Color(0xFFF7F8FA);
+  static const _textMuted = Color(0xFF9EA7B5);
+  static const _red = Color(0xFFE10600);
+  static const _redBright = Color(0xFFFF3B30);
+
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final isDark = theme.brightness == Brightness.dark;
-
     final raceName = _raceName;
     final location = _location;
     final sessionLines = _sessionLines;
     final countdownLine = _countdownLine;
     final nextIndex = _nextSessionIndex;
+    final roundLabel = race != null ? 'R${race!.round}' : '';
 
     return AspectRatio(
       aspectRatio: 16 / 14,
@@ -1432,219 +1702,197 @@ class _RaceWeekendPreview extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [colors.backgroundAlt, colors.surface],
+            colors: [_bg, _bgAlt],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
-              blurRadius: 10,
-              offset: Offset(0, 7),
-            ),
-          ],
+          border: Border.all(color: _border),
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -24,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      colors.f1RedBright.withValues(
-                        alpha: isDark ? 0.28 : 0.15,
-                      ),
-                      colors.f1Red.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(14),
-              child: Column(
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top: race info (left) + track (right)
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        height: 3,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [colors.f1Red, colors.f1RedBright],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          'RACE WEEKEND',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: onSurface,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceAlt.withValues(
-                            alpha: isDark ? 0.9 : 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Text(
-                          seasonLabel,
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  // Race name + track
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                if (race != null) ...[
-                                  Text(
-                                    countryFlag(race!.country),
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                  SizedBox(width: 6),
-                                ],
-                                Flexible(
-                                  child: Text(
-                                    raceName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: onSurface,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              location,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: colors.textMuted,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (race != null && race!.circuitId.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: CircuitTrack(
-                            circuitId: race!.circuitId,
-                            width: 52,
-                            height: 36,
-                            color: colors.f1RedBright.withValues(alpha: 0.5),
-                          ),
-                        ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  // Countdown
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: colors.surfaceAlt.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Text(
-                      countdownLine,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: onSurface,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  // Session list
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: List.generate(sessionLines.length, (i) {
-                        final isNext = i == nextIndex;
-                        return Padding(
-                          padding: EdgeInsets.only(top: i == 0 ? 0 : 3),
-                          child: Row(
-                            children: [
-                              if (isNext)
-                                Container(
-                                  width: 3,
-                                  height: 10,
-                                  margin: EdgeInsets.only(right: 5),
-                                  decoration: BoxDecoration(
-                                    color: colors.f1Red,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
+                      children: [
+                        // Header row
+                        Row(
+                          children: [
+                            Container(
+                              height: 3,
+                              width: 36,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [_red, _redBright],
                                 ),
-                              Expanded(
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'RACE WEEKEND',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: _textPrimary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 6),
+                            if (roundLabel.isNotEmpty)
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _red.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 child: Text(
-                                  sessionLines[i],
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  roundLabel,
                                   style: TextStyle(
-                                    color: isNext
-                                        ? onSurface
-                                        : colors.textMuted,
-                                    fontSize: 10,
-                                    fontWeight: isNext
-                                        ? FontWeight.w700
-                                        : FontWeight.normal,
+                                    color: _red,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
-                            ],
+                          ],
+                        ),
+                        SizedBox(height: 6),
+                        // Race name
+                        Text(
+                          raceName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
                           ),
-                        );
-                      }),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: _textMuted, fontSize: 10),
+                        ),
+                      ],
                     ),
                   ),
+                  // Track layout image
+                  if (race != null && race!.circuitId.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(left: 12),
+                      child: Opacity(
+                        opacity: 0.6,
+                        child: CircuitTrack(
+                          circuitId: race!.circuitId,
+                          width: 64,
+                          height: 48,
+                          color: _textMuted.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
                 ],
               ),
-            ),
-          ],
+              SizedBox(height: 8),
+              // Countdown row
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _surfaceAlt,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _border),
+                ),
+                child: Row(
+                  children: [
+                    // Active dot
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(colors: [_red, _redBright]),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        countdownLine,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _textPrimary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 6),
+              // Session timeline
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(sessionLines.length, (i) {
+                    final isNext = i == nextIndex;
+                    return Padding(
+                      padding: EdgeInsets.only(top: i == 0 ? 0 : 2),
+                      child: Row(
+                        children: [
+                          // Timeline dot
+                          Container(
+                            width: isNext ? 7 : 6,
+                            height: isNext ? 7 : 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isNext
+                                  ? null
+                                  : _textMuted.withValues(alpha: 0.4),
+                              gradient: isNext
+                                  ? LinearGradient(colors: [_red, _redBright])
+                                  : null,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              sessionLines[i],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: isNext ? _textPrimary : _textMuted,
+                                fontSize: 10,
+                                fontWeight: isNext
+                                    ? FontWeight.w700
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1744,20 +1992,29 @@ class _StandingsListPreview extends StatelessWidget {
   final String title;
   final String subtitle;
   final List<_PreviewEntry> entries;
+  final bool isTeam;
 
   const _StandingsListPreview({
     required this.seasonLabel,
     required this.title,
     required this.subtitle,
     required this.entries,
+    this.isTeam = false,
   });
+
+  static const _bg = Color(0xFF121722);
+  static const _bgAlt = Color(0xFF151B24);
+  static const _surfaceAlt = Color(0xFF1C2430);
+  static const _border = Color(0xFF232C3A);
+  static const _textPrimary = Color(0xFFF7F8FA);
+  static const _textSecondary = Color(0xFFDCE1EA);
+  static const _textMuted = Color(0xFF9EA7B5);
+  static const _red = Color(0xFFE10600);
+  static const _redBright = Color(0xFFFF3B30);
+  static const _bronze = Color(0xFFCD7F32);
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final isDark = theme.brightness == Brightness.dark;
     return AspectRatio(
       aspectRatio: 3 / 4,
       child: Container(
@@ -1765,224 +2022,134 @@ class _StandingsListPreview extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [colors.backgroundAlt, colors.surface],
+            colors: [_bg, _bgAlt],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
-              blurRadius: 10,
-              offset: Offset(0, 7),
-            ),
-          ],
+          border: Border.all(color: _border),
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -24,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      colors.f1RedBright.withValues(
-                        alpha: isDark ? 0.28 : 0.15,
-                      ),
-                      colors.f1Red.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -24,
-              bottom: -36,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surfaceAlt.withValues(alpha: 0.45),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
                 children: [
-                  // Header row
-                  Row(
-                    children: [
-                      Container(
-                        height: 3,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [colors.f1Red, colors.f1RedBright],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          title.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: onSurface,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceAlt.withValues(
-                            alpha: isDark ? 0.9 : 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Text(
-                          seasonLabel,
-                          style: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Container(
+                    height: 3,
+                    width: 30,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [_red, _redBright]),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  SizedBox(height: 6),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: colors.textMuted, fontSize: 11),
+                  SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      title.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _textPrimary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 8),
-                  // Podium section
-                  Expanded(child: _buildPodium(context, colors, onSurface)),
+                  SizedBox(width: 4),
+                  _DriverStandingsPreview._seasonPill(seasonLabel),
                 ],
               ),
-            ),
-          ],
+              SizedBox(height: 8),
+              // Podium section
+              Expanded(child: _buildPodium()),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPodium(BuildContext context, AppColors colors, Color onSurface) {
+  Widget _buildPodium() {
     final second = entries.length > 1 ? entries[1] : null;
     final first = entries.isNotEmpty ? entries[0] : null;
     final third = entries.length > 2 ? entries[2] : null;
 
     return Column(
       children: [
-        // Names & points row: 2nd · 1st (raised) · 3rd
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: second != null
-                    ? _podiumLabel(second, 2, colors, onSurface)
+                    ? _podiumColumn(second, 2)
                     : SizedBox.shrink(),
               ),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.only(bottom: 6),
                   child: first != null
-                      ? _podiumLabel(first, 1, colors, onSurface)
+                      ? _podiumColumn(first, 1)
                       : SizedBox.shrink(),
                 ),
               ),
               Expanded(
                 child: third != null
-                    ? _podiumLabel(third, 3, colors, onSurface)
+                    ? _podiumColumn(third, 3)
                     : SizedBox.shrink(),
               ),
             ],
           ),
         ),
         SizedBox(height: 2),
-        // Podium blocks
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Expanded(child: _podiumBlock(2, colors, height: 24)),
-            Expanded(child: _podiumBlock(1, colors, height: 34)),
-            Expanded(child: _podiumBlock(3, colors, height: 16)),
+            Expanded(child: _podiumBlock(2, height: 24)),
+            Expanded(child: _podiumBlock(1, height: 34)),
+            Expanded(child: _podiumBlock(3, height: 16)),
           ],
         ),
       ],
     );
   }
 
-  Widget _podiumLabel(
-    _PreviewEntry entry,
-    int position,
-    AppColors colors,
-    Color onSurface,
-  ) {
+  Widget _podiumColumn(_PreviewEntry entry, int position) {
+    final isP1 = position == 1;
+    final photoSize = isP1 ? 36.0 : 30.0;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Position badge
-        Container(
-          width: 18,
-          height: 18,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: position == 1
-                ? colors.f1Red.withValues(alpha: 0.95)
-                : colors.surfaceAlt,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            '$position',
-            style: TextStyle(
-              color: position == 1 ? Colors.white : colors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        SizedBox(height: 4),
+        // Photo / logo
+        if (isTeam)
+          _teamLogo(entry, photoSize)
+        else
+          _driverAvatar(entry, photoSize, isP1),
+        SizedBox(height: 3),
         // Name
         Text(
           entry.name.split(' ').last.toUpperCase(),
-          maxLines: 1,
+          maxLines: isTeam ? 2 : 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: onSurface,
-            fontSize: 9,
+            color: isP1 ? _textPrimary : _textSecondary,
+            fontSize: 8,
             fontWeight: FontWeight.w800,
-            letterSpacing: 0.3,
           ),
         ),
-        SizedBox(height: 2),
-        // Points
+        SizedBox(height: 1),
         if (entry.points.isNotEmpty)
           Text(
             entry.points,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: colors.textMuted,
-              fontSize: 8,
+              color: isP1 ? _textSecondary : _textMuted,
+              fontSize: 7,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1990,17 +2157,52 @@ class _StandingsListPreview extends StatelessWidget {
     );
   }
 
-  Widget _podiumBlock(
-    int position,
-    AppColors colors, {
-    required double height,
-  }) {
-    final positionColors = {
-      1: colors.f1Red,
-      2: colors.textMuted,
-      3: Color(0xFFCD7F32),
-    };
-    final blockColor = positionColors[position] ?? colors.surfaceAlt;
+  Widget _driverAvatar(_PreviewEntry entry, double size, bool isP1) {
+    if (entry.driverId != null && entry.driverId!.isNotEmpty) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: DriverPhoto(
+          driverId: entry.driverId!,
+          permanentNumber: entry.permanentNumber,
+          code: entry.code,
+          teamName: entry.teamName ?? '',
+          initials: entry.name.isNotEmpty ? entry.name[0] : '?',
+          size: size,
+        ),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _surfaceAlt,
+        border: Border.all(color: isP1 ? _red.withValues(alpha: 0.5) : _border),
+      ),
+      child: Icon(Icons.person, color: _textMuted, size: size * 0.5),
+    );
+  }
+
+  Widget _teamLogo(_PreviewEntry entry, double size) {
+    if (entry.teamName != null && entry.teamName!.isNotEmpty) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: teamLogoOrIcon(entry.teamName!, size: size * 0.7),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: _surfaceAlt),
+      child: Icon(Icons.directions_car, color: _textMuted, size: size * 0.5),
+    );
+  }
+
+  Widget _podiumBlock(int position, {required double height}) {
+    final positionColors = {1: _red, 2: _textMuted, 3: _bronze};
+    final blockColor = positionColors[position] ?? _surfaceAlt;
 
     return Container(
       height: height,
@@ -2141,21 +2343,44 @@ class _SelectionSheet<T> extends StatelessWidget {
 class _PreviewEntry {
   final String name;
   final String points;
+  final String? driverId;
+  final String? permanentNumber;
+  final String? code;
+  final String? teamName;
+  final String? constructorId;
 
-  const _PreviewEntry({required this.name, required this.points});
+  const _PreviewEntry({
+    required this.name,
+    required this.points,
+    this.driverId,
+    this.permanentNumber,
+    this.code,
+    this.teamName,
+    this.constructorId,
+  });
 }
 
 class _DriverPreviewData {
   final String name;
+  final String familyName;
   final String team;
   final String position;
   final String points;
+  final String driverNumber;
+  final String driverCode;
+  final String driverId;
+  final String constructorId;
 
   const _DriverPreviewData({
     required this.name,
+    required this.familyName,
     required this.team,
     required this.position,
     required this.points,
+    required this.driverNumber,
+    required this.driverCode,
+    required this.driverId,
+    required this.constructorId,
   });
 }
 
@@ -2163,187 +2388,84 @@ class _TeamPreviewData {
   final String name;
   final String points;
   final String position;
+  final String constructorId;
 
   const _TeamPreviewData({
     required this.name,
     required this.points,
     required this.position,
+    required this.constructorId,
   });
 }
 
-class _DriverPreviewRow extends StatelessWidget {
-  final _DriverPreviewData preview;
+class _TeamDriverData {
+  final String number;
+  final String familyName;
+  final String code;
+  final String driverId;
 
-  const _DriverPreviewRow({required this.preview});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: colors.surfaceAlt,
-                shape: BoxShape.circle,
-                border: Border.all(color: colors.border),
-              ),
-              child: Icon(Icons.person, color: colors.textMuted, size: 22),
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    preview.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: onSurface,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    preview.team,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: colors.textMuted, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 10),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: colors.surfaceAlt.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.border),
-          ),
-          child: Row(
-            children: [
-              Text(
-                'P${preview.position}',
-                style: TextStyle(
-                  color: onSurface,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Spacer(),
-              if (preview.points.isNotEmpty)
-                Text(
-                  preview.points,
-                  style: TextStyle(
-                    color: onSurface,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  const _TeamDriverData({
+    required this.number,
+    required this.familyName,
+    required this.code,
+    required this.driverId,
+  });
 }
 
-class _TeamPreviewRow extends StatelessWidget {
-  final _TeamPreviewData preview;
-  final String driverLines;
+/// Rectangular driver photo for the favourite-driver widget preview.
+/// Matches the Android widget's ImageView (scaleType=fitCenter) layout.
+class _DriverPhotoRect extends StatelessWidget {
+  final String driverId;
+  final String? permanentNumber;
+  final String? code;
+  final String teamName;
+  final String initials;
 
-  const _TeamPreviewRow({required this.preview, required this.driverLines});
+  const _DriverPhotoRect({
+    required this.driverId,
+    this.permanentNumber,
+    this.code,
+    required this.teamName,
+    required this.initials,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 64,
-              height: 36,
-              decoration: BoxDecoration(
-                color: colors.surfaceAlt,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: colors.border),
-              ),
-              child: Center(
-                child: IconTheme(
-                  data: IconThemeData(color: colors.textMuted),
-                  child: teamLogoOrIcon(preview.name, size: 20),
-                ),
-              ),
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    preview.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: onSurface,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    preview.points,
-                    style: TextStyle(color: colors.textMuted, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    final color = teamColor(teamName);
+    final url = F1ImageService.instance.driverHeadshotUrl(
+      permanentNumber: permanentNumber,
+      code: code,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withValues(alpha: 0.18), const Color(0xFF1C2430)],
         ),
-        SizedBox(height: 10),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: colors.surfaceAlt.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.border),
-          ),
-          child: Row(
-            children: [
-              Text(
-                'P${preview.position}',
-                style: TextStyle(
-                  color: onSurface,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Spacer(),
-              Text(
-                driverLines,
-                style: TextStyle(
-                  color: onSurface,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+      ),
+      child: url != null && url.isNotEmpty
+          ? Image.network(
+              url,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
+              errorBuilder: (_, _, _) => _placeholder(color),
+            )
+          : _placeholder(color),
+    );
+  }
+
+  Widget _placeholder(Color color) {
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: color.withValues(alpha: 0.5),
+          fontSize: 32,
+          fontWeight: FontWeight.w900,
         ),
-      ],
+      ),
     );
   }
 }
