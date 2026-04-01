@@ -840,6 +840,126 @@ private struct FavoriteTeamWidgetView: View {
   }
 }
 
+// MARK: - Race Weekend (Track Hero + Timeline)
+
+private struct RaceWeekendWidgetView: View {
+  let entry: GridGlanceEntry
+
+  private let sessionKeys: [(text: String, dot: Int)] = (1...7).map {
+    (text: "race_weekend_widget_session_\($0)", dot: $0)
+  }
+
+  private var nextIndex: Int {
+    Int(entry.text("race_weekend_widget_next_index", fallback: "-1")) ?? -1
+  }
+
+  var body: some View {
+    WidgetSurface {
+      VStack(spacing: 0) {
+        // Top: track image hero with race info
+        ZStack(alignment: .bottomLeading) {
+          if let trackImage = entry.image("race_weekend_widget_track") {
+            Image(uiImage: trackImage)
+              .resizable()
+              .aspectRatio(contentMode: .fit)
+              .opacity(0.25)
+              .padding(8)
+              .frame(maxWidth: .infinity, maxHeight: .infinity)
+          } else {
+            Rectangle().fill(Color.clear)
+          }
+
+          VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack(spacing: 6) {
+              RoundedRectangle(cornerRadius: 1.5)
+                .fill(LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing))
+                .frame(width: 28, height: 3)
+              Text("Race Weekend")
+                .font(.system(size: 10, weight: .bold))
+                .textCase(.uppercase)
+                .tracking(0.5)
+              Spacer()
+              Text(entry.text("race_weekend_widget_round", fallback: ""))
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(f1Red)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(f1Red.opacity(0.15))
+                .cornerRadius(4)
+                .overlay(
+                  RoundedRectangle(cornerRadius: 4)
+                    .stroke(f1Red.opacity(0.2), lineWidth: 1)
+                )
+            }
+
+            Spacer(minLength: 2)
+
+            Text(entry.text("race_weekend_widget_name", fallback: "Race weekend"))
+              .font(.system(size: 14, weight: .bold, design: .default))
+              .lineLimit(1)
+
+            Text(entry.text("race_weekend_widget_location", fallback: "Location TBA"))
+              .font(.system(size: 8))
+              .foregroundColor(textMuted)
+              .lineLimit(1)
+              .padding(.top, 1)
+          }
+          .padding(.horizontal, 10)
+          .padding(.vertical, 6)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        // Bottom: countdown + session timeline
+        VStack(alignment: .leading, spacing: 3) {
+          // Countdown
+          HStack(spacing: 6) {
+            Circle()
+              .fill(LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing))
+              .frame(width: 7, height: 7)
+            Text(entry.text("race_weekend_widget_countdown", fallback: "Waiting for schedule"))
+              .font(.system(size: 10, weight: .bold))
+              .lineLimit(1)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 6)
+          .padding(.vertical, 5)
+          .background(surfaceAlt)
+          .cornerRadius(6)
+          .overlay(
+            RoundedRectangle(cornerRadius: 6)
+              .stroke(borderColor, lineWidth: 1)
+          )
+
+          // Session rows
+          ForEach(0..<7, id: \.self) { i in
+            let text = entry.text(sessionKeys[i].text, fallback: "")
+            if !text.isEmpty {
+              HStack(spacing: 6) {
+                Circle()
+                  .fill(i == nextIndex
+                    ? LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing)
+                    : LinearGradient(colors: [Color(red: 0.17, green: 0.21, blue: 0.27), Color(red: 0.17, green: 0.21, blue: 0.27)], startPoint: .leading, endPoint: .trailing)
+                  )
+                  .frame(width: i == nextIndex ? 5 : 4, height: i == nextIndex ? 5 : 4)
+                Text(text)
+                  .font(.system(size: 8, weight: i == nextIndex ? .bold : .regular))
+                  .foregroundColor(i == nextIndex ? .white : textMuted)
+                  .lineLimit(1)
+              }
+            }
+          }
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+      }
+      .foregroundColor(.white)
+    }
+  }
+}
+
 // MARK: - Widget Declarations
 
 struct GridGlanceDriverStandingsWidget: Widget {
@@ -920,6 +1040,19 @@ struct GridGlanceFavoriteTeamWidget: Widget {
   }
 }
 
+struct GridGlanceRaceWeekendWidget: Widget {
+  let kind: String = "GridGlanceRaceWeekendWidget"
+
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
+      RaceWeekendWidgetView(entry: entry)
+    }
+    .configurationDisplayName("Race Weekend")
+    .description("Full weekend schedule with track layout.")
+    .supportedFamilies([.systemMedium])
+  }
+}
+
 @main
 struct GridGlanceWidgetsBundle: WidgetBundle {
   var body: some Widget {
@@ -929,5 +1062,6 @@ struct GridGlanceWidgetsBundle: WidgetBundle {
     GridGlanceFavoriteTeamWidget()
     GridGlanceNextRaceWidget()
     GridGlanceNextSessionWidget()
+    GridGlanceRaceWeekendWidget()
   }
 }

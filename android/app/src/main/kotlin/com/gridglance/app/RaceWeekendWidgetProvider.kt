@@ -3,9 +3,11 @@ package com.gridglance.app
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
+import java.io.File
 import java.util.Calendar
 
 class RaceWeekendWidgetProvider : AppWidgetProvider() {
@@ -23,6 +25,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         val raceName = prefs.getString("race_weekend_widget_name", "Race weekend") ?: "Race weekend"
         val raceLocation = prefs.getString("race_weekend_widget_location", "Location TBA") ?: "Location TBA"
         val countdown = prefs.getString("race_weekend_widget_countdown", "Waiting for schedule") ?: "Waiting for schedule"
+        val round = prefs.getString("race_weekend_widget_round", "") ?: ""
         val isTransparent = prefs.getString("race_weekend_widget_transparent", "false") == "true"
 
         val sessionTextIds = arrayOf(
@@ -47,10 +50,23 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             }
             views.setInt(R.id.widget_root, "setBackgroundResource", background)
             views.setTextViewText(R.id.widget_title, title)
-            views.setTextViewText(R.id.widget_season, season)
+            views.setTextViewText(R.id.race_round, round)
             views.setTextViewText(R.id.race_name, raceName)
             views.setTextViewText(R.id.race_location, raceLocation)
             views.setTextViewText(R.id.next_session_countdown, countdown)
+
+            // Load track layout image.
+            val trackPath = prefs.getString("race_weekend_widget_track", null)
+            if (trackPath != null) {
+                val file = File(trackPath)
+                if (file.exists()) {
+                    val bitmap = BitmapFactory.decodeFile(trackPath)
+                    if (bitmap != null) {
+                        views.setImageViewBitmap(R.id.track_image, bitmap)
+                        views.setViewVisibility(R.id.track_image, View.VISIBLE)
+                    }
+                }
+            }
 
             for (i in sessionTextIds.indices) {
                 val key = "race_weekend_widget_session_${i + 1}"
@@ -70,7 +86,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
                     views.setTextColor(sessionTextIds[i], 0xFFF7F8FA.toInt())
                     views.setInt(sessionDotIds[i], "setBackgroundResource", R.drawable.widget_timeline_dot_active)
                 } else {
-                    views.setTextColor(sessionTextIds[i], 0xFFDCE1EA.toInt())
+                    views.setTextColor(sessionTextIds[i], 0xFF9EA7B5.toInt())
                     views.setInt(sessionDotIds[i], "setBackgroundResource", R.drawable.widget_timeline_dot)
                 }
             }

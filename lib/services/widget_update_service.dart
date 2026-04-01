@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:http/http.dart' as http;
 
@@ -347,6 +349,7 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_name', 'No upcoming race');
       await _saveDps('race_weekend_widget_location', 'Season complete');
       await _saveDps('race_weekend_widget_countdown', 'Awaiting next calendar');
+      await _saveDps('race_weekend_widget_round', '');
       for (int i = 1; i <= 7; i++) {
         await _saveDps('race_weekend_widget_session_$i', '');
       }
@@ -361,6 +364,11 @@ class WidgetUpdateService {
         target.location.isEmpty
             ? (target.circuitName.isEmpty ? 'Location TBA' : target.circuitName)
             : target.location,
+      );
+      await _saveDps('race_weekend_widget_round', 'R${target.round}');
+      await _saveTrackImage(
+        'race_weekend_widget_track',
+        target.circuitId,
       );
 
       // Build session lines for this race.
@@ -808,6 +816,60 @@ class WidgetUpdateService {
         await _saveDps('${prefix}d${idx}_number', '--');
         await _saveDps('${prefix}d${idx}_code', '---');
       }
+    }
+  }
+
+  /// Rasterizes a circuit SVG from Flutter assets to a PNG and saves it.
+  static Future<void> _saveTrackImage(
+    String imageKey,
+    String circuitId,
+  ) async {
+    final assetPath = 'lib/assets/circuits/$circuitId.svg';
+    try {
+      final svgString = await rootBundle.loadString(assetPath);
+      final pictureInfo = await vg.loadPicture(SvgStringLoader(svgString), null);
+      const targetWidth = 200.0;
+      const targetHeight = 140.0;
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+
+      // Scale SVG to fit target size.
+      final svgSize = pictureInfo.size;
+      final scaleX = targetWidth / svgSize.width;
+      final scaleY = targetHeight / svgSize.height;
+      final scale = scaleX < scaleY ? scaleX : scaleY;
+      final dx = (targetWidth - svgSize.width * scale) / 2;
+      final dy = (targetHeight - svgSize.height * scale) / 2;
+      canvas.translate(dx, dy);
+      canvas.scale(scale);
+
+      // Tint the track red.
+      canvas.saveLayer(
+        ui.Rect.fromLTWH(0, 0, svgSize.width, svgSize.height),
+        ui.Paint()..colorFilter = const ui.ColorFilter.mode(
+          ui.Color(0xFFE10600),
+          ui.BlendMode.srcIn,
+        ),
+      );
+      canvas.drawPicture(pictureInfo.picture);
+      canvas.restore();
+
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(
+        targetWidth.toInt(),
+        targetHeight.toInt(),
+      );
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      pictureInfo.picture.dispose();
+      image.dispose();
+      if (byteData == null) return;
+
+      await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+        'id': imageKey,
+        'bytes': byteData.buffer.asUint8List(),
+      });
+    } catch (_) {
+      // SVG not found or render failure — widget shows without track image.
     }
   }
 
