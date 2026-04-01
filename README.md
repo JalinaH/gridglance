@@ -57,7 +57,7 @@ gridglance/
 │   ├── services/        # Notifications, predictions, weather, calendar, sharing, preferences
 │   ├── theme/           # AppColors theme extension (dark/light)
 │   ├── utils/           # Formatting, haptics, team assets
-│   └── widgets/         # 16 reusable UI components
+│   └── widgets/         # 20 reusable UI components
 ├── android/             # Android app + 6 AppWidget providers
 ├── ios/                 # iOS runner + WidgetKit extension
 ├── test/
@@ -121,13 +121,13 @@ flutter build ios --release
 
 ## Testing
 
-128 automated tests covering:
+176 automated tests covering:
 
 - **Models** — Race, RaceSession, DriverStanding, ConstructorStanding, and all result types (race, sprint, qualifying)
-- **Screens** — SplashScreen (animation sequence, 5 starting lights, onComplete callback, racing stripes, logo fade-in, dark background, disposal), AboutScreen (sections, features, info cards, links, Season card removal, scrollability)
+- **Screens** — SplashScreen (animation sequence, 5 starting lights, onComplete callback, racing stripes, logo fade-in, dark background, disposal), AboutScreen (sections, features, info cards, links, Season card removal, scrollability), DriverStandingsScreen (title/season rendering, search filtering, empty state, offline cache label, share button), ConstructorStandingsScreen (title/season rendering, search filtering, empty state, offline cache label, share button), RaceScheduleScreen (title/season, search, filter chips, empty state, offline cache), MainShell (bottom navigation tabs, theme toggle, IndexedStack tab persistence)
 - **Services** — NotificationService key generation and ID determinism, NotificationPreferences (session toggles, lead times, weekend digest, favorite alerts), UserPreferences (season, favorite driver/team), PredictionService (scoring, season aggregation, input validation)
 - **Utils** — Date/time formatting (relative labels, localized dates), team logo asset lookup (case-insensitive matching, legacy names, 2026 roster)
-- **Widgets** — BounceTap (scale animation, event pass-through), AnimatedCounter (value animation, formatting, prefix/suffix), EmptyState (icon mapping for all 7 types), SwipeActionWrapper (primary/secondary swipe actions, threshold behavior), CelebrationOverlay (confetti/pulse variants, IgnorePointer)
+- **Widgets** — BounceTap (scale animation, event pass-through), AnimatedCounter (value animation, formatting, prefix/suffix), EmptyState (icon mapping for all 7 types), SwipeActionWrapper (primary/secondary swipe actions, threshold behavior), CelebrationOverlay (confetti/pulse variants, IgnorePointer), CompactSearchField (hint text, search icon, onChanged callback, clear button, rounded decoration), F1Scaffold (body rendering, AppBar, FAB, maxContentWidth constraint, transparent background, extendBodyBehindAppBar)
 
 ```bash
 flutter test                 # Run all tests
