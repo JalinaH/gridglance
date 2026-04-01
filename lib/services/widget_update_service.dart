@@ -366,10 +366,7 @@ class WidgetUpdateService {
             : target.location,
       );
       await _saveDps('race_weekend_widget_round', 'R${target.round}');
-      await _saveTrackImage(
-        'race_weekend_widget_track',
-        target.circuitId,
-      );
+      await _saveTrackImage('race_weekend_widget_track', target.circuitId);
 
       // Build session lines for this race.
       final allSessions = target.sessions;
@@ -820,14 +817,14 @@ class WidgetUpdateService {
   }
 
   /// Rasterizes a circuit SVG from Flutter assets to a PNG and saves it.
-  static Future<void> _saveTrackImage(
-    String imageKey,
-    String circuitId,
-  ) async {
+  static Future<void> _saveTrackImage(String imageKey, String circuitId) async {
     final assetPath = 'lib/assets/circuits/$circuitId.svg';
     try {
       final svgString = await rootBundle.loadString(assetPath);
-      final pictureInfo = await vg.loadPicture(SvgStringLoader(svgString), null);
+      final pictureInfo = await vg.loadPicture(
+        SvgStringLoader(svgString),
+        null,
+      );
       const targetWidth = 200.0;
       const targetHeight = 140.0;
       final recorder = ui.PictureRecorder();
@@ -846,10 +843,11 @@ class WidgetUpdateService {
       // Tint the track red.
       canvas.saveLayer(
         ui.Rect.fromLTWH(0, 0, svgSize.width, svgSize.height),
-        ui.Paint()..colorFilter = const ui.ColorFilter.mode(
-          ui.Color(0xFFE10600),
-          ui.BlendMode.srcIn,
-        ),
+        ui.Paint()
+          ..colorFilter = const ui.ColorFilter.mode(
+            ui.Color(0xFFE10600),
+            ui.BlendMode.srcIn,
+          ),
       );
       canvas.drawPicture(pictureInfo.picture);
       canvas.restore();
