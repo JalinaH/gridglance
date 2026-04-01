@@ -106,6 +106,23 @@ private let surfaceAlt = Color(red: 0.11, green: 0.14, blue: 0.19)
 private let borderColor = Color(red: 0.14, green: 0.17, blue: 0.23)
 private let textMuted = Color.white.opacity(0.55)
 
+private struct TeamLogoView: View {
+  let image: UIImage?
+  let size: CGFloat
+
+  var body: some View {
+    if let uiImage = image {
+      Image(uiImage: uiImage)
+        .resizable()
+        .aspectRatio(contentMode: .fit)
+        .frame(width: size, height: size)
+    } else {
+      Color.clear
+        .frame(width: size, height: size)
+    }
+  }
+}
+
 private struct DriverPhotoView: View {
   let image: UIImage?
   let size: CGFloat
@@ -243,10 +260,11 @@ private struct DriverStandingsWidgetView: View {
 
         Spacer(minLength: 4)
 
-        // Podium: driver photos + names + blocks
+        // Podium: team logos + driver photos + names + blocks
         HStack(alignment: .bottom, spacing: 4) {
           // 2nd place
-          VStack(spacing: 3) {
+          VStack(spacing: 2) {
+            TeamLogoView(image: entry.image("driver_2_team_logo"), size: 14)
             DriverPhotoView(image: entry.image("driver_2_image"), size: 32)
             Text(entry.text("driver_2_last_name", fallback: "P2"))
               .font(.system(size: 8, weight: .bold, design: .default))
@@ -260,7 +278,8 @@ private struct DriverStandingsWidgetView: View {
           .frame(maxWidth: .infinity)
 
           // 1st place
-          VStack(spacing: 3) {
+          VStack(spacing: 2) {
+            TeamLogoView(image: entry.image("driver_1_team_logo"), size: 16)
             DriverPhotoView(image: entry.image("driver_1_image"), size: 40, borderColor: f1Red.opacity(0.6))
             Text(entry.text("driver_1_last_name", fallback: "P1"))
               .font(.system(size: 9, weight: .bold, design: .default))
@@ -274,7 +293,8 @@ private struct DriverStandingsWidgetView: View {
           .frame(maxWidth: .infinity)
 
           // 3rd place
-          VStack(spacing: 3) {
+          VStack(spacing: 2) {
+            TeamLogoView(image: entry.image("driver_3_team_logo"), size: 14)
             DriverPhotoView(image: entry.image("driver_3_image"), size: 32)
             Text(entry.text("driver_3_last_name", fallback: "P3"))
               .font(.system(size: 8, weight: .bold, design: .default))

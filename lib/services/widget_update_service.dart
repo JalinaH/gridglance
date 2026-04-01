@@ -173,13 +173,14 @@ class WidgetUpdateService {
       }
     }
 
-    // Download headshot images for top 3 drivers.
+    // Download headshot images and save team logos for top 3 drivers.
     for (int i = 0; i < top.length && i < 3; i++) {
       await _saveDriverImage(
         'driver_${i + 1}_image',
         permanentNumber: top[i].permanentNumber,
         code: top[i].code,
       );
+      await _saveTeamLogo('driver_${i + 1}_team_logo', top[i].teamName);
     }
 
     await _refreshDriverWidget();
@@ -808,6 +809,53 @@ class WidgetUpdateService {
         await _saveDps('${prefix}d${idx}_code', '---');
       }
     }
+  }
+
+  /// Saves a team logo from Flutter assets to native widget storage.
+  static Future<void> _saveTeamLogo(
+    String imageKey,
+    String teamName,
+  ) async {
+    final assetPath = _teamLogoAsset(teamName);
+    if (assetPath == null) return;
+    try {
+      final data = await rootBundle.load(assetPath);
+      await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+        'id': imageKey,
+        'bytes': data.buffer.asUint8List(),
+      });
+    } catch (_) {
+      // Asset load failure is non-fatal.
+    }
+  }
+
+  static String? _teamLogoAsset(String teamName) {
+    final key = teamName.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (key.isEmpty) return null;
+    const logos = {
+      'redbull': 'lib/assets/images/red-bull.png',
+      'redbullracing': 'lib/assets/images/red-bull.png',
+      'rb': 'lib/assets/images/rb.png',
+      'racingbulls': 'lib/assets/images/rb.png',
+      'ferrari': 'lib/assets/images/ferrari.png',
+      'scuderiaferrari': 'lib/assets/images/ferrari.png',
+      'mercedes': 'lib/assets/images/mercedes.png',
+      'mercedesamgpetronas': 'lib/assets/images/mercedes.png',
+      'mclaren': 'lib/assets/images/mclaren.png',
+      'astonmartin': 'lib/assets/images/aston.png',
+      'alpine': 'lib/assets/images/alpine.png',
+      'haas': 'lib/assets/images/haas.png',
+      'williams': 'lib/assets/images/williams.png',
+      'sauber': 'lib/assets/images/audi.png',
+      'kicksauber': 'lib/assets/images/audi.png',
+      'audi': 'lib/assets/images/audi.png',
+      'cadillac': 'lib/assets/images/cadillac.png',
+    };
+    if (logos.containsKey(key)) return logos[key];
+    for (final entry in logos.entries) {
+      if (key.contains(entry.key)) return entry.value;
+    }
+    return null;
   }
 
   /// Downloads a driver headshot and saves it to native widget storage.
