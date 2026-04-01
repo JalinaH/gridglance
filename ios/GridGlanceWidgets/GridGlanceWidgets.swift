@@ -656,9 +656,9 @@ private struct FavoriteTeamWidgetView: View {
           if let carImage = entry.image("favorite_team_default_car_image") {
             Image(uiImage: carImage)
               .resizable()
-              .aspectRatio(contentMode: .fill)
+              .aspectRatio(contentMode: .fit)
+              .padding(6)
               .frame(maxWidth: .infinity, maxHeight: .infinity)
-              .clipped()
           } else {
             Rectangle()
               .fill(surfaceAlt)

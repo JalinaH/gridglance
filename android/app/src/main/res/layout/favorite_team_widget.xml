@@ -18,7 +18,8 @@
             android:layout_height="match_parent"
             android:background="@drawable/widget_team_car"
             android:contentDescription="Team car"
-            android:scaleType="centerCrop" />
+            android:padding="6dp"
+            android:scaleType="fitCenter" />
 
         <!-- Team name overlay on car -->
         <LinearLayout
