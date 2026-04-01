@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:http/http.dart' as http;
 
 import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../utils/team_colors.dart';
+import 'f1_image_service.dart';
 
 class WidgetUpdateService {
   static const String androidDriverWidgetProvider =
@@ -152,6 +156,34 @@ class WidgetUpdateService {
     await _saveDps('driver_2', _formatDriver(top, 1));
     await _saveDps('driver_3', _formatDriver(top, 2));
 
+    // Store separate fields for podium layout.
+    for (int i = 0; i < 3; i++) {
+      final idx = i + 1;
+      if (i < top.length) {
+        await _saveDps(
+          'driver_${idx}_last_name',
+          top[i].familyName.toUpperCase(),
+        );
+        await _saveDps('driver_${idx}_first_name', top[i].givenName);
+        await _saveDps('driver_${idx}_pts', top[i].points);
+        await _saveDps('driver_${idx}_code', _shortDriverCode(top[i]));
+      } else {
+        await _saveDps('driver_${idx}_last_name', 'TBD');
+        await _saveDps('driver_${idx}_first_name', '');
+        await _saveDps('driver_${idx}_pts', '0');
+        await _saveDps('driver_${idx}_code', '---');
+      }
+    }
+
+    // Download headshot images for top 3 drivers.
+    for (int i = 0; i < top.length && i < 3; i++) {
+      await _saveDriverImage(
+        'driver_${i + 1}_image',
+        permanentNumber: top[i].permanentNumber,
+        code: top[i].code,
+      );
+    }
+
     await _refreshDriverWidget();
   }
 
@@ -173,6 +205,19 @@ class WidgetUpdateService {
     await _saveDps('team_2', _formatTeam(top, 1));
     await _saveDps('team_3', _formatTeam(top, 2));
 
+    // Store separate fields for podium layout + team logos.
+    for (int i = 0; i < 3; i++) {
+      final idx = i + 1;
+      if (i < top.length) {
+        await _saveDps('team_${idx}_name', top[i].teamName);
+        await _saveDps('team_${idx}_pts', top[i].points);
+        await _saveTeamLogo('team_${idx}_logo', top[i].teamName);
+      } else {
+        await _saveDps('team_${idx}_name', 'TBD');
+        await _saveDps('team_${idx}_pts', '0');
+      }
+    }
+
     await _refreshTeamWidget();
   }
 
@@ -191,6 +236,11 @@ class WidgetUpdateService {
       await _saveDps('next_race_widget_location', 'Season complete');
       await _saveDps('next_race_widget_start', 'Time TBA');
       await _saveDps('next_race_widget_countdown', 'Awaiting next calendar');
+      await _saveDps('next_race_widget_days', '--');
+      await _saveDps('next_race_widget_hours', '--');
+      await _saveDps('next_race_widget_mins', '--');
+      await _saveDps('next_race_widget_round', '');
+      await _saveDps('next_race_widget_circuit', '');
     } else {
       await _saveDps(
         'next_race_widget_name',
@@ -210,6 +260,28 @@ class WidgetUpdateService {
         'next_race_widget_countdown',
         _formatCountdownLabel(race.startDateTime),
       );
+      await _saveDps('next_race_widget_circuit', race.circuitName);
+      await _saveDps('next_race_widget_round', 'R${race.round}');
+
+      // Segmented countdown.
+      final remaining = race.startDateTime != null
+          ? race.startDateTime!.difference(DateTime.now())
+          : Duration.zero;
+      if (remaining.isNegative || remaining.inMinutes <= 0) {
+        await _saveDps('next_race_widget_days', '0');
+        await _saveDps('next_race_widget_hours', '0');
+        await _saveDps('next_race_widget_mins', '0');
+      } else {
+        await _saveDps('next_race_widget_days', remaining.inDays.toString());
+        await _saveDps(
+          'next_race_widget_hours',
+          (remaining.inHours % 24).toString(),
+        );
+        await _saveDps(
+          'next_race_widget_mins',
+          (remaining.inMinutes % 60).toString(),
+        );
+      }
     }
 
     await _refreshNextRaceWidget();
@@ -277,6 +349,7 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_name', 'No upcoming race');
       await _saveDps('race_weekend_widget_location', 'Season complete');
       await _saveDps('race_weekend_widget_countdown', 'Awaiting next calendar');
+      await _saveDps('race_weekend_widget_round', '');
       for (int i = 1; i <= 7; i++) {
         await _saveDps('race_weekend_widget_session_$i', '');
       }
@@ -292,6 +365,8 @@ class WidgetUpdateService {
             ? (target.circuitName.isEmpty ? 'Location TBA' : target.circuitName)
             : target.location,
       );
+      await _saveDps('race_weekend_widget_round', 'R${target.round}');
+      await _saveTrackImage('race_weekend_widget_track', target.circuitId);
 
       // Build session lines for this race.
       final allSessions = target.sessions;
@@ -373,6 +448,15 @@ class WidgetUpdateService {
         '${driver.points} pts',
       );
       await _saveDps(_favoriteDriverKey(widgetId, 'season'), seasonLabel);
+      await _saveFavoriteDriverDetails(
+        _favoriteDriverKey(widgetId, ''),
+        driver,
+      );
+      await _saveDriverImage(
+        _favoriteDriverKey(widgetId, 'image'),
+        permanentNumber: driver.permanentNumber,
+        code: driver.code,
+      );
     }
 
     await _refreshFavoriteDriverWidget();
@@ -420,6 +504,15 @@ class WidgetUpdateService {
         _formatDriverLine(teamDrivers, 1),
       );
       await _saveDps(_favoriteTeamKey(widgetId, 'season'), seasonLabel);
+      await _saveTeamDetails(
+        _favoriteTeamKey(widgetId, ''),
+        team.teamName,
+        teamDrivers,
+      );
+      await _saveCarImage(
+        _favoriteTeamKey(widgetId, 'car_image'),
+        team.constructorId,
+      );
     }
 
     await _refreshFavoriteTeamWidget();
@@ -438,6 +531,12 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps('${_favoriteDriverDefaultKey}_season', season);
+    await _saveFavoriteDriverDetails('${_favoriteDriverDefaultKey}_', driver);
+    await _saveDriverImage(
+      '${_favoriteDriverDefaultKey}_image',
+      permanentNumber: driver.permanentNumber,
+      code: driver.code,
+    );
     await _refreshFavoriteDriverWidget();
   }
 
@@ -462,6 +561,15 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps('${_favoriteTeamDefaultKey}_season', season);
+    await _saveTeamDetails(
+      '${_favoriteTeamDefaultKey}_',
+      team.teamName,
+      drivers,
+    );
+    await _saveCarImage(
+      '${_favoriteTeamDefaultKey}_car_image',
+      team.constructorId,
+    );
     await _refreshFavoriteTeamWidget();
   }
 
@@ -492,6 +600,12 @@ class WidgetUpdateService {
       '${driver.points} pts',
     );
     await _saveDps(_favoriteDriverKey(widgetId, 'season'), season);
+    await _saveFavoriteDriverDetails(_favoriteDriverKey(widgetId, ''), driver);
+    await _saveDriverImage(
+      _favoriteDriverKey(widgetId, 'image'),
+      permanentNumber: driver.permanentNumber,
+      code: driver.code,
+    );
     await _refreshFavoriteDriverWidget();
   }
 
@@ -520,6 +634,15 @@ class WidgetUpdateService {
       _formatDriverLine(drivers, 1),
     );
     await _saveDps(_favoriteTeamKey(widgetId, 'season'), season);
+    await _saveTeamDetails(
+      _favoriteTeamKey(widgetId, ''),
+      team.teamName,
+      drivers,
+    );
+    await _saveCarImage(
+      _favoriteTeamKey(widgetId, 'car_image'),
+      team.constructorId,
+    );
     await _refreshFavoriteTeamWidget();
   }
 
@@ -646,6 +769,197 @@ class WidgetUpdateService {
   static Future<void> setRaceWeekendWidgetTransparent(bool value) async {
     await _saveDps(_raceWeekendWidgetTransparentKey, value.toString());
     await _refreshRaceWeekendWidget();
+  }
+
+  /// Saves team color, driver number, and last name for the favorite driver widget.
+  static Future<void> _saveFavoriteDriverDetails(
+    String prefix,
+    DriverStanding driver,
+  ) async {
+    final color = teamColor(driver.teamName);
+    final hex = color
+        .toARGB32()
+        .toRadixString(16)
+        .padLeft(8, '0')
+        .toUpperCase();
+    await _saveDps('${prefix}team_color', '#$hex');
+    await _saveDps('${prefix}last_name', driver.familyName.toUpperCase());
+    await _saveDps('${prefix}number', driver.permanentNumber ?? '--');
+    await _saveDps('${prefix}code', _shortDriverCode(driver));
+  }
+
+  /// Saves team color hex and individual driver details for the favorite team widget.
+  static Future<void> _saveTeamDetails(
+    String prefix,
+    String teamName,
+    List<DriverStanding> drivers,
+  ) async {
+    final color = teamColor(teamName);
+    final hex = color
+        .toARGB32()
+        .toRadixString(16)
+        .padLeft(8, '0')
+        .toUpperCase();
+    await _saveDps('${prefix}team_color', '#$hex');
+    for (int i = 0; i < 2; i++) {
+      final idx = i + 1;
+      if (i < drivers.length) {
+        final d = drivers[i];
+        await _saveDps('${prefix}d${idx}_name', d.familyName.toUpperCase());
+        await _saveDps('${prefix}d${idx}_number', d.permanentNumber ?? '--');
+        await _saveDps('${prefix}d${idx}_code', _shortDriverCode(d));
+      } else {
+        await _saveDps('${prefix}d${idx}_name', 'TBD');
+        await _saveDps('${prefix}d${idx}_number', '--');
+        await _saveDps('${prefix}d${idx}_code', '---');
+      }
+    }
+  }
+
+  /// Rasterizes a circuit SVG from Flutter assets to a PNG and saves it.
+  static Future<void> _saveTrackImage(String imageKey, String circuitId) async {
+    final assetPath = 'lib/assets/circuits/$circuitId.svg';
+    try {
+      final svgString = await rootBundle.loadString(assetPath);
+      final pictureInfo = await vg.loadPicture(
+        SvgStringLoader(svgString),
+        null,
+      );
+      const targetWidth = 200.0;
+      const targetHeight = 140.0;
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+
+      // Scale SVG to fit target size.
+      final svgSize = pictureInfo.size;
+      final scaleX = targetWidth / svgSize.width;
+      final scaleY = targetHeight / svgSize.height;
+      final scale = scaleX < scaleY ? scaleX : scaleY;
+      final dx = (targetWidth - svgSize.width * scale) / 2;
+      final dy = (targetHeight - svgSize.height * scale) / 2;
+      canvas.translate(dx, dy);
+      canvas.scale(scale);
+
+      // Tint the track red.
+      canvas.saveLayer(
+        ui.Rect.fromLTWH(0, 0, svgSize.width, svgSize.height),
+        ui.Paint()
+          ..colorFilter = const ui.ColorFilter.mode(
+            ui.Color(0xFFE10600),
+            ui.BlendMode.srcIn,
+          ),
+      );
+      canvas.drawPicture(pictureInfo.picture);
+      canvas.restore();
+
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(
+        targetWidth.toInt(),
+        targetHeight.toInt(),
+      );
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      pictureInfo.picture.dispose();
+      image.dispose();
+      if (byteData == null) return;
+
+      await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+        'id': imageKey,
+        'bytes': byteData.buffer.asUint8List(),
+      });
+    } catch (_) {
+      // SVG not found or render failure — widget shows without track image.
+    }
+  }
+
+  /// Saves a team logo from Flutter assets to native widget storage.
+  static Future<void> _saveTeamLogo(String imageKey, String teamName) async {
+    final assetPath = _teamLogoAsset(teamName);
+    if (assetPath == null) return;
+    try {
+      final data = await rootBundle.load(assetPath);
+      await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+        'id': imageKey,
+        'bytes': data.buffer.asUint8List(),
+      });
+    } catch (_) {
+      // Asset load failure is non-fatal.
+    }
+  }
+
+  static String? _teamLogoAsset(String teamName) {
+    final key = teamName.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
+    if (key.isEmpty) return null;
+    const logos = {
+      'redbull': 'lib/assets/images/red-bull.png',
+      'redbullracing': 'lib/assets/images/red-bull.png',
+      'rb': 'lib/assets/images/rb.png',
+      'racingbulls': 'lib/assets/images/rb.png',
+      'ferrari': 'lib/assets/images/ferrari.png',
+      'scuderiaferrari': 'lib/assets/images/ferrari.png',
+      'mercedes': 'lib/assets/images/mercedes.png',
+      'mercedesamgpetronas': 'lib/assets/images/mercedes.png',
+      'mclaren': 'lib/assets/images/mclaren.png',
+      'astonmartin': 'lib/assets/images/aston.png',
+      'alpine': 'lib/assets/images/alpine.png',
+      'haas': 'lib/assets/images/haas.png',
+      'williams': 'lib/assets/images/williams.png',
+      'sauber': 'lib/assets/images/audi.png',
+      'kicksauber': 'lib/assets/images/audi.png',
+      'audi': 'lib/assets/images/audi.png',
+      'cadillac': 'lib/assets/images/cadillac.png',
+    };
+    if (logos.containsKey(key)) return logos[key];
+    for (final entry in logos.entries) {
+      if (key.contains(entry.key)) return entry.value;
+    }
+    return null;
+  }
+
+  /// Downloads a driver headshot and saves it to native widget storage.
+  static Future<void> _saveDriverImage(
+    String imageKey, {
+    String? permanentNumber,
+    String? code,
+  }) async {
+    final url = F1ImageService.instance.driverHeadshotUrl(
+      permanentNumber: permanentNumber,
+      code: code,
+    );
+    if (url == null) return;
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+          'id': imageKey,
+          'bytes': Uint8List.fromList(response.bodyBytes),
+        });
+      }
+    } catch (_) {
+      // Image download failure is non-fatal — widget falls back to placeholder.
+    }
+  }
+
+  /// Downloads a team car image and saves it to native widget storage.
+  static Future<void> _saveCarImage(
+    String imageKey,
+    String constructorId,
+  ) async {
+    final url = F1ImageService.instance.carImageUrl(constructorId);
+    if (url == null) return;
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
+          'id': imageKey,
+          'bytes': Uint8List.fromList(response.bodyBytes),
+        });
+      }
+    } catch (_) {
+      // Image download failure is non-fatal — widget falls back to placeholder.
+    }
   }
 
   static Future<void> _saveDps(String id, String value) async {

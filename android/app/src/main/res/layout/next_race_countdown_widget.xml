@@ -7,6 +7,7 @@
     android:orientation="vertical"
     android:padding="14dp">
 
+    <!-- Header row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -38,78 +39,178 @@
             android:layout_weight="1"
             android:text="" />
 
+        <!-- Round badge -->
         <TextView
-            android:id="@+id/widget_season"
+            android:id="@+id/race_round"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/widget_pill"
+            android:background="@drawable/widget_round_badge"
             android:includeFontPadding="false"
             android:paddingLeft="6dp"
-            android:paddingTop="2dp"
             android:paddingRight="6dp"
+            android:paddingTop="2dp"
             android:paddingBottom="2dp"
-            android:text="----"
-            android:textColor="#B8C0CC"
+            android:text="R1"
+            android:textColor="#E10600"
             android:textSize="9sp"
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Race name -->
     <TextView
         android:id="@+id/race_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:ellipsize="end"
         android:includeFontPadding="false"
-        android:maxLines="2"
+        android:maxLines="1"
         android:text="Australian Grand Prix"
         android:textColor="#F7F8FA"
         android:textSize="14sp"
         android:textStyle="bold" />
 
+    <!-- Location + date -->
     <TextView
         android:id="@+id/race_location"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="2dp"
         android:ellipsize="end"
         android:includeFontPadding="false"
         android:maxLines="1"
         android:text="Melbourne, Australia"
         android:textColor="#9EA7B5"
-        android:textSize="11sp" />
+        android:textSize="10sp" />
 
+    <TextView
+        android:id="@+id/race_start"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:text="Mar 16 • 5:00 PM"
+        android:textColor="#9EA7B5"
+        android:textSize="9sp" />
+
+    <!-- Countdown boxes -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:background="@drawable/widget_row_highlight"
-        android:orientation="vertical"
-        android:padding="8dp">
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <!-- Days -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/widget_countdown_box"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <TextView
+                android:id="@+id/countdown_days"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="2"
+                android:textColor="#F7F8FA"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="DAYS"
+                android:textColor="#9EA7B5"
+                android:textSize="7sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/race_start"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:maxLines="1"
-            android:text="Mar 16 • 5:00 PM"
-            android:textColor="#DCE1EA"
-            android:textSize="10sp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text=":"
+            android:textColor="#4DE10600"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/race_countdown"
-            android:layout_width="match_parent"
+        <!-- Hours -->
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:maxLines="1"
-            android:text="Starts in 2d 4h"
-            android:textColor="#F7F8FA"
-            android:textSize="13sp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_countdown_box"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <TextView
+                android:id="@+id/countdown_hours"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="14"
+                android:textColor="#F7F8FA"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="HRS"
+                android:textColor="#9EA7B5"
+                android:textSize="7sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text=":"
+            android:textColor="#4DE10600"
+            android:textSize="16sp"
             android:textStyle="bold" />
+
+        <!-- Minutes -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/widget_countdown_box"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <TextView
+                android:id="@+id/countdown_mins"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="32"
+                android:textColor="#F7F8FA"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="MIN"
+                android:textColor="#9EA7B5"
+                android:textSize="7sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
