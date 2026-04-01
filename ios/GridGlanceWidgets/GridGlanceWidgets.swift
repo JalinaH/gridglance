@@ -855,20 +855,9 @@ private struct RaceWeekendWidgetView: View {
 
   var body: some View {
     WidgetSurface {
-      VStack(spacing: 0) {
-        // Top: track image hero with race info
-        ZStack(alignment: .bottomLeading) {
-          if let trackImage = entry.image("race_weekend_widget_track") {
-            Image(uiImage: trackImage)
-              .resizable()
-              .aspectRatio(contentMode: .fit)
-              .opacity(0.25)
-              .padding(8)
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-          } else {
-            Rectangle().fill(Color.clear)
-          }
-
+      VStack(alignment: .leading, spacing: 0) {
+        // Top: race info (left) + track layout (right)
+        HStack(alignment: .center) {
           VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack(spacing: 6) {
@@ -893,24 +882,33 @@ private struct RaceWeekendWidgetView: View {
                 )
             }
 
-            Spacer(minLength: 2)
-
             Text(entry.text("race_weekend_widget_name", fallback: "Race weekend"))
-              .font(.system(size: 14, weight: .bold, design: .default))
-              .lineLimit(1)
+              .font(.system(size: 15, weight: .bold, design: .default))
+              .lineLimit(2)
+              .padding(.top, 5)
 
             Text(entry.text("race_weekend_widget_location", fallback: "Location TBA"))
-              .font(.system(size: 8))
+              .font(.system(size: 9))
               .foregroundColor(textMuted)
               .lineLimit(1)
               .padding(.top, 1)
           }
-          .padding(.horizontal, 10)
-          .padding(.vertical, 6)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-        // Bottom: countdown + session timeline
+          Spacer(minLength: 8)
+
+          // Track layout
+          if let trackImage = entry.image("race_weekend_widget_track") {
+            Image(uiImage: trackImage)
+              .resizable()
+              .aspectRatio(contentMode: .fit)
+              .opacity(0.6)
+              .frame(width: 70, height: 50)
+          }
+        }
+
+        Spacer(minLength: 6)
+
+        // Countdown + session timeline
         VStack(alignment: .leading, spacing: 3) {
           // Countdown
           HStack(spacing: 6) {
@@ -918,11 +916,11 @@ private struct RaceWeekendWidgetView: View {
               .fill(LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing))
               .frame(width: 7, height: 7)
             Text(entry.text("race_weekend_widget_countdown", fallback: "Waiting for schedule"))
-              .font(.system(size: 10, weight: .bold))
+              .font(.system(size: 11, weight: .bold))
               .lineLimit(1)
           }
           .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(.horizontal, 6)
+          .padding(.horizontal, 7)
           .padding(.vertical, 5)
           .background(surfaceAlt)
           .cornerRadius(6)
@@ -941,19 +939,15 @@ private struct RaceWeekendWidgetView: View {
                     ? LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing)
                     : LinearGradient(colors: [Color(red: 0.17, green: 0.21, blue: 0.27), Color(red: 0.17, green: 0.21, blue: 0.27)], startPoint: .leading, endPoint: .trailing)
                   )
-                  .frame(width: i == nextIndex ? 5 : 4, height: i == nextIndex ? 5 : 4)
+                  .frame(width: i == nextIndex ? 6 : 5, height: i == nextIndex ? 6 : 5)
                 Text(text)
-                  .font(.system(size: 8, weight: i == nextIndex ? .bold : .regular))
+                  .font(.system(size: 10, weight: i == nextIndex ? .bold : .regular))
                   .foregroundColor(i == nextIndex ? .white : textMuted)
                   .lineLimit(1)
               }
             }
           }
         }
-        .padding(.horizontal, 10)
-        .padding(.top, 4)
-        .padding(.bottom, 6)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       }
       .foregroundColor(.white)
     }
