@@ -12,7 +12,6 @@ class AboutScreen extends StatefulWidget {
 
 class _AboutScreenState extends State<AboutScreen> {
   String _version = '';
-  String _buildNumber = '';
 
   @override
   void initState() {
@@ -24,7 +23,6 @@ class _AboutScreenState extends State<AboutScreen> {
     final info = await PackageInfo.fromPlatform();
     setState(() {
       _version = info.version;
-      _buildNumber = info.buildNumber;
     });
   }
 
@@ -89,7 +87,7 @@ class _AboutScreenState extends State<AboutScreen> {
               const SizedBox(height: 4),
               if (_version.isNotEmpty)
                 Text(
-                  'Version $_version ($_buildNumber)',
+                  'Version $_version',
                   style: TextStyle(color: colors.textMuted, fontSize: 13),
                 ),
               const SizedBox(height: 10),

@@ -44,13 +44,33 @@ class _MainShellState extends State<MainShell> {
     final body = IndexedStack(
       index: _index,
       children: [
-        HomeScreen(
-          isDarkMode: widget.isDarkMode,
-          onToggleTheme: widget.onToggleTheme,
-          showAppBar: false,
-        ),
+        if (wide)
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 1000),
+              child: HomeScreen(
+                isDarkMode: widget.isDarkMode,
+                onToggleTheme: widget.onToggleTheme,
+                showAppBar: false,
+              ),
+            ),
+          )
+        else
+          HomeScreen(
+            isDarkMode: widget.isDarkMode,
+            onToggleTheme: widget.onToggleTheme,
+            showAppBar: false,
+          ),
         WidgetsScreen(),
-        AboutScreen(),
+        if (wide)
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 800),
+              child: AboutScreen(),
+            ),
+          )
+        else
+          AboutScreen(),
       ],
     );
     return F1Scaffold(
@@ -69,126 +89,11 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-      body: wide
-          ? Row(
-              children: [
-                _buildNavigationRail(context),
-                VerticalDivider(width: 1, thickness: 1, color: colors.border),
-                Expanded(child: body),
-              ],
-            )
-          : Column(
-              children: [
-                Expanded(child: body),
-                _buildNavigationBar(context),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildNavigationRail(BuildContext context) {
-    final colors = AppColors.of(context);
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return Container(
-      width: 72,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            colors.surfaceAlt.withValues(alpha: 0.98),
-            colors.surface.withValues(alpha: 0.98),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        right: false,
-        child: Column(
-          children: [
-            SizedBox(height: 12),
-            _buildRailItem(
-              index: 0,
-              icon: Icons.home_outlined,
-              selectedIcon: Icons.home,
-              label: 'Home',
-              activeColor: colors.f1RedBright,
-              inactiveColor: colors.textMuted,
-              textColor: onSurface,
-            ),
-            SizedBox(height: 8),
-            _buildRailItem(
-              index: 1,
-              icon: Icons.dashboard_outlined,
-              selectedIcon: Icons.dashboard,
-              label: 'Widgets',
-              activeColor: colors.f1RedBright,
-              inactiveColor: colors.textMuted,
-              textColor: onSurface,
-            ),
-            SizedBox(height: 8),
-            _buildRailItem(
-              index: 2,
-              icon: Icons.info_outline,
-              selectedIcon: Icons.info,
-              label: 'About',
-              activeColor: colors.f1RedBright,
-              inactiveColor: colors.textMuted,
-              textColor: onSurface,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRailItem({
-    required int index,
-    required IconData icon,
-    required IconData selectedIcon,
-    required String label,
-    required Color activeColor,
-    required Color inactiveColor,
-    required Color textColor,
-  }) {
-    final selected = _index == index;
-    final colors = AppColors.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          Haptics.light();
-          setState(() => _index = index);
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: 56,
-          padding: EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: selected
-                ? colors.f1Red.withValues(alpha: 0.12)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                selected ? selectedIcon : icon,
-                color: selected ? activeColor : inactiveColor,
-                size: 24,
-              ),
-              SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected ? textColor : inactiveColor,
-                  fontSize: 10,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+      body: Column(
+        children: [
+          Expanded(child: body),
+          _buildNavigationBar(context),
+        ],
       ),
     );
   }

@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../utils/country_flags.dart';
 import '../utils/date_time_format.dart';
 import '../utils/haptics.dart';
+import 'adaptive_layout.dart';
 import 'animated_counter.dart';
 import 'circuit_track.dart';
 import 'driver_number_badge.dart';
@@ -40,6 +41,13 @@ class GlassCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final shadowOpacity = isDark ? 0.35 : 0.12;
     final shadowBlur = isDark ? 18.0 : 12.0;
+    final wide = isWideScreen(context);
+    final effectiveMargin = wide
+        ? EdgeInsets.symmetric(horizontal: 20, vertical: 8)
+        : margin;
+    final effectivePadding = wide
+        ? EdgeInsets.symmetric(horizontal: 20, vertical: 14)
+        : padding;
     final content = Ink(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -79,13 +87,13 @@ class GlassCard extends StatelessWidget {
                 ),
               ),
             ),
-          Padding(padding: padding, child: child),
+          Padding(padding: effectivePadding, child: child),
         ],
       ),
     );
 
     return Padding(
-      padding: margin,
+      padding: effectiveMargin,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
