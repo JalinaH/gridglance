@@ -580,9 +580,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
             setState(() {
               _favoriteTeamTransparent = value;
             });
-            await WidgetUpdateService.setFavoriteTeamDefaultTransparent(
-              value,
-            );
+            await WidgetUpdateService.setFavoriteTeamDefaultTransparent(value);
           },
           actionLabel: _primaryActionLabel,
           isAdding: _addingFavoriteTeam,
@@ -688,9 +686,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               decoration: BoxDecoration(
                 color: colors.f1Red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colors.f1Red.withValues(alpha: 0.2),
-                ),
+                border: Border.all(color: colors.f1Red.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
