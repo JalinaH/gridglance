@@ -176,9 +176,7 @@ class _AboutScreenState extends State<AboutScreen> {
           context,
           icon: Icons.language_outlined,
           title: 'Website',
-          onTap: () => _launchUrl(
-            'https://jalinah.github.io/gridglance-web/',
-          ),
+          onTap: () => _launchUrl('https://jalinah.github.io/gridglance-web/'),
         ),
         _buildLinkTile(
           context,
@@ -192,9 +190,8 @@ class _AboutScreenState extends State<AboutScreen> {
           context,
           icon: Icons.description_outlined,
           title: 'Terms of Service',
-          onTap: () => _launchUrl(
-            'https://jalinah.github.io/gridglance-web/terms.html',
-          ),
+          onTap: () =>
+              _launchUrl('https://jalinah.github.io/gridglance-web/terms.html'),
         ),
         _buildLinkTile(
           context,
