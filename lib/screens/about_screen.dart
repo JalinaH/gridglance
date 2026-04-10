@@ -174,21 +174,33 @@ class _AboutScreenState extends State<AboutScreen> {
         ),
         _buildLinkTile(
           context,
+          icon: Icons.language_outlined,
+          title: 'Website',
+          onTap: () => _launchUrl(
+            'https://jalinah.github.io/gridglance-web/',
+          ),
+        ),
+        _buildLinkTile(
+          context,
           icon: Icons.privacy_tip_outlined,
           title: 'Privacy Policy',
-          onTap: () => _launchUrl('https://gridglance.com/privacy'),
+          onTap: () => _launchUrl(
+            'https://jalinah.github.io/gridglance-web/privacy.html',
+          ),
         ),
         _buildLinkTile(
           context,
           icon: Icons.description_outlined,
           title: 'Terms of Service',
-          onTap: () => _launchUrl('https://gridglance.com/terms'),
+          onTap: () => _launchUrl(
+            'https://jalinah.github.io/gridglance-web/terms.html',
+          ),
         ),
         _buildLinkTile(
           context,
           icon: Icons.mail_outline,
           title: 'Send Feedback',
-          onTap: () => _launchUrl('mailto:support@gridglance.com'),
+          onTap: () => _launchUrl('mailto:info.gridglance@gmail.com'),
         ),
 
         const SizedBox(height: 28),
