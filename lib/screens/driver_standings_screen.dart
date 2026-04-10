@@ -8,7 +8,6 @@ import '../utils/date_time_format.dart';
 import '../widgets/compact_search_field.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/f1_scaffold.dart';
-import '../widgets/adaptive_layout.dart';
 import '../widgets/reveal.dart';
 import '../widgets/bounce_tap.dart';
 import '../widgets/season_cards.dart';
@@ -117,6 +116,7 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
     final colors = AppColors.of(context);
     final standings = _filteredStandings;
     return F1Scaffold(
+      maxContentWidth: 800,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +220,7 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
                           : RefreshIndicator(
                               onRefresh: _refresh,
                               color: colors.f1Red,
-                              child: AdaptiveCardList(
+                              child: ListView.builder(
                                 padding: EdgeInsets.only(bottom: 24),
                                 physics: AlwaysScrollableScrollPhysics(
                                   parent: BouncingScrollPhysics(),

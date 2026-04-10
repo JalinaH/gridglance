@@ -14,6 +14,7 @@ import '../utils/team_colors.dart';
 import '../widgets/car_image.dart';
 import '../widgets/circuit_track.dart';
 import '../widgets/driver_photo.dart';
+import '../widgets/adaptive_layout.dart';
 import '../widgets/empty_state.dart';
 
 class WidgetsScreen extends StatefulWidget {
@@ -538,215 +539,291 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
           hasError: hasError,
         );
 
+        final wide = isWideScreen(context);
+
+        // ── Reusable widget card builders ──
+        final favDriverCard = _buildWidgetCard(
+          context,
+          title: 'Favorite Driver',
+          preview: _DriverStandingsPreview(
+            seasonLabel: seasonLabel,
+            preview: favoriteDriverPreview,
+            title: 'Favorite Driver',
+          ),
+          transparentValue: _favoriteDriverTransparent,
+          onTransparentChanged: (value) async {
+            setState(() {
+              _favoriteDriverTransparent = value;
+            });
+            await WidgetUpdateService.setFavoriteDriverDefaultTransparent(
+              value,
+            );
+          },
+          actionLabel: _primaryActionLabel,
+          isAdding: _addingFavoriteDriver,
+          onAction: _addingFavoriteDriver ? null : _addFavoriteDriverWidget,
+          statusMessage: _favoriteDriverStatusMessage,
+        );
+
+        final favTeamCard = _buildWidgetCard(
+          context,
+          title: 'Favorite Team',
+          preview: _TeamStandingsPreview(
+            seasonLabel: seasonLabel,
+            preview: favoriteTeamPreview,
+            driverLines: favoriteTeamDriverLines,
+            drivers: favoriteTeamDrivers,
+            title: 'Favorite Team',
+          ),
+          transparentValue: _favoriteTeamTransparent,
+          onTransparentChanged: (value) async {
+            setState(() {
+              _favoriteTeamTransparent = value;
+            });
+            await WidgetUpdateService.setFavoriteTeamDefaultTransparent(value);
+          },
+          actionLabel: _primaryActionLabel,
+          isAdding: _addingFavoriteTeam,
+          onAction: _addingFavoriteTeam ? null : _addFavoriteTeamWidget,
+          statusMessage: _favoriteTeamStatusMessage,
+        );
+
+        final driverStandingsCard = _buildWidgetCard(
+          context,
+          title: 'Drivers',
+          preview: _StandingsListPreview(
+            seasonLabel: seasonLabel,
+            title: 'Driver Standings',
+            subtitle: 'Top 3 drivers',
+            entries: driverStandings,
+          ),
+          transparentValue: _driverWidgetTransparent,
+          onTransparentChanged: (value) async {
+            setState(() {
+              _driverWidgetTransparent = value;
+            });
+            await WidgetUpdateService.setDriverWidgetTransparent(value);
+          },
+          actionLabel: _primaryActionLabel,
+          isAdding: _addingDriver,
+          onAction: _addingDriver ? null : _addDriverWidget,
+          statusMessage: _driverStatusMessage,
+          compact: true,
+        );
+
+        final teamStandingsCard = _buildWidgetCard(
+          context,
+          title: 'Teams',
+          preview: _StandingsListPreview(
+            seasonLabel: seasonLabel,
+            title: 'Team Standings',
+            subtitle: 'Top 3 teams',
+            entries: teamStandings,
+            isTeam: true,
+          ),
+          transparentValue: _teamWidgetTransparent,
+          onTransparentChanged: (value) async {
+            setState(() {
+              _teamWidgetTransparent = value;
+            });
+            await WidgetUpdateService.setTeamWidgetTransparent(value);
+          },
+          actionLabel: _primaryActionLabel,
+          isAdding: _addingTeam,
+          onAction: _addingTeam ? null : _addTeamWidget,
+          statusMessage: _teamStatusMessage,
+          compact: true,
+        );
+
+        final raceWeekendCard = _buildWidgetCard(
+          context,
+          title: 'Race Weekend',
+          preview: _RaceWeekendPreview(
+            seasonLabel: seasonLabel,
+            race: data?.nextRace,
+            raceSchedule: data?.raceSchedule,
+            isLoading: isLoading,
+            hasError: hasError,
+          ),
+          transparentValue: _raceWeekendWidgetTransparent,
+          onTransparentChanged: (value) async {
+            setState(() {
+              _raceWeekendWidgetTransparent = value;
+            });
+            await WidgetUpdateService.setRaceWeekendWidgetTransparent(value);
+          },
+          actionLabel: _primaryActionLabel,
+          isAdding: _addingRaceWeekend,
+          onAction: _addingRaceWeekend ? null : _addRaceWeekendWidget,
+          statusMessage: _raceWeekendStatusMessage,
+        );
+
+        // ── Header widgets (shared between layouts) ──
+        final headerWidgets = <Widget>[
+          Text(
+            "Widgets",
+            style: TextStyle(
+              color: onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Add live F1 widgets to your home screen',
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 16),
+          if (_isIosWidgetPickerFlow) ...[
+            Container(
+              margin: EdgeInsets.only(bottom: 16),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.f1Red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.f1Red.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: colors.f1Red),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'iOS uses the widget picker. These buttons prepare live widget data.',
+                      style: TextStyle(
+                        color: onSurface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ];
+
         return ListView(
           padding: EdgeInsets.fromLTRB(20, 12, 20, 32),
           children: [
-            // ── Title area ──
-            Text(
-              "Widgets",
-              style: TextStyle(
-                color: onSurface,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.3,
+            ...headerWidgets,
+
+            if (wide) ...[
+              // ── TABLET LAYOUT: 2-column grid ──
+
+              // Favorites row
+              _buildSectionHeader(
+                context,
+                icon: Icons.star_rounded,
+                label: 'Favorites',
+                description: 'Track your favorite driver and team',
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Add live F1 widgets to your home screen',
-              style: TextStyle(
-                color: colors.textMuted,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+              SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: favDriverCard),
+                  SizedBox(width: 16),
+                  Expanded(child: favTeamCard),
+                ],
               ),
-            ),
-            SizedBox(height: 16),
-            if (_isIosWidgetPickerFlow) ...[
-              Container(
-                margin: EdgeInsets.only(bottom: 16),
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colors.f1Red.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colors.f1Red.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 16, color: colors.f1Red),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'iOS uses the widget picker. These buttons prepare live widget data.',
-                        style: TextStyle(
-                          color: onSurface,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+              SizedBox(height: 24),
+
+              // Standings + Race Weekend row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Standings column (left)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader(
+                          context,
+                          icon: Icons.leaderboard_rounded,
+                          label: 'Standings',
+                          description: 'Championship leaderboards',
                         ),
-                      ),
+                        SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: driverStandingsCard),
+                            SizedBox(width: 12),
+                            Expanded(child: teamStandingsCard),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(width: 16),
+                  // Race Weekend column (right)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader(
+                          context,
+                          icon: Icons.flag_rounded,
+                          label: 'Race Weekend',
+                          description: 'Upcoming sessions and countdown',
+                        ),
+                        SizedBox(height: 12),
+                        raceWeekendCard,
+                      ],
+                    ),
+                  ),
+                ],
               ),
+            ] else ...[
+              // ── MOBILE LAYOUT: single column ──
+
+              // Favorites
+              _buildSectionHeader(
+                context,
+                icon: Icons.star_rounded,
+                label: 'Favorites',
+                description: 'Track your favorite driver and team',
+              ),
+              SizedBox(height: 12),
+              favDriverCard,
+              SizedBox(height: 12),
+              favTeamCard,
+              SizedBox(height: 24),
+
+              // Standings
+              _buildSectionHeader(
+                context,
+                icon: Icons.leaderboard_rounded,
+                label: 'Standings',
+                description: 'Championship leaderboards at a glance',
+              ),
+              SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: driverStandingsCard),
+                  SizedBox(width: 12),
+                  Expanded(child: teamStandingsCard),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Race Weekend
+              _buildSectionHeader(
+                context,
+                icon: Icons.flag_rounded,
+                label: 'Race Weekend',
+                description: 'Upcoming sessions and countdown',
+              ),
+              SizedBox(height: 12),
+              raceWeekendCard,
             ],
-
-            // ── ★ FAVORITES ──
-            _buildSectionHeader(
-              context,
-              icon: Icons.star_rounded,
-              label: 'Favorites',
-              description: 'Track your favorite driver and team',
-            ),
-            SizedBox(height: 12),
-            _buildWidgetCard(
-              context,
-              title: 'Favorite Driver',
-              preview: _DriverStandingsPreview(
-                seasonLabel: seasonLabel,
-                preview: favoriteDriverPreview,
-                title: 'Favorite Driver',
-              ),
-              transparentValue: _favoriteDriverTransparent,
-              onTransparentChanged: (value) async {
-                setState(() {
-                  _favoriteDriverTransparent = value;
-                });
-                await WidgetUpdateService.setFavoriteDriverDefaultTransparent(
-                  value,
-                );
-              },
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingFavoriteDriver,
-              onAction: _addingFavoriteDriver ? null : _addFavoriteDriverWidget,
-              statusMessage: _favoriteDriverStatusMessage,
-            ),
-            SizedBox(height: 12),
-            _buildWidgetCard(
-              context,
-              title: 'Favorite Team',
-              preview: _TeamStandingsPreview(
-                seasonLabel: seasonLabel,
-                preview: favoriteTeamPreview,
-                driverLines: favoriteTeamDriverLines,
-                drivers: favoriteTeamDrivers,
-                title: 'Favorite Team',
-              ),
-              transparentValue: _favoriteTeamTransparent,
-              onTransparentChanged: (value) async {
-                setState(() {
-                  _favoriteTeamTransparent = value;
-                });
-                await WidgetUpdateService.setFavoriteTeamDefaultTransparent(
-                  value,
-                );
-              },
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingFavoriteTeam,
-              onAction: _addingFavoriteTeam ? null : _addFavoriteTeamWidget,
-              statusMessage: _favoriteTeamStatusMessage,
-            ),
-            SizedBox(height: 24),
-
-            // ── 📊 STANDINGS ──
-            _buildSectionHeader(
-              context,
-              icon: Icons.leaderboard_rounded,
-              label: 'Standings',
-              description: 'Championship leaderboards at a glance',
-            ),
-            SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _buildWidgetCard(
-                    context,
-                    title: 'Drivers',
-                    preview: _StandingsListPreview(
-                      seasonLabel: seasonLabel,
-                      title: 'Driver Standings',
-                      subtitle: 'Top 3 drivers',
-                      entries: driverStandings,
-                    ),
-                    transparentValue: _driverWidgetTransparent,
-                    onTransparentChanged: (value) async {
-                      setState(() {
-                        _driverWidgetTransparent = value;
-                      });
-                      await WidgetUpdateService.setDriverWidgetTransparent(
-                        value,
-                      );
-                    },
-                    actionLabel: _primaryActionLabel,
-                    isAdding: _addingDriver,
-                    onAction: _addingDriver ? null : _addDriverWidget,
-                    statusMessage: _driverStatusMessage,
-                    compact: true,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildWidgetCard(
-                    context,
-                    title: 'Teams',
-                    preview: _StandingsListPreview(
-                      seasonLabel: seasonLabel,
-                      title: 'Team Standings',
-                      subtitle: 'Top 3 teams',
-                      entries: teamStandings,
-                      isTeam: true,
-                    ),
-                    transparentValue: _teamWidgetTransparent,
-                    onTransparentChanged: (value) async {
-                      setState(() {
-                        _teamWidgetTransparent = value;
-                      });
-                      await WidgetUpdateService.setTeamWidgetTransparent(value);
-                    },
-                    actionLabel: _primaryActionLabel,
-                    isAdding: _addingTeam,
-                    onAction: _addingTeam ? null : _addTeamWidget,
-                    statusMessage: _teamStatusMessage,
-                    compact: true,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-
-            // ── 🏁 RACE ──
-            _buildSectionHeader(
-              context,
-              icon: Icons.flag_rounded,
-              label: 'Race Weekend',
-              description: 'Upcoming sessions and countdown',
-            ),
-            SizedBox(height: 12),
-            _buildWidgetCard(
-              context,
-              title: 'Race Weekend',
-              preview: _RaceWeekendPreview(
-                seasonLabel: seasonLabel,
-                race: data?.nextRace,
-                raceSchedule: data?.raceSchedule,
-                isLoading: isLoading,
-                hasError: hasError,
-              ),
-              transparentValue: _raceWeekendWidgetTransparent,
-              onTransparentChanged: (value) async {
-                setState(() {
-                  _raceWeekendWidgetTransparent = value;
-                });
-                await WidgetUpdateService.setRaceWeekendWidgetTransparent(
-                  value,
-                );
-              },
-              actionLabel: _primaryActionLabel,
-              isAdding: _addingRaceWeekend,
-              onAction: _addingRaceWeekend ? null : _addRaceWeekendWidget,
-              statusMessage: _raceWeekendStatusMessage,
-            ),
           ],
         );
       },
@@ -1481,11 +1558,13 @@ class _TeamStandingsPreview extends StatelessWidget {
                 children: [
                   if (preview.constructorId.isNotEmpty)
                     Positioned.fill(
-                      child: CarImage(
-                        teamName: preview.name,
-                        constructorId: preview.constructorId,
-                        width: double.infinity,
-                        height: double.infinity,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => CarImage(
+                          teamName: preview.name,
+                          constructorId: preview.constructorId,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                        ),
                       ),
                     )
                   else

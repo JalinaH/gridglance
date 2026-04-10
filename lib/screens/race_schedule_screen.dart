@@ -83,6 +83,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
     final colors = AppColors.of(context);
     final races = _filteredRaces;
     return F1Scaffold(
+      maxContentWidth: 800,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
