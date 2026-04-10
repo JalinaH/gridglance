@@ -1558,11 +1558,13 @@ class _TeamStandingsPreview extends StatelessWidget {
                 children: [
                   if (preview.constructorId.isNotEmpty)
                     Positioned.fill(
-                      child: CarImage(
-                        teamName: preview.name,
-                        constructorId: preview.constructorId,
-                        width: double.infinity,
-                        height: double.infinity,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => CarImage(
+                          teamName: preview.name,
+                          constructorId: preview.constructorId,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                        ),
                       ),
                     )
                   else
