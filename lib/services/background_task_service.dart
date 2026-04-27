@@ -6,12 +6,15 @@ import 'package:workmanager/workmanager.dart';
 
 import 'favorite_result_alert_service.dart';
 import 'notification_service.dart';
+import 'widget_update_service.dart';
 
 @pragma('vm:entry-point')
 void backgroundTaskDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       await NotificationService.init();
+      await WidgetUpdateService.ensureHomeWidgetSetup();
+      await WidgetUpdateService.refreshRaceWeekend();
       await FavoriteResultAlertService.checkForUpdates();
       if (task == Workmanager.iOSBackgroundTask ||
           task == BackgroundTaskService.iOSBgProcessingTaskIdentifier) {

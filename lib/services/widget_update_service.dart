@@ -97,6 +97,28 @@ class WidgetUpdateService {
     _driverRefreshTimer = null;
   }
 
+  /// Fetches fresh schedule + next race and pushes updated data to the
+  /// Race Weekend widget. Safe to call from a background isolate — used by
+  /// [BackgroundTaskService] so the widget's date/time/countdown stay current
+  /// without requiring the user to open the app.
+  static Future<void> refreshRaceWeekend() async {
+    try {
+      final season = _seasonOverride ?? DateTime.now().year.toString();
+      final api = ApiService();
+      final races = await api.getRaceSchedule(season: season);
+      Race? nextRace;
+      try {
+        nextRace = await api.getNextRace(season: season);
+      } catch (_) {
+        // Fall back to first upcoming race in the schedule if the dedicated
+        // endpoint fails — updateRaceWeekend handles a null nextRace.
+      }
+      await updateRaceWeekend(races, nextRace: nextRace, season: season);
+    } catch (_) {
+      // Ignore refresh errors to keep periodic updates alive.
+    }
+  }
+
   static Future<void> refreshDriverStandings() async {
     if (_driverRefreshInFlight) {
       return;
