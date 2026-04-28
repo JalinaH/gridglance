@@ -1,3 +1,5 @@
+import '../utils/json_safe.dart';
+
 class ConstructorStanding {
   final String position;
   final String points;
@@ -14,7 +16,7 @@ class ConstructorStanding {
   });
 
   factory ConstructorStanding.fromJson(Map<String, dynamic> json) {
-    final constructor = json['Constructor'] as Map<String, dynamic>? ?? {};
+    final constructor = JsonSafe.asMap(json['Constructor']);
 
     return ConstructorStanding(
       position: json['position'] ?? '-',

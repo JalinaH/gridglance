@@ -1,3 +1,5 @@
+import '../utils/json_safe.dart';
+
 class Race {
   final String round;
   final String raceName;
@@ -36,8 +38,8 @@ class Race {
   });
 
   factory Race.fromJson(Map<String, dynamic> json) {
-    final circuit = json['Circuit'] as Map<String, dynamic>? ?? {};
-    final location = circuit['Location'] as Map<String, dynamic>? ?? {};
+    final circuit = JsonSafe.asMap(json['Circuit']);
+    final location = JsonSafe.asMap(circuit['Location']);
     final sessions = _parseSessions(json);
 
     return Race(
@@ -114,7 +116,7 @@ class Race {
     String key,
     String label,
   ) {
-    final data = json[key] as Map<String, dynamic>?;
+    final data = JsonSafe.asMapOrNull(json[key]);
     if (data == null) {
       return null;
     }

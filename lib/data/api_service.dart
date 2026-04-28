@@ -9,6 +9,7 @@ import '../models/race.dart';
 import '../models/race_result.dart';
 import '../models/session_results.dart';
 import '../models/season_overview.dart';
+import '../utils/json_safe.dart';
 
 class CachedApiResponse<T> {
   final T data;
@@ -43,15 +44,11 @@ class ApiService {
     String? season,
   }) async {
     season ??= DateTime.now().year.toString();
-    final response = await _getJsonWithCache(
+    return _getJsonWithCache<List<DriverStanding>>(
       uri: Uri.parse('$_baseUrl$season/driverstandings/'),
       cacheKey: _cacheKey(bucket: 'driver_standings', season: season),
       failureMessage: 'Failed to load standings',
-    );
-    return CachedApiResponse(
-      data: _parseDriverStandings(response.data),
-      lastUpdated: response.lastUpdated,
-      isFromCache: response.isFromCache,
+      parse: _parseDriverStandings,
     );
   }
 
@@ -66,15 +63,11 @@ class ApiService {
   Future<CachedApiResponse<List<ConstructorStanding>>>
   getConstructorStandingsSnapshot({String? season}) async {
     season ??= DateTime.now().year.toString();
-    final response = await _getJsonWithCache(
+    return _getJsonWithCache<List<ConstructorStanding>>(
       uri: Uri.parse('$_baseUrl$season/constructorstandings/'),
       cacheKey: _cacheKey(bucket: 'constructor_standings', season: season),
       failureMessage: 'Failed to load team standings',
-    );
-    return CachedApiResponse(
-      data: _parseConstructorStandings(response.data),
-      lastUpdated: response.lastUpdated,
-      isFromCache: response.isFromCache,
+      parse: _parseConstructorStandings,
     );
   }
 
@@ -86,15 +79,11 @@ class ApiService {
 
   Future<CachedApiResponse<Race?>> getNextRaceSnapshot({String? season}) async {
     season ??= DateTime.now().year.toString();
-    final response = await _getJsonWithCache(
+    return _getJsonWithCache<Race?>(
       uri: Uri.parse('$_baseUrl$season/next/'),
       cacheKey: _cacheKey(bucket: 'next_race', season: season),
       failureMessage: 'Failed to load next race',
-    );
-    return CachedApiResponse(
-      data: _parseNextRace(response.data),
-      lastUpdated: response.lastUpdated,
-      isFromCache: response.isFromCache,
+      parse: _parseNextRace,
     );
   }
 
@@ -108,15 +97,11 @@ class ApiService {
     String? season,
   }) async {
     season ??= DateTime.now().year.toString();
-    final response = await _getJsonWithCache(
+    return _getJsonWithCache<List<Race>>(
       uri: Uri.parse('$_baseUrl$season/'),
       cacheKey: _cacheKey(bucket: 'race_schedule', season: season),
       failureMessage: 'Failed to load race schedule',
-    );
-    return CachedApiResponse(
-      data: _parseRaceSchedule(response.data),
-      lastUpdated: response.lastUpdated,
-      isFromCache: response.isFromCache,
+      parse: _parseRaceSchedule,
     );
   }
 
@@ -172,14 +157,11 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = _decodeJsonMap(response.body);
-      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-      final racesJson = raceTable['Races'] as List? ?? [];
+      final racesJson = _extractRaces(data);
       return racesJson
-          .map(
-            (json) =>
-                DriverRaceResult.fromRaceJson(json as Map<String, dynamic>),
-          )
+          .map((json) => JsonSafe.asMapOrNull(json))
+          .whereType<Map<String, dynamic>>()
+          .map(DriverRaceResult.fromRaceJson)
           .toList();
     } else {
       throw Exception('Failed to load driver results');
@@ -196,13 +178,11 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = _decodeJsonMap(response.body);
-      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-      final racesJson = raceTable['Races'] as List? ?? [];
+      final racesJson = _extractRaces(data);
       return racesJson
-          .map(
-            (json) => TeamRaceResult.fromRaceJson(json as Map<String, dynamic>),
-          )
+          .map((json) => JsonSafe.asMapOrNull(json))
+          .whereType<Map<String, dynamic>>()
+          .map(TeamRaceResult.fromRaceJson)
           .toList();
     } else {
       throw Exception('Failed to load constructor results');
@@ -219,14 +199,11 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = _decodeJsonMap(response.body);
-      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-      final racesJson = raceTable['Races'] as List? ?? [];
+      final racesJson = _extractRaces(data);
       return racesJson
-          .map(
-            (json) =>
-                DriverSprintResult.fromRaceJson(json as Map<String, dynamic>),
-          )
+          .map((json) => JsonSafe.asMapOrNull(json))
+          .whereType<Map<String, dynamic>>()
+          .map(DriverSprintResult.fromRaceJson)
           .toList();
     } else {
       throw Exception('Failed to load driver sprint results');
@@ -243,14 +220,11 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = _decodeJsonMap(response.body);
-      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-      final racesJson = raceTable['Races'] as List? ?? [];
+      final racesJson = _extractRaces(data);
       return racesJson
-          .map(
-            (json) =>
-                TeamSprintResult.fromRaceJson(json as Map<String, dynamic>),
-          )
+          .map((json) => JsonSafe.asMapOrNull(json))
+          .whereType<Map<String, dynamic>>()
+          .map(TeamSprintResult.fromRaceJson)
           .toList();
     } else {
       throw Exception('Failed to load constructor sprint results');
@@ -267,15 +241,11 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = _decodeJsonMap(response.body);
-      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-      final racesJson = raceTable['Races'] as List? ?? [];
+      final racesJson = _extractRaces(data);
       return racesJson
-          .map(
-            (json) => DriverQualifyingResult.fromRaceJson(
-              json as Map<String, dynamic>,
-            ),
-          )
+          .map((json) => JsonSafe.asMapOrNull(json))
+          .whereType<Map<String, dynamic>>()
+          .map(DriverQualifyingResult.fromRaceJson)
           .toList();
     } else {
       throw Exception('Failed to load driver qualifying results');
@@ -292,14 +262,11 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = _decodeJsonMap(response.body);
-      final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-      final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-      final racesJson = raceTable['Races'] as List? ?? [];
+      final racesJson = _extractRaces(data);
       return racesJson
-          .map(
-            (json) =>
-                TeamQualifyingResult.fromRaceJson(json as Map<String, dynamic>),
-          )
+          .map((json) => JsonSafe.asMapOrNull(json))
+          .whereType<Map<String, dynamic>>()
+          .map(TeamQualifyingResult.fromRaceJson)
           .toList();
     } else {
       throw Exception('Failed to load constructor qualifying results');
@@ -320,19 +287,20 @@ class ApiService {
       throw Exception('Failed to load race results');
     }
     final data = _decodeJsonMap(response.body);
-    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-    final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-    final racesJson = raceTable['Races'] as List? ?? [];
+    final racesJson = _extractRaces(data);
     if (racesJson.isEmpty) {
       return [];
     }
-    final raceJson = racesJson.first as Map<String, dynamic>;
-    final results = raceJson['Results'] as List? ?? [];
+    final raceJson = JsonSafe.asMapOrNull(racesJson.first);
+    if (raceJson == null) {
+      return [];
+    }
+    final results = JsonSafe.asList(raceJson['Results']);
     return results
         .take(3)
         .map((result) {
-          final resultJson = result as Map<String, dynamic>;
-          final driver = resultJson['Driver'] as Map<String, dynamic>? ?? {};
+          final resultJson = JsonSafe.asMap(result);
+          final driver = JsonSafe.asMap(resultJson['Driver']);
           return '${driver['driverId'] ?? ''}';
         })
         .where((id) => id.isNotEmpty)
@@ -353,19 +321,20 @@ class ApiService {
       throw Exception('Failed to load qualifying results');
     }
     final data = _decodeJsonMap(response.body);
-    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-    final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-    final racesJson = raceTable['Races'] as List? ?? [];
+    final racesJson = _extractRaces(data);
     if (racesJson.isEmpty) {
       return [];
     }
-    final raceJson = racesJson.first as Map<String, dynamic>;
-    final results = raceJson['QualifyingResults'] as List? ?? [];
+    final raceJson = JsonSafe.asMapOrNull(racesJson.first);
+    if (raceJson == null) {
+      return [];
+    }
+    final results = JsonSafe.asList(raceJson['QualifyingResults']);
     return results
         .take(3)
         .map((result) {
-          final resultJson = result as Map<String, dynamic>;
-          final driver = resultJson['Driver'] as Map<String, dynamic>? ?? {};
+          final resultJson = JsonSafe.asMap(result);
+          final driver = JsonSafe.asMap(resultJson['Driver']);
           return '${driver['driverId'] ?? ''}';
         })
         .where((id) => id.isNotEmpty)
@@ -411,25 +380,32 @@ class ApiService {
     required String resultsKey,
     required SessionType type,
   }) async {
-    final response = await _getJsonWithCache(
+    final response = await _getJsonWithCache<SessionResults?>(
       uri: Uri.parse('$_baseUrl$season/$endpoint'),
       cacheKey: _cacheKey(bucket: cacheBucket, season: season),
       acceptedStatusCodes: const {200, 404},
       failureMessage: 'Failed to load session results',
+      parse: (data) =>
+          _parseSessionResults(data, resultsKey: resultsKey, type: type),
     );
-    return _parseSessionResults(
-      response.data,
-      resultsKey: resultsKey,
-      type: type,
+    final parsed = response.data;
+    if (parsed == null) {
+      return null;
+    }
+    return SessionResults(
+      race: parsed.race,
+      results: parsed.results,
+      type: parsed.type,
       lastUpdated: response.lastUpdated,
       isFromCache: response.isFromCache,
     );
   }
 
-  Future<CachedApiResponse<Map<String, dynamic>>> _getJsonWithCache({
+  Future<CachedApiResponse<T>> _getJsonWithCache<T>({
     required Uri uri,
     required String cacheKey,
     required String failureMessage,
+    required T Function(Map<String, dynamic>) parse,
     Set<int> acceptedStatusCodes = const {200},
   }) async {
     try {
@@ -439,77 +415,94 @@ class ApiService {
       }
 
       final data = _decodeJsonMap(response.body);
+      final parsed = parse(data);
       final updatedAt = DateTime.now();
       await _writeCachedBody(cacheKey, response.body, updatedAt);
       return CachedApiResponse(
-        data: data,
+        data: parsed,
         lastUpdated: updatedAt,
         isFromCache: false,
       );
     } catch (_) {
       final cached = await _readCachedBody(cacheKey);
       if (cached != null) {
-        final cachedData = _decodeJsonMap(cached.body);
-        return CachedApiResponse(
-          data: cachedData,
-          lastUpdated: cached.updatedAt,
-          isFromCache: true,
-        );
+        try {
+          final cachedData = _decodeJsonMap(cached.body);
+          return CachedApiResponse(
+            data: parse(cachedData),
+            lastUpdated: cached.updatedAt,
+            isFromCache: true,
+          );
+        } catch (_) {
+          // Cached body is also malformed; fall through to failure.
+        }
       }
       throw Exception(failureMessage);
     }
   }
 
+  static List<dynamic> _extractRaces(Map<String, dynamic> data) {
+    final mrData = JsonSafe.asMap(data['MRData']);
+    final raceTable = JsonSafe.asMap(mrData['RaceTable']);
+    return JsonSafe.asList(raceTable['Races']);
+  }
+
   static List<DriverStanding> _parseDriverStandings(Map<String, dynamic> data) {
-    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-    final standingsTable =
-        mrData['StandingsTable'] as Map<String, dynamic>? ?? {};
-    final standingsLists = standingsTable['StandingsLists'] as List? ?? [];
+    final mrData = JsonSafe.asMap(data['MRData']);
+    final standingsTable = JsonSafe.asMap(mrData['StandingsTable']);
+    final standingsLists = JsonSafe.asList(standingsTable['StandingsLists']);
     if (standingsLists.isEmpty) {
       return [];
     }
-    final standingsJson =
-        standingsLists.first['DriverStandings'] as List? ?? [];
+    final firstList = JsonSafe.asMap(standingsLists.first);
+    final standingsJson = JsonSafe.asList(firstList['DriverStandings']);
     return standingsJson
-        .map((json) => DriverStanding.fromJson(json as Map<String, dynamic>))
+        .map((json) => JsonSafe.asMapOrNull(json))
+        .whereType<Map<String, dynamic>>()
+        .map(DriverStanding.fromJson)
         .toList();
   }
 
   static List<ConstructorStanding> _parseConstructorStandings(
     Map<String, dynamic> data,
   ) {
-    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-    final standingsTable =
-        mrData['StandingsTable'] as Map<String, dynamic>? ?? {};
-    final standingsLists = standingsTable['StandingsLists'] as List? ?? [];
+    final mrData = JsonSafe.asMap(data['MRData']);
+    final standingsTable = JsonSafe.asMap(mrData['StandingsTable']);
+    final standingsLists = JsonSafe.asList(standingsTable['StandingsLists']);
     if (standingsLists.isEmpty) {
       return [];
     }
-    final standingsJson =
-        standingsLists.first['ConstructorStandings'] as List? ?? [];
+    final firstList = JsonSafe.asMap(standingsLists.first);
+    final standingsJson = JsonSafe.asList(firstList['ConstructorStandings']);
     return standingsJson
-        .map(
-          (json) => ConstructorStanding.fromJson(json as Map<String, dynamic>),
-        )
+        .map((json) => JsonSafe.asMapOrNull(json))
+        .whereType<Map<String, dynamic>>()
+        .map(ConstructorStanding.fromJson)
         .toList();
   }
 
   static Race? _parseNextRace(Map<String, dynamic> data) {
-    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-    final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-    final racesJson = raceTable['Races'] as List? ?? [];
+    final mrData = JsonSafe.asMap(data['MRData']);
+    final raceTable = JsonSafe.asMap(mrData['RaceTable']);
+    final racesJson = JsonSafe.asList(raceTable['Races']);
     if (racesJson.isEmpty) {
       return null;
     }
-    return Race.fromJson(racesJson.first as Map<String, dynamic>);
+    final firstRace = JsonSafe.asMapOrNull(racesJson.first);
+    if (firstRace == null) {
+      return null;
+    }
+    return Race.fromJson(firstRace);
   }
 
   static List<Race> _parseRaceSchedule(Map<String, dynamic> data) {
-    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-    final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-    final racesJson = raceTable['Races'] as List? ?? [];
+    final mrData = JsonSafe.asMap(data['MRData']);
+    final raceTable = JsonSafe.asMap(mrData['RaceTable']);
+    final racesJson = JsonSafe.asList(raceTable['Races']);
     return racesJson
-        .map((json) => Race.fromJson(json as Map<String, dynamic>))
+        .map((json) => JsonSafe.asMapOrNull(json))
+        .whereType<Map<String, dynamic>>()
+        .map(Race.fromJson)
         .toList();
   }
 
@@ -517,29 +510,27 @@ class ApiService {
     Map<String, dynamic> data, {
     required String resultsKey,
     required SessionType type,
-    required DateTime? lastUpdated,
-    required bool isFromCache,
   }) {
-    final mrData = data['MRData'] as Map<String, dynamic>? ?? {};
-    final raceTable = mrData['RaceTable'] as Map<String, dynamic>? ?? {};
-    final racesJson = raceTable['Races'] as List? ?? [];
+    final mrData = JsonSafe.asMap(data['MRData']);
+    final raceTable = JsonSafe.asMap(mrData['RaceTable']);
+    final racesJson = JsonSafe.asList(raceTable['Races']);
     if (racesJson.isEmpty) {
       return null;
     }
-    final raceJson = racesJson.first as Map<String, dynamic>;
-    final resultsJson = raceJson[resultsKey] as List? ?? [];
+    final raceJson = JsonSafe.asMapOrNull(racesJson.first);
+    if (raceJson == null) {
+      return null;
+    }
+    final resultsJson = JsonSafe.asList(raceJson[resultsKey]);
     final results = resultsJson
-        .map(
-          (json) =>
-              ResultEntry.fromJson(json as Map<String, dynamic>, type: type),
-        )
+        .map((json) => JsonSafe.asMapOrNull(json))
+        .whereType<Map<String, dynamic>>()
+        .map((json) => ResultEntry.fromJson(json, type: type))
         .toList();
     return SessionResults(
       race: Race.fromJson(raceJson),
       results: results,
       type: type,
-      lastUpdated: lastUpdated,
-      isFromCache: isFromCache,
     );
   }
 

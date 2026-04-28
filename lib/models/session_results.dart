@@ -1,3 +1,4 @@
+import '../utils/json_safe.dart';
 import 'race.dart';
 
 enum SessionType { race, qualifying, sprint }
@@ -49,9 +50,9 @@ class ResultEntry {
     Map<String, dynamic> json, {
     required SessionType type,
   }) {
-    final driver = json['Driver'] as Map<String, dynamic>? ?? {};
-    final constructor = json['Constructor'] as Map<String, dynamic>? ?? {};
-    final timeData = json['Time'] as Map<String, dynamic>?;
+    final driver = JsonSafe.asMap(json['Driver']);
+    final constructor = JsonSafe.asMap(json['Constructor']);
+    final timeData = JsonSafe.asMapOrNull(json['Time']);
     final status = json['status'] ?? '';
     final time = timeData?['time'] as String?;
     return ResultEntry(
