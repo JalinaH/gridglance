@@ -50,10 +50,7 @@ class TeamRaceResult {
       round: reader.string('round'),
       raceName: reader.string('raceName'),
       date: reader.string('date'),
-      drivers: reader
-          .readers('Results')
-          .map(_teamDriverFromReader)
-          .toList(),
+      drivers: reader.readers('Results').map(_teamDriverFromReader).toList(),
     );
   }
 }

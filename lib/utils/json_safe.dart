@@ -30,8 +30,7 @@ class JsonReader {
 
   /// Wraps the nested object at [key]. Returns an empty reader if the key
   /// is missing or its value isn't a JSON object.
-  JsonReader requireMap(String key) =>
-      JsonReader._(JsonSafe.asMap(_json[key]));
+  JsonReader requireMap(String key) => JsonReader._(JsonSafe.asMap(_json[key]));
 
   /// Wraps the nested object at [key], or null if missing / not an object.
   JsonReader? optMap(String key) {

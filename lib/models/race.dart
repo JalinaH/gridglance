@@ -144,4 +144,3 @@ DateTime? _parseDateTime(String date, String? time) {
   final normalizedTime = time.startsWith('T') ? time.substring(1) : time;
   return DateTime.tryParse('${date}T$normalizedTime');
 }
-
