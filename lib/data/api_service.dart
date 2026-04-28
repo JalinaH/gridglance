@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -46,6 +47,10 @@ class ApiService {
   static const String _cacheNamespace = 'api_cache_v1';
 
   static final Map<String, Future<CachedApiResponse<dynamic>>> _inFlight = {};
+  static final Random _retryJitter = Random();
+  static const Duration _requestTimeout = Duration(seconds: 10);
+  static const int _maxRetries = 2;
+  static const Duration _retryBaseDelay = Duration(milliseconds: 250);
 
   Future<List<DriverStanding>> getDriverStandings({String? season}) async {
     season ??= DateTime.now().year.toString();
@@ -448,38 +453,71 @@ class ApiService {
     required T Function(Map<String, dynamic>) parse,
     required Set<int> acceptedStatusCodes,
   }) async {
-    try {
-      final response = await http.get(uri);
-      if (!acceptedStatusCodes.contains(response.statusCode)) {
-        throw _ApiHttpException(response.statusCode);
-      }
-
-      final data = _decodeJsonMap(response.body);
-      final parsed = parse(data);
-      final updatedAt = DateTime.now();
-      await _writeCachedBody(cacheKey, response.body, updatedAt);
-      return CachedApiResponse(
-        data: parsed,
-        lastUpdated: updatedAt,
-        isFromCache: false,
-      );
-    } catch (error, stackTrace) {
-      _logApiError(uri, error, stackTrace);
-      final cached = await _readCachedBody(cacheKey);
-      if (cached != null) {
-        try {
-          final cachedData = _decodeJsonMap(cached.body);
-          return CachedApiResponse(
-            data: parse(cachedData),
-            lastUpdated: cached.updatedAt,
-            isFromCache: true,
-          );
-        } catch (cacheError, cacheStack) {
-          _logApiError(uri, cacheError, cacheStack, fromCache: true);
+    Object? lastError;
+    StackTrace? lastStackTrace;
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final response = await http.get(uri).timeout(_requestTimeout);
+        if (!acceptedStatusCodes.contains(response.statusCode)) {
+          throw _ApiHttpException(response.statusCode);
         }
+        final data = _decodeJsonMap(response.body);
+        final parsed = parse(data);
+        final updatedAt = DateTime.now();
+        await _writeCachedBody(cacheKey, response.body, updatedAt);
+        return CachedApiResponse(
+          data: parsed,
+          lastUpdated: updatedAt,
+          isFromCache: false,
+        );
+      } catch (error, stackTrace) {
+        lastError = error;
+        lastStackTrace = stackTrace;
+        if (attempt < _maxRetries && _isTransient(error)) {
+          final delay = _retryDelay(attempt);
+          if (kDebugMode) {
+            debugPrint(
+              'ApiService retry ${attempt + 1}/$_maxRetries '
+              'after ${delay.inMilliseconds}ms for ${uri.path}: $error',
+            );
+          }
+          await Future.delayed(delay);
+          continue;
+        }
+        break;
       }
-      throw Exception(failureMessage);
     }
+    if (lastError != null) {
+      _logApiError(uri, lastError, lastStackTrace ?? StackTrace.empty);
+    }
+    final cached = await _readCachedBody(cacheKey);
+    if (cached != null) {
+      try {
+        final cachedData = _decodeJsonMap(cached.body);
+        return CachedApiResponse(
+          data: parse(cachedData),
+          lastUpdated: cached.updatedAt,
+          isFromCache: true,
+        );
+      } catch (cacheError, cacheStack) {
+        _logApiError(uri, cacheError, cacheStack, fromCache: true);
+      }
+    }
+    throw Exception(failureMessage);
+  }
+
+  static bool _isTransient(Object error) {
+    if (error is _ApiHttpException) return error.statusCode >= 500;
+    return error is SocketException ||
+        error is TimeoutException ||
+        error is http.ClientException;
+  }
+
+  static Duration _retryDelay(int attempt) {
+    final baseMs = _retryBaseDelay.inMilliseconds * (1 << attempt);
+    final jitterMs = baseMs * (_retryJitter.nextDouble() * 0.5 - 0.25);
+    final totalMs = (baseMs + jitterMs).round();
+    return Duration(milliseconds: totalMs < 0 ? 0 : totalMs);
   }
 
   static void _logApiError(
