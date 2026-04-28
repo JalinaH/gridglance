@@ -11,11 +11,13 @@ import 'services/background_task_service.dart';
 import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/f1_image_service.dart';
+import 'services/user_preferences.dart';
 import 'services/widget_update_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await UserPreferences.init();
   await WidgetUpdateService.ensureHomeWidgetSetup();
   await NotificationService.init();
   await BackgroundTaskService.initializeAndSchedule();

@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(UserPreferences.resetForTesting);
+
   group('UserPreferences.season', () {
     test('returns null when no season is stored', () async {
       SharedPreferences.setMockInitialValues({});
