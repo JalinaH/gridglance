@@ -41,19 +41,13 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
   late List<DriverStanding> _standings = widget.standings;
   DateTime? _lastUpdated;
   bool _isFromCache = false;
-  String? _favoriteDriverId;
+  String? _favoriteDriverId = UserPreferences.favoriteDriverIdSync;
 
   @override
   void initState() {
     super.initState();
     _lastUpdated = widget.lastUpdated;
     _isFromCache = widget.isFromCache;
-    _loadFavoriteDriver();
-  }
-
-  Future<void> _loadFavoriteDriver() async {
-    final id = await UserPreferences.getFavoriteDriverId();
-    if (mounted) setState(() => _favoriteDriverId = id);
   }
 
   @override

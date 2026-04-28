@@ -42,8 +42,8 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   bool _addingRaceWeekend = false;
   String? _raceWeekendStatusMessage;
   bool _raceWeekendWidgetTransparent = false;
-  String? _favoriteDriverId;
-  String? _favoriteTeamId;
+  final String? _favoriteDriverId = UserPreferences.favoriteDriverIdSync;
+  final String? _favoriteTeamId = UserPreferences.favoriteTeamIdSync;
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
   _WidgetPreviewData? _previewData;
@@ -52,7 +52,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFavoriteIds();
     _previewFuture = _loadPreviewData();
     _previewFuture.then((value) {
       if (!mounted) {
@@ -137,16 +136,6 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     if (delta.inHours < 1) return '${delta.inMinutes}m ago';
     if (delta.inDays < 1) return '${delta.inHours}h ago';
     return '${delta.inDays}d ago';
-  }
-
-  Future<void> _loadFavoriteIds() async {
-    final driverId = await UserPreferences.getFavoriteDriverId();
-    final teamId = await UserPreferences.getFavoriteTeamId();
-    if (!mounted) return;
-    setState(() {
-      _favoriteDriverId = driverId;
-      _favoriteTeamId = teamId;
-    });
   }
 
   Future<_WidgetPreviewData> _loadPreviewData() async {
@@ -941,7 +930,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     DriverStanding? driver;
     if (_favoriteDriverId != null &&
-        _favoriteDriverId!.isNotEmpty &&
+        _favoriteDriverId.isNotEmpty &&
         standings != null) {
       driver = standings.cast<DriverStanding?>().firstWhere(
         (d) => d!.driverId == _favoriteDriverId,
@@ -999,7 +988,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     ConstructorStanding? team;
     if (_favoriteTeamId != null &&
-        _favoriteTeamId!.isNotEmpty &&
+        _favoriteTeamId.isNotEmpty &&
         standings != null) {
       team = standings.cast<ConstructorStanding?>().firstWhere(
         (t) => t!.constructorId == _favoriteTeamId,
@@ -1118,7 +1107,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     ConstructorStanding? topTeam;
     if (_favoriteTeamId != null &&
-        _favoriteTeamId!.isNotEmpty &&
+        _favoriteTeamId.isNotEmpty &&
         teams != null) {
       topTeam = teams.cast<ConstructorStanding?>().firstWhere(
         (t) => t!.constructorId == _favoriteTeamId,

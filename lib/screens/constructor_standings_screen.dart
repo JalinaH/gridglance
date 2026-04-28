@@ -43,19 +43,13 @@ class _ConstructorStandingsScreenState
   late List<ConstructorStanding> _standings = widget.standings;
   DateTime? _lastUpdated;
   bool _isFromCache = false;
-  String? _favoriteTeamId;
+  String? _favoriteTeamId = UserPreferences.favoriteTeamIdSync;
 
   @override
   void initState() {
     super.initState();
     _lastUpdated = widget.lastUpdated;
     _isFromCache = widget.isFromCache;
-    _loadFavoriteTeam();
-  }
-
-  Future<void> _loadFavoriteTeam() async {
-    final id = await UserPreferences.getFavoriteTeamId();
-    if (mounted) setState(() => _favoriteTeamId = id);
   }
 
   @override

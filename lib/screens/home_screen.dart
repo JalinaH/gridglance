@@ -45,7 +45,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _season = DateTime.now().year.toString();
+  late String _season;
   late Future<SeasonOverview> _overview;
   bool _didUpdateWidget = false;
   String? _favoriteDriverId;
@@ -54,28 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    final storedSeason = UserPreferences.seasonSync;
+    _season = (storedSeason != null && storedSeason.isNotEmpty)
+        ? storedSeason
+        : DateTime.now().year.toString();
+    _favoriteDriverId = UserPreferences.favoriteDriverIdSync;
+    _favoriteTeamId = UserPreferences.favoriteTeamIdSync;
     _overview = ApiService().getSeasonOverview(season: _season);
-    _loadPreferences();
-  }
-
-  Future<void> _loadPreferences() async {
-    final storedSeason = await UserPreferences.getSeason();
-    final favoriteDriverId = await UserPreferences.getFavoriteDriverId();
-    final favoriteTeamId = await UserPreferences.getFavoriteTeamId();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _favoriteDriverId = favoriteDriverId;
-      _favoriteTeamId = favoriteTeamId;
-      if (storedSeason != null &&
-          storedSeason.isNotEmpty &&
-          storedSeason != _season) {
-        _season = storedSeason;
-        _overview = ApiService().getSeasonOverview(season: _season);
-        _didUpdateWidget = false;
-      }
-    });
   }
 
   Future<void> _refresh() async {
