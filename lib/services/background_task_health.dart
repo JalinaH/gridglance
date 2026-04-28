@@ -40,7 +40,10 @@ class BackgroundTaskHealth {
     await prefs.remove(_keyLastErrorMessage);
   }
 
-  static Future<void> recordFailure(Object error, StackTrace? stackTrace) async {
+  static Future<void> recordFailure(
+    Object error,
+    StackTrace? stackTrace,
+  ) async {
     if (kDebugMode) {
       debugPrint('BackgroundTask failure: $error');
       if (stackTrace != null) {
