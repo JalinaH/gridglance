@@ -88,7 +88,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Compare Mode'),
+            const Text('Compare Mode'),
             Text(
               'Season ${widget.season}',
               style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -100,7 +100,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
         future: _bootstrapFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return CompareModeSkeleton();
+            return const CompareModeSkeleton();
           }
           if (snapshot.hasError || snapshot.data == null) {
             return Center(
@@ -120,8 +120,8 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
             });
           }
           return ListView(
-            padding: EdgeInsets.only(bottom: 24),
-            physics: BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 24),
+            physics: const BouncingScrollPhysics(),
             children: [
               _buildModeCard(bootstrap),
               _buildPickerCard(bootstrap),
@@ -137,7 +137,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
                           color: colors.f1RedBright,
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         'Building comparison...',
                         style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -179,16 +179,16 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
               letterSpacing: 0.4,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Pick two drivers or two teams and compare trend + race pace.',
             style: TextStyle(color: colors.textMuted, fontSize: 12),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Row(
             children: [
               ChoiceChip(
-                label: Text('Drivers'),
+                label: const Text('Drivers'),
                 selected: _mode == CompareMode.drivers,
                 selectedColor: colors.f1Red,
                 backgroundColor: colors.surfaceAlt,
@@ -209,9 +209,9 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
                       }
                     : null,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               ChoiceChip(
-                label: Text('Teams'),
+                label: const Text('Teams'),
                 selected: _mode == CompareMode.teams,
                 selectedColor: colors.f1Red,
                 backgroundColor: colors.surfaceAlt,
@@ -261,7 +261,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
               letterSpacing: 0.4,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           _buildPickerRow(
             label: 'Entity A',
             value: firstLabel,
@@ -269,7 +269,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
                 ? _pickDriver(isFirst: true, data: data)
                 : _pickTeam(isFirst: true, data: data),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           _buildPickerRow(
             label: 'Entity B',
             value: secondLabel,
@@ -301,14 +301,14 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(12),
             child: Ink(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: colors.surfaceAlt,
                 borderRadius: BorderRadius.circular(12),
@@ -354,7 +354,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
                   letterSpacing: 0.4,
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               HeadToHeadPointsChart(
                 firstPoints: viewModel.firstTrend,
                 secondPoints: viewModel.secondTrend,
@@ -378,12 +378,12 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
                   letterSpacing: 0.4,
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               _buildMetricTable(viewModel),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: colors.surfaceAlt,
                   borderRadius: BorderRadius.circular(12),
@@ -442,7 +442,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
           hint: 'Lower is better',
           isLast: true,
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -473,7 +473,7 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
   }) {
     final colors = AppColors.of(context);
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         border: Border(
           bottom: isLast
@@ -1133,13 +1133,13 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet> {
       height: MediaQuery.of(context).size.height * 0.74,
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(color: colors.border),
       ),
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 10),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
             child: Row(
               children: [
                 Expanded(
@@ -1160,7 +1160,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: TextField(
               controller: _searchController,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),

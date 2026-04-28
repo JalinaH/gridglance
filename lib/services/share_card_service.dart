@@ -93,7 +93,7 @@ class ShareCardService {
         return await boundary.toImage(pixelRatio: pixelRatio);
       } catch (error) {
         lastError = error;
-        await Future<void>.delayed(Duration(milliseconds: 16));
+        await Future<void>.delayed(const Duration(milliseconds: 16));
         await WidgetsBinding.instance.endOfFrame;
       }
     }

@@ -114,7 +114,7 @@ void main() {
     testWidgets('shows empty state when no standings', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          DriverStandingsScreen(standings: const [], season: '2025'),
+          const DriverStandingsScreen(standings: [], season: '2025'),
         ),
       );
       await tester.pump();

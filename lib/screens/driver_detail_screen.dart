@@ -61,8 +61,8 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
         ),
       ),
       body: ListView(
-        padding: EdgeInsets.only(bottom: 24),
-        physics: BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        physics: const BouncingScrollPhysics(),
         children: [
           GlassCard(
             child: Row(
@@ -77,7 +77,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                       '${widget.driver.givenName.isNotEmpty ? widget.driver.givenName[0] : ''}${widget.driver.familyName.isNotEmpty ? widget.driver.familyName[0] : ''}',
                   size: 52,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,15 +96,15 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           if (widget.driver.nationality != null) ...[
                             Text(
                               countryFlag(widget.driver.nationality!),
-                              style: TextStyle(fontSize: 14),
+                              style: const TextStyle(fontSize: 14),
                             ),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                           ],
                           Flexible(
                             child: Text(
@@ -118,7 +118,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
@@ -150,13 +150,13 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                       animateValue: double.tryParse(widget.driver.position),
                       animatePrefix: 'P',
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     StatPill(
                       text: '${widget.driver.points} PTS',
                       animateValue: double.tryParse(widget.driver.points),
                       animateSuffix: ' PTS',
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     StatPill(
                       text: '${widget.driver.wins} W',
                       animateValue: double.tryParse(widget.driver.wins),
@@ -180,12 +180,12 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     letterSpacing: 0.4,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 FutureBuilder<List<DriverRaceResult>>(
                   future: _resultsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Padding(
+                      return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
                         child: ChartSkeleton(),
                       );
@@ -213,7 +213,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildChartStats(points),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         PointsTrendChart(points: points, labels: labels),
                       ],
                     );
@@ -235,20 +235,20 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     letterSpacing: 0.4,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 FutureBuilder<List<DriverRaceResult>>(
                   future: _resultsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           child: CircularProgressIndicator(color: colors.f1Red),
                         ),
                       );
                     }
                     if (snapshot.hasError) {
-                      return EmptyState(
+                      return const EmptyState(
                         message: 'Failed to load recent results.',
                         type: EmptyStateType.network,
                         iconSize: 36,
@@ -256,7 +256,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     }
                     final results = _recentResults(snapshot.data ?? []);
                     if (results.isEmpty) {
-                      return EmptyState(
+                      return const EmptyState(
                         message: 'No results available.',
                         type: EmptyStateType.results,
                         iconSize: 36,
@@ -303,7 +303,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
         : formatLocalDate(context, dateTime);
     final statusLabel = _statusLabel(result.status);
     return Padding(
-      padding: EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -330,7 +330,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   statusLabel.isEmpty ? dateLabel : '$dateLabel • $statusLabel',
                   style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -346,7 +346,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                 animateValue: double.tryParse(result.position),
                 animatePrefix: 'P',
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               AnimatedCounter(
                 value: double.tryParse(result.points) ?? 0,
                 suffix: ' pts',
@@ -361,7 +361,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
 
   Widget _metaChip(AppColors colors, String label) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
@@ -403,9 +403,9 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
     return Row(
       children: [
         _statChip(colors, 'Races', points.length.toString()),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         _statChip(colors, 'Avg', _formatPoints(avg)),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         _statChip(colors, 'Best', _formatPoints(best)),
       ],
     );
@@ -413,7 +413,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
 
   Widget _statChip(AppColors colors, String label, String value) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
@@ -431,7 +431,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
               letterSpacing: 0.4,
             ),
           ),
-          SizedBox(width: 6),
+          const SizedBox(width: 6),
           Text(
             value,
             style: TextStyle(

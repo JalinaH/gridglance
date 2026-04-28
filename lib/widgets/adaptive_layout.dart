@@ -91,7 +91,7 @@ class AdaptiveCardList extends StatelessWidget {
             if (secondIndex < itemCount)
               Expanded(child: itemBuilder(context, secondIndex))
             else
-              Expanded(child: SizedBox.shrink()),
+              const Expanded(child: SizedBox.shrink()),
           ],
         );
       },

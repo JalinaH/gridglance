@@ -56,25 +56,25 @@ class HeadToHeadPointsChart extends StatelessWidget {
             child: const SizedBox.expand(),
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Row(
           children: [
             _LegendDot(color: colors.f1Red, label: firstLabel),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             _LegendDot(
               color: colors.f1RedBright.withValues(alpha: 0.75),
               label: secondLabel,
             ),
           ],
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         Row(
           children: [
             Text(
               chartLabels.isEmpty ? '' : chartLabels.first,
               style: TextStyle(color: colors.textMuted, fontSize: 11),
             ),
-            Spacer(),
+            const Spacer(),
             Text(
               chartLabels.isEmpty ? '' : chartLabels.last,
               style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -103,7 +103,7 @@ class _LegendDot extends StatelessWidget {
           height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        SizedBox(width: 6),
+        const SizedBox(width: 6),
         Text(
           label,
           style: TextStyle(
