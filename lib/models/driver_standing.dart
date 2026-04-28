@@ -28,24 +28,22 @@ class DriverStanding {
   });
 
   factory DriverStanding.fromJson(Map<String, dynamic> json) {
-    final constructors = JsonSafe.asList(json['Constructors']);
-    final team = constructors.isNotEmpty
-        ? JsonSafe.asMapOrNull(constructors[0])
-        : null;
-    final driver = JsonSafe.asMap(json['Driver']);
+    final reader = JsonReader(json);
+    final team = reader.readers('Constructors').firstOrNull;
+    final driver = reader.requireMap('Driver');
 
     return DriverStanding(
-      position: json['position'] ?? '-',
-      points: json['points'] ?? '0',
-      wins: json['wins'] ?? '0',
-      givenName: driver['givenName'] ?? '',
-      familyName: driver['familyName'] ?? '',
-      teamName: team?['name'] ?? '',
-      driverId: driver['driverId'] ?? '',
-      constructorId: team?['constructorId'] ?? '',
-      code: driver['code'],
-      permanentNumber: driver['permanentNumber'],
-      nationality: driver['nationality'],
+      position: reader.string('position', defaultValue: '-'),
+      points: reader.string('points', defaultValue: '0'),
+      wins: reader.string('wins', defaultValue: '0'),
+      givenName: driver.string('givenName'),
+      familyName: driver.string('familyName'),
+      teamName: team?.string('name') ?? '',
+      driverId: driver.string('driverId'),
+      constructorId: team?.string('constructorId') ?? '',
+      code: driver.optString('code'),
+      permanentNumber: driver.optString('permanentNumber'),
+      nationality: driver.optString('nationality'),
     );
   }
 }

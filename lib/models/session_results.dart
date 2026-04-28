@@ -50,24 +50,23 @@ class ResultEntry {
     Map<String, dynamic> json, {
     required SessionType type,
   }) {
-    final driver = JsonSafe.asMap(json['Driver']);
-    final constructor = JsonSafe.asMap(json['Constructor']);
-    final timeData = JsonSafe.asMapOrNull(json['Time']);
-    final status = json['status'] ?? '';
-    final time = timeData?['time'] as String?;
+    final reader = JsonReader(json);
+    final driver = reader.requireMap('Driver');
+    final constructor = reader.requireMap('Constructor');
+    final isQualifying = type == SessionType.qualifying;
     return ResultEntry(
-      position: json['position'] ?? '-',
-      driverName: '${driver['givenName'] ?? ''} ${driver['familyName'] ?? ''}'
+      position: reader.string('position', defaultValue: '-'),
+      driverName: '${driver.string('givenName')} ${driver.string('familyName')}'
           .trim(),
-      driverId: driver['driverId'] ?? '',
-      teamName: constructor['name'] ?? '',
-      constructorId: constructor['constructorId'] ?? '',
-      points: json['points'] ?? '',
-      status: status ?? '',
-      time: time,
-      q1: type == SessionType.qualifying ? json['Q1'] : null,
-      q2: type == SessionType.qualifying ? json['Q2'] : null,
-      q3: type == SessionType.qualifying ? json['Q3'] : null,
+      driverId: driver.string('driverId'),
+      teamName: constructor.string('name'),
+      constructorId: constructor.string('constructorId'),
+      points: reader.string('points'),
+      status: reader.string('status'),
+      time: reader.optMap('Time')?.optString('time'),
+      q1: isQualifying ? reader.optString('Q1') : null,
+      q2: isQualifying ? reader.optString('Q2') : null,
+      q3: isQualifying ? reader.optString('Q3') : null,
     );
   }
 

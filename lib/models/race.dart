@@ -38,27 +38,31 @@ class Race {
   });
 
   factory Race.fromJson(Map<String, dynamic> json) {
-    final circuit = JsonSafe.asMap(json['Circuit']);
-    final location = JsonSafe.asMap(circuit['Location']);
-    final sessions = _parseSessions(json);
+    final reader = JsonReader(json);
+    final circuit = reader.requireMap('Circuit');
+    final location = circuit.requireMap('Location');
 
     return Race(
-      round: json['round'] ?? '',
-      raceName: json['raceName'] ?? '',
-      date: json['date'] ?? '',
-      time: json['time'],
-      circuitId: circuit['circuitId'] ?? '',
-      circuitName: circuit['circuitName'] ?? '',
-      locality: location['locality'] ?? '',
-      country: location['country'] ?? '',
-      latitude: _parseCoordinate(location['lat']),
-      longitude: _parseCoordinate(location['long']),
-      practice1: sessions['practice1'],
-      practice2: sessions['practice2'],
-      practice3: sessions['practice3'],
-      qualifying: sessions['qualifying'],
-      sprintQualifying: sessions['sprintQualifying'],
-      sprint: sessions['sprint'],
+      round: reader.string('round'),
+      raceName: reader.string('raceName'),
+      date: reader.string('date'),
+      time: reader.optString('time'),
+      circuitId: circuit.string('circuitId'),
+      circuitName: circuit.string('circuitName'),
+      locality: location.string('locality'),
+      country: location.string('country'),
+      latitude: location.optDouble('lat'),
+      longitude: location.optDouble('long'),
+      practice1: _parseSession(reader, 'FirstPractice', 'Free Practice 1'),
+      practice2: _parseSession(reader, 'SecondPractice', 'Free Practice 2'),
+      practice3: _parseSession(reader, 'ThirdPractice', 'Free Practice 3'),
+      qualifying: _parseSession(reader, 'Qualifying', 'Qualifying'),
+      sprintQualifying: _parseSession(
+        reader,
+        'SprintQualifying',
+        'Sprint Qualifying',
+      ),
+      sprint: _parseSession(reader, 'Sprint', 'Sprint'),
     );
   }
 
@@ -96,34 +100,19 @@ class Race {
     ];
   }
 
-  static Map<String, RaceSession?> _parseSessions(Map<String, dynamic> json) {
-    return {
-      'practice1': _parseSession(json, 'FirstPractice', 'Free Practice 1'),
-      'practice2': _parseSession(json, 'SecondPractice', 'Free Practice 2'),
-      'practice3': _parseSession(json, 'ThirdPractice', 'Free Practice 3'),
-      'qualifying': _parseSession(json, 'Qualifying', 'Qualifying'),
-      'sprintQualifying': _parseSession(
-        json,
-        'SprintQualifying',
-        'Sprint Qualifying',
-      ),
-      'sprint': _parseSession(json, 'Sprint', 'Sprint'),
-    };
-  }
-
   static RaceSession? _parseSession(
-    Map<String, dynamic> json,
+    JsonReader reader,
     String key,
     String label,
   ) {
-    final data = JsonSafe.asMapOrNull(json[key]);
+    final data = reader.optMap(key);
     if (data == null) {
       return null;
     }
     return RaceSession(
       name: label,
-      date: data['date'] ?? '',
-      time: data['time'],
+      date: data.string('date'),
+      time: data.optString('time'),
     );
   }
 }
@@ -154,17 +143,4 @@ DateTime? _parseDateTime(String date, String? time) {
   }
   final normalizedTime = time.startsWith('T') ? time.substring(1) : time;
   return DateTime.tryParse('${date}T$normalizedTime');
-}
-
-double? _parseCoordinate(dynamic value) {
-  if (value == null) {
-    return null;
-  }
-  if (value is num) {
-    return value.toDouble();
-  }
-  if (value is String) {
-    return double.tryParse(value);
-  }
-  return null;
 }
