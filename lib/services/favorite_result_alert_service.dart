@@ -14,140 +14,144 @@ class FavoriteResultAlertService {
   static const String _sessionSeededPrefix = 'favorite_alert_session_seeded';
   static const String _standingsSeededPrefix =
       'favorite_alert_standings_seeded';
-  static bool _checking = false;
+  static Future<void>? _inFlight;
 
-  static Future<void> checkForUpdates({String? season}) async {
-    if (_checking) {
+  static Future<void> checkForUpdates({String? season}) {
+    final existing = _inFlight;
+    if (existing != null) {
+      return existing;
+    }
+    final future = _runCheck(season: season);
+    _inFlight = future;
+    return future.whenComplete(() {
+      _inFlight = null;
+    });
+  }
+
+  static Future<void> _runCheck({String? season}) async {
+    final sessionFinishedEnabled =
+        await NotificationPreferences.isFavoriteSessionFinishedEnabled();
+    final standingsUpdateEnabled =
+        await NotificationPreferences.isFavoritePositionPointsEnabled();
+    if (!sessionFinishedEnabled && !standingsUpdateEnabled) {
       return;
     }
-    _checking = true;
-    try {
-      final sessionFinishedEnabled =
-          await NotificationPreferences.isFavoriteSessionFinishedEnabled();
-      final standingsUpdateEnabled =
-          await NotificationPreferences.isFavoritePositionPointsEnabled();
-      if (!sessionFinishedEnabled && !standingsUpdateEnabled) {
-        return;
+
+    final favoriteDriverId = await UserPreferences.getFavoriteDriverId();
+    final favoriteTeamId = await UserPreferences.getFavoriteTeamId();
+    final hasFavoriteDriver =
+        favoriteDriverId != null && favoriteDriverId.isNotEmpty;
+    final hasFavoriteTeam =
+        favoriteTeamId != null && favoriteTeamId.isNotEmpty;
+    if (!hasFavoriteDriver && !hasFavoriteTeam) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    if (!await _shouldRunNow(prefs)) {
+      return;
+    }
+
+    final selectedSeason =
+        season ??
+        await UserPreferences.getSeason() ??
+        DateTime.now().year.toString();
+    final api = ApiService();
+
+    final values = await Future.wait<Object?>([
+      sessionFinishedEnabled
+          ? _safe<SessionResults?>(
+              api.getLastRaceResults(season: selectedSeason),
+            )
+          : Future.value(null),
+      sessionFinishedEnabled
+          ? _safe<SessionResults?>(
+              api.getLastSprintResults(season: selectedSeason),
+            )
+          : Future.value(null),
+      sessionFinishedEnabled
+          ? _safe<SessionResults?>(
+              api.getLastQualifyingResults(season: selectedSeason),
+            )
+          : Future.value(null),
+      standingsUpdateEnabled
+          ? _safe<List<DriverStanding>>(
+              api.getDriverStandings(season: selectedSeason),
+            )
+          : Future.value(null),
+      standingsUpdateEnabled
+          ? _safe<List<ConstructorStanding>>(
+              api.getConstructorStandings(season: selectedSeason),
+            )
+          : Future.value(null),
+    ]);
+
+    final raceResults = values[0] as SessionResults?;
+    final sprintResults = values[1] as SessionResults?;
+    final qualifyingResults = values[2] as SessionResults?;
+    final driverStandings = values[3] as List<DriverStanding>?;
+    final teamStandings = values[4] as List<ConstructorStanding>?;
+
+    if (sessionFinishedEnabled) {
+      final sessionSeededKey = _sessionSeededKey(selectedSeason);
+      final sessionSeeded = prefs.getBool(sessionSeededKey) ?? false;
+      if (!sessionSeeded) {
+        await _storeSessionBaseline(
+          prefs: prefs,
+          season: selectedSeason,
+          raceResults: raceResults,
+          sprintResults: sprintResults,
+          qualifyingResults: qualifyingResults,
+        );
+        await prefs.setBool(sessionSeededKey, true);
+      } else {
+        await _processSessionFinishedAlerts(
+          prefs: prefs,
+          season: selectedSeason,
+          session: raceResults,
+          favoriteDriverId: favoriteDriverId,
+          favoriteTeamId: favoriteTeamId,
+        );
+        await _processSessionFinishedAlerts(
+          prefs: prefs,
+          season: selectedSeason,
+          session: sprintResults,
+          favoriteDriverId: favoriteDriverId,
+          favoriteTeamId: favoriteTeamId,
+        );
+        await _processSessionFinishedAlerts(
+          prefs: prefs,
+          season: selectedSeason,
+          session: qualifyingResults,
+          favoriteDriverId: favoriteDriverId,
+          favoriteTeamId: favoriteTeamId,
+        );
       }
+    }
 
-      final favoriteDriverId = await UserPreferences.getFavoriteDriverId();
-      final favoriteTeamId = await UserPreferences.getFavoriteTeamId();
-      final hasFavoriteDriver =
-          favoriteDriverId != null && favoriteDriverId.isNotEmpty;
-      final hasFavoriteTeam =
-          favoriteTeamId != null && favoriteTeamId.isNotEmpty;
-      if (!hasFavoriteDriver && !hasFavoriteTeam) {
-        return;
+    if (standingsUpdateEnabled) {
+      final standingsSeededKey = _standingsSeededKey(selectedSeason);
+      final standingsSeeded = prefs.getBool(standingsSeededKey) ?? false;
+      if (!standingsSeeded) {
+        await _storeStandingsBaseline(
+          prefs: prefs,
+          season: selectedSeason,
+          favoriteDriverId: favoriteDriverId,
+          favoriteTeamId: favoriteTeamId,
+          driverStandings: driverStandings,
+          teamStandings: teamStandings,
+        );
+        await prefs.setBool(standingsSeededKey, true);
+      } else {
+        await _processStandingsUpdates(
+          prefs: prefs,
+          season: selectedSeason,
+          favoriteDriverId: favoriteDriverId,
+          favoriteTeamId: favoriteTeamId,
+          driverStandings: driverStandings,
+          teamStandings: teamStandings,
+        );
       }
-
-      final prefs = await SharedPreferences.getInstance();
-      if (!await _shouldRunNow(prefs)) {
-        return;
-      }
-
-      final selectedSeason =
-          season ??
-          await UserPreferences.getSeason() ??
-          DateTime.now().year.toString();
-      final api = ApiService();
-
-      final values = await Future.wait<Object?>([
-        sessionFinishedEnabled
-            ? _safe<SessionResults?>(
-                api.getLastRaceResults(season: selectedSeason),
-              )
-            : Future.value(null),
-        sessionFinishedEnabled
-            ? _safe<SessionResults?>(
-                api.getLastSprintResults(season: selectedSeason),
-              )
-            : Future.value(null),
-        sessionFinishedEnabled
-            ? _safe<SessionResults?>(
-                api.getLastQualifyingResults(season: selectedSeason),
-              )
-            : Future.value(null),
-        standingsUpdateEnabled
-            ? _safe<List<DriverStanding>>(
-                api.getDriverStandings(season: selectedSeason),
-              )
-            : Future.value(null),
-        standingsUpdateEnabled
-            ? _safe<List<ConstructorStanding>>(
-                api.getConstructorStandings(season: selectedSeason),
-              )
-            : Future.value(null),
-      ]);
-
-      final raceResults = values[0] as SessionResults?;
-      final sprintResults = values[1] as SessionResults?;
-      final qualifyingResults = values[2] as SessionResults?;
-      final driverStandings = values[3] as List<DriverStanding>?;
-      final teamStandings = values[4] as List<ConstructorStanding>?;
-
-      if (sessionFinishedEnabled) {
-        final sessionSeededKey = _sessionSeededKey(selectedSeason);
-        final sessionSeeded = prefs.getBool(sessionSeededKey) ?? false;
-        if (!sessionSeeded) {
-          await _storeSessionBaseline(
-            prefs: prefs,
-            season: selectedSeason,
-            raceResults: raceResults,
-            sprintResults: sprintResults,
-            qualifyingResults: qualifyingResults,
-          );
-          await prefs.setBool(sessionSeededKey, true);
-        } else {
-          await _processSessionFinishedAlerts(
-            prefs: prefs,
-            season: selectedSeason,
-            session: raceResults,
-            favoriteDriverId: favoriteDriverId,
-            favoriteTeamId: favoriteTeamId,
-          );
-          await _processSessionFinishedAlerts(
-            prefs: prefs,
-            season: selectedSeason,
-            session: sprintResults,
-            favoriteDriverId: favoriteDriverId,
-            favoriteTeamId: favoriteTeamId,
-          );
-          await _processSessionFinishedAlerts(
-            prefs: prefs,
-            season: selectedSeason,
-            session: qualifyingResults,
-            favoriteDriverId: favoriteDriverId,
-            favoriteTeamId: favoriteTeamId,
-          );
-        }
-      }
-
-      if (standingsUpdateEnabled) {
-        final standingsSeededKey = _standingsSeededKey(selectedSeason);
-        final standingsSeeded = prefs.getBool(standingsSeededKey) ?? false;
-        if (!standingsSeeded) {
-          await _storeStandingsBaseline(
-            prefs: prefs,
-            season: selectedSeason,
-            favoriteDriverId: favoriteDriverId,
-            favoriteTeamId: favoriteTeamId,
-            driverStandings: driverStandings,
-            teamStandings: teamStandings,
-          );
-          await prefs.setBool(standingsSeededKey, true);
-        } else {
-          await _processStandingsUpdates(
-            prefs: prefs,
-            season: selectedSeason,
-            favoriteDriverId: favoriteDriverId,
-            favoriteTeamId: favoriteTeamId,
-            driverStandings: driverStandings,
-            teamStandings: teamStandings,
-          );
-        }
-      }
-    } finally {
-      _checking = false;
     }
   }
 
