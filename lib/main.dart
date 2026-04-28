@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/main_shell.dart';
 import 'screens/splash_screen.dart';
 import 'screens/widget_config_screen.dart';
+import 'services/analytics.dart';
 import 'services/background_task_service.dart';
 import 'services/crash_reporting.dart';
 import 'services/favorite_result_alert_service.dart';
@@ -20,6 +21,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CrashReporting.runWithCrashReporting(() async {
     await UserPreferences.init();
+    await Analytics.init();
     await WidgetUpdateService.ensureHomeWidgetSetup();
     await NotificationService.init();
     await BackgroundTaskService.initializeAndSchedule();
@@ -92,6 +94,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     await prefs.setString(
       _themeKey,
       nextMode == ThemeMode.dark ? 'dark' : 'light',
+    );
+    unawaited(
+      Analytics.track(
+        'theme_toggled',
+        properties: {'to': nextMode == ThemeMode.dark ? 'dark' : 'light'},
+      ),
     );
   }
 

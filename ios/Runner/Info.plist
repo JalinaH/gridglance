@@ -58,5 +58,10 @@
 		<string>fetch</string>
 		<string>processing</string>
 	</array>
+	<!-- PostHog: disable auto-init so the SDK is configured from Dart
+	     with a key that comes via --dart-define-from-file=secrets.json
+	     instead of being baked into Info.plist. -->
+	<key>com.posthog.posthog.AUTO_INIT</key>
+	<false/>
 </dict>
 </plist>

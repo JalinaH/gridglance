@@ -274,6 +274,7 @@ class _ConstructorStandingsScreenState
         fileName: 'team-standings-${widget.season}',
         text: 'F1 team standings (${widget.season}) via GridGlance',
         subject: 'F1 Team Standings',
+        kind: 'team_standings',
       );
     } on ShareCardException catch (error) {
       _showSnackBar(error.message);

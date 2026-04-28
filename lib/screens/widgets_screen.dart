@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
@@ -5,6 +7,7 @@ import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../services/analytics.dart';
 import '../services/background_task_health.dart';
 import '../services/widget_update_service.dart';
 import '../services/user_preferences.dart';
@@ -233,10 +236,17 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
 
   Future<void> _requestPinWidget({
     required String qualifiedAndroidName,
+    required String widgetType,
     required ValueSetter<String> onStatus,
   }) async {
     if (_isIosWidgetPickerFlow) {
       onStatus(_iosWidgetPickerMessage);
+      unawaited(
+        Analytics.track(
+          'widget_prepared',
+          properties: {'type': widgetType, 'platform': 'ios'},
+        ),
+      );
       return;
     }
     final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
@@ -248,6 +258,12 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       qualifiedAndroidName: qualifiedAndroidName,
     );
     onStatus('Widget add request sent');
+    unawaited(
+      Analytics.track(
+        'widget_added',
+        properties: {'type': widgetType, 'platform': 'android'},
+      ),
+    );
   }
 
   Future<void> _addDriverWidget() async {
@@ -265,6 +281,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedDriverWidgetProvider,
+        widgetType: 'driver_standings',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -305,6 +322,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedRaceWeekendWidgetProvider,
+        widgetType: 'race_weekend',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -344,6 +362,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedTeamWidgetProvider,
+        widgetType: 'team_standings',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -394,6 +413,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedFavoriteDriverWidgetProvider,
+        widgetType: 'favorite_driver',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -452,6 +472,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedFavoriteTeamWidgetProvider,
+        widgetType: 'favorite_team',
         onStatus: (message) {
           if (!mounted) {
             return;

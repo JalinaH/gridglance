@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../data/api_service.dart';
 import '../utils/haptics.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../services/analytics.dart';
 import '../services/calendar_service.dart';
 import '../services/prediction_service.dart';
 import '../services/share_card_service.dart';
@@ -1198,6 +1201,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           driverIds: driverIds,
         );
       }
+      unawaited(
+        Analytics.track(
+          'prediction_submitted',
+          properties: {
+            'kind': isQualifying ? 'qualifying_top3' : 'race_podium',
+          },
+        ),
+      );
       final updatedScore = await _predictionService.getSeasonScore(
         season: widget.season,
         apiService: _apiService,
@@ -1896,6 +1907,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         fileName: 'race-countdown-${widget.season}-round-${widget.race.round}',
         text: '${widget.race.raceName} countdown via GridGlance',
         subject: 'F1 Race Countdown',
+        kind: 'race_countdown',
       );
     } on ShareCardException catch (error) {
       _showSnackBar(error.message);

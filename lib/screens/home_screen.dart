@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../data/api_service.dart';
+import '../services/analytics.dart';
 import '../utils/haptics.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
@@ -152,7 +154,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (selection == null || selection == _season) {
       return;
     }
+    final previousSeason = _season;
     await UserPreferences.setSeason(selection);
+    unawaited(
+      Analytics.track(
+        'season_changed',
+        properties: {'from': previousSeason, 'to': selection},
+      ),
+    );
     if (!mounted) {
       return;
     }
@@ -225,6 +234,12 @@ class _HomeScreenState extends State<HomeScreen> {
       driver: selection,
       season: _season,
     );
+    unawaited(
+      Analytics.track(
+        'favorite_driver_set',
+        properties: {'source': 'home_screen'},
+      ),
+    );
     if (!mounted) {
       return;
     }
@@ -290,6 +305,12 @@ class _HomeScreenState extends State<HomeScreen> {
       team: selection.team,
       drivers: selection.drivers,
       season: _season,
+    );
+    unawaited(
+      Analytics.track(
+        'favorite_team_set',
+        properties: {'source': 'home_screen'},
+      ),
     );
     if (!mounted) {
       return;
