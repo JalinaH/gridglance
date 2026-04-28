@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'background_task_health.dart';
 import 'favorite_result_alert_service.dart';
 import 'notification_service.dart';
 import 'widget_update_service.dart';
@@ -20,8 +21,10 @@ void backgroundTaskDispatcher() {
           task == BackgroundTaskService.iOSBgProcessingTaskIdentifier) {
         await BackgroundTaskService.scheduleIOSProcessingTask();
       }
+      await BackgroundTaskHealth.recordSuccess();
       return true;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      await BackgroundTaskHealth.recordFailure(error, stackTrace);
       return false;
     }
   });
