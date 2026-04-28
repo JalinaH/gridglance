@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,9 +33,19 @@ class _CachedBody {
   const _CachedBody({required this.body, required this.updatedAt});
 }
 
+class _ApiHttpException implements Exception {
+  final int statusCode;
+  const _ApiHttpException(this.statusCode);
+
+  @override
+  String toString() => '_ApiHttpException(statusCode: $statusCode)';
+}
+
 class ApiService {
   static const String _baseUrl = 'https://api.jolpi.ca/ergast/f1/';
   static const String _cacheNamespace = 'api_cache_v1';
+
+  static final Map<String, Future<CachedApiResponse<dynamic>>> _inFlight = {};
 
   Future<List<DriverStanding>> getDriverStandings({String? season}) async {
     season ??= DateTime.now().year.toString();
@@ -408,10 +421,37 @@ class ApiService {
     required T Function(Map<String, dynamic>) parse,
     Set<int> acceptedStatusCodes = const {200},
   }) async {
+    final dedupeKey = uri.toString();
+    final existing = _inFlight[dedupeKey];
+    if (existing != null) {
+      return (await existing) as CachedApiResponse<T>;
+    }
+    final future = _fetchAndParse<T>(
+      uri: uri,
+      cacheKey: cacheKey,
+      failureMessage: failureMessage,
+      parse: parse,
+      acceptedStatusCodes: acceptedStatusCodes,
+    );
+    _inFlight[dedupeKey] = future;
+    try {
+      return await future;
+    } finally {
+      _inFlight.remove(dedupeKey);
+    }
+  }
+
+  Future<CachedApiResponse<T>> _fetchAndParse<T>({
+    required Uri uri,
+    required String cacheKey,
+    required String failureMessage,
+    required T Function(Map<String, dynamic>) parse,
+    required Set<int> acceptedStatusCodes,
+  }) async {
     try {
       final response = await http.get(uri);
       if (!acceptedStatusCodes.contains(response.statusCode)) {
-        throw Exception('$failureMessage (${response.statusCode})');
+        throw _ApiHttpException(response.statusCode);
       }
 
       final data = _decodeJsonMap(response.body);
@@ -423,7 +463,8 @@ class ApiService {
         lastUpdated: updatedAt,
         isFromCache: false,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      _logApiError(uri, error, stackTrace);
       final cached = await _readCachedBody(cacheKey);
       if (cached != null) {
         try {
@@ -433,12 +474,40 @@ class ApiService {
             lastUpdated: cached.updatedAt,
             isFromCache: true,
           );
-        } catch (_) {
-          // Cached body is also malformed; fall through to failure.
+        } catch (cacheError, cacheStack) {
+          _logApiError(uri, cacheError, cacheStack, fromCache: true);
         }
       }
       throw Exception(failureMessage);
     }
+  }
+
+  static void _logApiError(
+    Uri uri,
+    Object error,
+    StackTrace stackTrace, {
+    bool fromCache = false,
+  }) {
+    if (!kDebugMode) return;
+    final source = fromCache ? 'cache' : 'network';
+    final classification = _classifyError(error);
+    debugPrint(
+      'ApiService [$source/$classification] ${uri.path}: $error',
+    );
+  }
+
+  static String _classifyError(Object error) {
+    if (error is _ApiHttpException) {
+      final code = error.statusCode;
+      if (code >= 500) return 'http-5xx';
+      if (code >= 400) return 'http-4xx';
+      return 'http-$code';
+    }
+    if (error is SocketException) return 'network';
+    if (error is TimeoutException) return 'timeout';
+    if (error is http.ClientException) return 'http-client';
+    if (error is FormatException) return 'parse';
+    return 'unknown';
   }
 
   static List<dynamic> _extractRaces(Map<String, dynamic> data) {
