@@ -33,16 +33,16 @@ class ApiService {
   static const String _baseUrl = 'https://api.jolpi.ca/ergast/f1/';
   static const String _cacheNamespace = 'api_cache_v1';
 
-  Future<List<DriverStanding>> getDriverStandings({
-    String season = '2025',
-  }) async {
+  Future<List<DriverStanding>> getDriverStandings({String? season}) async {
+    season ??= DateTime.now().year.toString();
     final snapshot = await getDriverStandingsSnapshot(season: season);
     return snapshot.data;
   }
 
   Future<CachedApiResponse<List<DriverStanding>>> getDriverStandingsSnapshot({
-    String season = '2025',
+    String? season,
   }) async {
+    season ??= DateTime.now().year.toString();
     final response = await _getJsonWithCache(
       uri: Uri.parse('$_baseUrl$season/driverstandings/'),
       cacheKey: _cacheKey(bucket: 'driver_standings', season: season),
@@ -56,14 +56,16 @@ class ApiService {
   }
 
   Future<List<ConstructorStanding>> getConstructorStandings({
-    String season = '2025',
+    String? season,
   }) async {
+    season ??= DateTime.now().year.toString();
     final snapshot = await getConstructorStandingsSnapshot(season: season);
     return snapshot.data;
   }
 
   Future<CachedApiResponse<List<ConstructorStanding>>>
-  getConstructorStandingsSnapshot({String season = '2025'}) async {
+  getConstructorStandingsSnapshot({String? season}) async {
+    season ??= DateTime.now().year.toString();
     final response = await _getJsonWithCache(
       uri: Uri.parse('$_baseUrl$season/constructorstandings/'),
       cacheKey: _cacheKey(bucket: 'constructor_standings', season: season),
@@ -76,14 +78,16 @@ class ApiService {
     );
   }
 
-  Future<Race?> getNextRace({String season = '2025'}) async {
+  Future<Race?> getNextRace({String? season}) async {
+    season ??= DateTime.now().year.toString();
     final snapshot = await getNextRaceSnapshot(season: season);
     return snapshot.data;
   }
 
   Future<CachedApiResponse<Race?>> getNextRaceSnapshot({
-    String season = '2025',
+    String? season,
   }) async {
+    season ??= DateTime.now().year.toString();
     final response = await _getJsonWithCache(
       uri: Uri.parse('$_baseUrl$season/next/'),
       cacheKey: _cacheKey(bucket: 'next_race', season: season),
@@ -96,14 +100,16 @@ class ApiService {
     );
   }
 
-  Future<List<Race>> getRaceSchedule({String season = '2025'}) async {
+  Future<List<Race>> getRaceSchedule({String? season}) async {
+    season ??= DateTime.now().year.toString();
     final snapshot = await getRaceScheduleSnapshot(season: season);
     return snapshot.data;
   }
 
   Future<CachedApiResponse<List<Race>>> getRaceScheduleSnapshot({
-    String season = '2025',
+    String? season,
   }) async {
+    season ??= DateTime.now().year.toString();
     final response = await _getJsonWithCache(
       uri: Uri.parse('$_baseUrl$season/'),
       cacheKey: _cacheKey(bucket: 'race_schedule', season: season),
@@ -116,7 +122,8 @@ class ApiService {
     );
   }
 
-  Future<SeasonOverview> getSeasonOverview({String season = '2025'}) async {
+  Future<SeasonOverview> getSeasonOverview({String? season}) async {
+    season ??= DateTime.now().year.toString();
     final responses = await Future.wait<Object>([
       getDriverStandingsSnapshot(season: season),
       getConstructorStandingsSnapshot(season: season),
