@@ -41,7 +41,10 @@ class CompactSearchField extends StatelessWidget {
                   onPressed: onClear,
                 ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
         ),
       ),
     );

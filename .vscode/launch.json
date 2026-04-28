@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GridGlance (with secrets)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": [
+        "--dart-define-from-file=secrets.json"
+      ]
+    },
+    {
+      "name": "GridGlance (no secrets)",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
+}

@@ -107,15 +107,15 @@ class RaceCountdownShareCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             '${race.circuitName} • ${race.location}',
             style: TextStyle(color: colors.textMuted, fontSize: 12),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: colors.surfaceAlt.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(12),
@@ -134,11 +134,11 @@ class RaceCountdownShareCard extends StatelessWidget {
                 ),
                 if (start != null)
                   Padding(
-                    padding: EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 4),
                     child: CountdownText(
                       target: start,
                       hideIfPast: false,
-                      refreshInterval: Duration(minutes: 1),
+                      refreshInterval: const Duration(minutes: 1),
                       style: TextStyle(
                         color: colors.f1RedBright,
                         fontSize: 13,
@@ -172,7 +172,7 @@ class _ShareFrame extends StatelessWidget {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -200,7 +200,7 @@ class _ShareFrame extends StatelessWidget {
                         letterSpacing: 0.3,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -219,7 +219,7 @@ class _ShareFrame extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           child,
         ],
       ),
@@ -237,9 +237,9 @@ Widget _standingRow({
   final colors = AppColors.of(context);
   final onSurface = Theme.of(context).colorScheme.onSurface;
   return Padding(
-    padding: EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.only(bottom: 8),
     child: Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: colors.surfaceAlt.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(12),

@@ -43,10 +43,10 @@ class GlassCard extends StatelessWidget {
     final shadowBlur = isDark ? 18.0 : 12.0;
     final wide = isWideScreen(context);
     final effectiveMargin = wide
-        ? EdgeInsets.symmetric(horizontal: 20, vertical: 8)
+        ? const EdgeInsets.symmetric(horizontal: 20, vertical: 8)
         : margin;
     final effectivePadding = wide
-        ? EdgeInsets.symmetric(horizontal: 20, vertical: 14)
+        ? const EdgeInsets.symmetric(horizontal: 20, vertical: 14)
         : padding;
     final content = Ink(
       decoration: BoxDecoration(
@@ -64,7 +64,7 @@ class GlassCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: shadowOpacity),
             blurRadius: shadowBlur,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -147,7 +147,7 @@ class StatPill extends StatelessWidget {
       letterSpacing: 0.6,
     );
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         gradient: pillGradient,
         borderRadius: BorderRadius.circular(20),
@@ -199,9 +199,9 @@ class DriverStandingCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
-              duration: Duration(milliseconds: 600),
+              duration: const Duration(milliseconds: 600),
             ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Hero(
             tag: 'driver-logo-${driver.driverId}',
             child: DriverPhoto(
@@ -214,7 +214,7 @@ class DriverStandingCard extends StatelessWidget {
               size: 34,
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,8 +226,8 @@ class DriverStandingCard extends StatelessWidget {
                     child: Row(
                       children: [
                         if (flag != null) ...[
-                          Text(flag, style: TextStyle(fontSize: 14)),
-                          SizedBox(width: 6),
+                          Text(flag, style: const TextStyle(fontSize: 14)),
+                          const SizedBox(width: 6),
                         ],
                         Flexible(
                           child: Text(
@@ -260,7 +260,7 @@ class DriverStandingCard extends StatelessWidget {
                 animateValue: double.tryParse(driver.points),
                 animateSuffix: ' PTS',
               ),
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
               StatPill(
                 text: "${driver.wins} W",
                 animateValue: double.tryParse(driver.wins),
@@ -297,14 +297,14 @@ class ConstructorStandingCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
             ),
-            duration: Duration(milliseconds: 600),
+            duration: const Duration(milliseconds: 600),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Hero(
             tag: 'team-logo-${team.constructorId}',
             child: TeamLogo(teamName: team.teamName, size: 30),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +339,7 @@ class ConstructorStandingCard extends StatelessWidget {
                 animateValue: double.tryParse(team.points),
                 animateSuffix: ' PTS',
               ),
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
               StatPill(
                 text: "${team.wins} W",
                 animateValue: double.tryParse(team.wins),
@@ -388,7 +388,7 @@ class RaceCard extends StatelessWidget {
                 Row(
                   children: [
                     StatPill(text: "Round ${race.round}"),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         dateLabel,
@@ -398,14 +398,14 @@ class RaceCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Text(
                       countryFlag(race.country),
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         race.raceName,
@@ -420,7 +420,7 @@ class RaceCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   "${race.circuitName} - ${race.location}",
                   style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -430,7 +430,7 @@ class RaceCard extends StatelessWidget {
           ),
           if (race.circuitId.isNotEmpty)
             Padding(
-              padding: EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.only(left: 8),
               child: CircuitTrack(
                 circuitId: race.circuitId,
                 width: highlight ? 72 : 56,

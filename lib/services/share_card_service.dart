@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -5,6 +6,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:share_plus/share_plus.dart';
+
+import 'analytics.dart';
 
 class ShareCardException implements Exception {
   final String message;
@@ -22,6 +25,7 @@ class ShareCardService {
     required String fileName,
     required String text,
     String? subject,
+    String? kind,
   }) async {
     await WidgetsBinding.instance.endOfFrame;
     final renderObject = repaintBoundaryKey.currentContext?.findRenderObject();
@@ -54,6 +58,12 @@ class ShareCardService {
         text: text,
         subject: subject,
         sharePositionOrigin: shareRect,
+      );
+      unawaited(
+        Analytics.track(
+          'share_card_generated',
+          properties: {'kind': kind ?? 'unknown'},
+        ),
       );
     } on MissingPluginException {
       throw const ShareCardException(
@@ -93,7 +103,7 @@ class ShareCardService {
         return await boundary.toImage(pixelRatio: pixelRatio);
       } catch (error) {
         lastError = error;
-        await Future<void>.delayed(Duration(milliseconds: 16));
+        await Future<void>.delayed(const Duration(milliseconds: 16));
         await WidgetsBinding.instance.endOfFrame;
       }
     }

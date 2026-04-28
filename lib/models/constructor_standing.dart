@@ -1,3 +1,5 @@
+import '../utils/json_safe.dart';
+
 class ConstructorStanding {
   final String position;
   final String points;
@@ -14,14 +16,15 @@ class ConstructorStanding {
   });
 
   factory ConstructorStanding.fromJson(Map<String, dynamic> json) {
-    final constructor = json['Constructor'] as Map<String, dynamic>? ?? {};
+    final reader = JsonReader(json);
+    final constructor = reader.requireMap('Constructor');
 
     return ConstructorStanding(
-      position: json['position'] ?? '-',
-      points: json['points'] ?? '0',
-      wins: json['wins'] ?? '0',
-      teamName: constructor['name'] ?? '',
-      constructorId: constructor['constructorId'] ?? '',
+      position: reader.string('position', defaultValue: '-'),
+      points: reader.string('points', defaultValue: '0'),
+      wins: reader.string('wins', defaultValue: '0'),
+      teamName: constructor.string('name'),
+      constructorId: constructor.string('constructorId'),
     );
   }
 }

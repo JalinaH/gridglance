@@ -1,3 +1,5 @@
+import '../utils/json_safe.dart';
+
 class DriverRaceResult {
   final String round;
   final String raceName;
@@ -16,17 +18,15 @@ class DriverRaceResult {
   });
 
   factory DriverRaceResult.fromRaceJson(Map<String, dynamic> json) {
-    final results = json['Results'] as List? ?? [];
-    final result = results.isNotEmpty
-        ? results.first as Map<String, dynamic>? ?? {}
-        : <String, dynamic>{};
+    final reader = JsonReader(json);
+    final result = reader.readers('Results').firstOrNull;
     return DriverRaceResult(
-      round: json['round'] ?? '',
-      raceName: json['raceName'] ?? '',
-      date: json['date'] ?? '',
-      position: result['position'] ?? '-',
-      points: result['points'] ?? '0',
-      status: result['status'] ?? '',
+      round: reader.string('round'),
+      raceName: reader.string('raceName'),
+      date: reader.string('date'),
+      position: result?.string('position', defaultValue: '-') ?? '-',
+      points: result?.string('points', defaultValue: '0') ?? '0',
+      status: result?.string('status') ?? '',
     );
   }
 }
@@ -45,16 +45,12 @@ class TeamRaceResult {
   });
 
   factory TeamRaceResult.fromRaceJson(Map<String, dynamic> json) {
-    final results = json['Results'] as List? ?? [];
+    final reader = JsonReader(json);
     return TeamRaceResult(
-      round: json['round'] ?? '',
-      raceName: json['raceName'] ?? '',
-      date: json['date'] ?? '',
-      drivers: results
-          .map(
-            (item) => TeamDriverResult.fromJson(item as Map<String, dynamic>),
-          )
-          .toList(),
+      round: reader.string('round'),
+      raceName: reader.string('raceName'),
+      date: reader.string('date'),
+      drivers: reader.readers('Results').map(_teamDriverFromReader).toList(),
     );
   }
 }
@@ -76,17 +72,20 @@ class TeamDriverResult {
     required this.permanentNumber,
   });
 
-  factory TeamDriverResult.fromJson(Map<String, dynamic> json) {
-    final driver = json['Driver'] as Map<String, dynamic>? ?? {};
-    return TeamDriverResult(
-      givenName: driver['givenName'] ?? '',
-      familyName: driver['familyName'] ?? '',
-      position: json['position'] ?? '-',
-      points: json['points'] ?? '0',
-      code: driver['code'],
-      permanentNumber: driver['permanentNumber'],
-    );
-  }
+  factory TeamDriverResult.fromJson(Map<String, dynamic> json) =>
+      _teamDriverFromReader(JsonReader(json));
+}
+
+TeamDriverResult _teamDriverFromReader(JsonReader reader) {
+  final driver = reader.requireMap('Driver');
+  return TeamDriverResult(
+    givenName: driver.string('givenName'),
+    familyName: driver.string('familyName'),
+    position: reader.string('position', defaultValue: '-'),
+    points: reader.string('points', defaultValue: '0'),
+    code: driver.optString('code'),
+    permanentNumber: driver.optString('permanentNumber'),
+  );
 }
 
 class DriverSprintResult {
@@ -103,15 +102,13 @@ class DriverSprintResult {
   });
 
   factory DriverSprintResult.fromRaceJson(Map<String, dynamic> json) {
-    final sprintResults = json['SprintResults'] as List? ?? [];
-    final result = sprintResults.isNotEmpty
-        ? sprintResults.first as Map<String, dynamic>? ?? {}
-        : <String, dynamic>{};
+    final reader = JsonReader(json);
+    final result = reader.readers('SprintResults').firstOrNull;
     return DriverSprintResult(
-      round: json['round'] ?? '',
-      raceName: json['raceName'] ?? '',
-      date: json['date'] ?? '',
-      points: result['points'] ?? '0',
+      round: reader.string('round'),
+      raceName: reader.string('raceName'),
+      date: reader.string('date'),
+      points: result?.string('points', defaultValue: '0') ?? '0',
     );
   }
 }
@@ -130,15 +127,15 @@ class TeamSprintResult {
   });
 
   factory TeamSprintResult.fromRaceJson(Map<String, dynamic> json) {
-    final sprintResults = json['SprintResults'] as List? ?? [];
-    final points = sprintResults
-        .map((item) => '${(item as Map<String, dynamic>)['points'] ?? '0'}')
-        .toList();
+    final reader = JsonReader(json);
     return TeamSprintResult(
-      round: json['round'] ?? '',
-      raceName: json['raceName'] ?? '',
-      date: json['date'] ?? '',
-      points: points,
+      round: reader.string('round'),
+      raceName: reader.string('raceName'),
+      date: reader.string('date'),
+      points: reader
+          .readers('SprintResults')
+          .map((r) => r.string('points', defaultValue: '0'))
+          .toList(),
     );
   }
 }
@@ -157,15 +154,13 @@ class DriverQualifyingResult {
   });
 
   factory DriverQualifyingResult.fromRaceJson(Map<String, dynamic> json) {
-    final qualifying = json['QualifyingResults'] as List? ?? [];
-    final result = qualifying.isNotEmpty
-        ? qualifying.first as Map<String, dynamic>? ?? {}
-        : <String, dynamic>{};
+    final reader = JsonReader(json);
+    final result = reader.readers('QualifyingResults').firstOrNull;
     return DriverQualifyingResult(
-      round: json['round'] ?? '',
-      raceName: json['raceName'] ?? '',
-      date: json['date'] ?? '',
-      position: result['position'] ?? '-',
+      round: reader.string('round'),
+      raceName: reader.string('raceName'),
+      date: reader.string('date'),
+      position: result?.string('position', defaultValue: '-') ?? '-',
     );
   }
 }
@@ -184,15 +179,15 @@ class TeamQualifyingResult {
   });
 
   factory TeamQualifyingResult.fromRaceJson(Map<String, dynamic> json) {
-    final qualifying = json['QualifyingResults'] as List? ?? [];
-    final positions = qualifying
-        .map((item) => '${(item as Map<String, dynamic>)['position'] ?? '-'}')
-        .toList();
+    final reader = JsonReader(json);
     return TeamQualifyingResult(
-      round: json['round'] ?? '',
-      raceName: json['raceName'] ?? '',
-      date: json['date'] ?? '',
-      positions: positions,
+      round: reader.string('round'),
+      raceName: reader.string('raceName'),
+      date: reader.string('date'),
+      positions: reader
+          .readers('QualifyingResults')
+          .map((r) => r.string('position', defaultValue: '-'))
+          .toList(),
     );
   }
 }

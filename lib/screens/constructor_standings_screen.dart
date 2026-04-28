@@ -43,19 +43,13 @@ class _ConstructorStandingsScreenState
   late List<ConstructorStanding> _standings = widget.standings;
   DateTime? _lastUpdated;
   bool _isFromCache = false;
-  String? _favoriteTeamId;
+  String? _favoriteTeamId = UserPreferences.favoriteTeamIdSync;
 
   @override
   void initState() {
     super.initState();
     _lastUpdated = widget.lastUpdated;
     _isFromCache = widget.isFromCache;
-    _loadFavoriteTeam();
-  }
-
-  Future<void> _loadFavoriteTeam() async {
-    final id = await UserPreferences.getFavoriteTeamId();
-    if (mounted) setState(() => _favoriteTeamId = id);
   }
 
   @override
@@ -120,7 +114,7 @@ class _ConstructorStandingsScreenState
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Team Standings"),
+            const Text("Team Standings"),
             Text(
               "Season ${widget.season}",
               style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -140,7 +134,7 @@ class _ConstructorStandingsScreenState
                         color: colors.f1RedBright,
                       ),
                     )
-                  : Icon(Icons.ios_share, size: 20),
+                  : const Icon(Icons.ios_share, size: 20),
               tooltip: 'Share standings',
             ),
           ),
@@ -164,7 +158,7 @@ class _ConstructorStandingsScreenState
             ),
           ),
           _standings.isEmpty
-              ? Center(
+              ? const Center(
                   child: EmptyState(
                     message: "No team standings available.",
                     type: EmptyStateType.standings,
@@ -174,7 +168,7 @@ class _ConstructorStandingsScreenState
                   children: [
                     if (_lastUpdated != null)
                       Padding(
-                        padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -189,7 +183,7 @@ class _ConstructorStandingsScreenState
                         ),
                       ),
                     Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                       child: CompactSearchField(
                         controller: _controller,
                         hintText: 'Search teams',
@@ -220,8 +214,8 @@ class _ConstructorStandingsScreenState
                               onRefresh: _refresh,
                               color: colors.f1Red,
                               child: ListView.builder(
-                                padding: EdgeInsets.only(bottom: 24),
-                                physics: AlwaysScrollableScrollPhysics(
+                                padding: const EdgeInsets.only(bottom: 24),
+                                physics: const AlwaysScrollableScrollPhysics(
                                   parent: BouncingScrollPhysics(),
                                 ),
                                 itemCount: standings.length,
@@ -280,6 +274,7 @@ class _ConstructorStandingsScreenState
         fileName: 'team-standings-${widget.season}',
         text: 'F1 team standings (${widget.season}) via GridGlance',
         subject: 'F1 Team Standings',
+        kind: 'team_standings',
       );
     } on ShareCardException catch (error) {
       _showSnackBar(error.message);

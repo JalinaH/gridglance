@@ -52,7 +52,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Last Race Results'),
+            const Text('Last Race Results'),
             Text(
               'Season ${widget.season}',
               style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -64,14 +64,14 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         onRefresh: _refresh,
         color: colors.f1Red,
         child: ListView(
-          padding: EdgeInsets.only(bottom: 24),
-          physics: AlwaysScrollableScrollPhysics(
+          padding: const EdgeInsets.only(bottom: 24),
+          physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
           children: [
             _buildRaceHeader(),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: _buildSegmentedControl(),
             ),
             _buildResultsBody(),
@@ -86,10 +86,10 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
       future: _raceFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return RaceCardSkeleton();
+          return const RaceCardSkeleton();
         }
         if (snapshot.hasError) {
-          return GlassCard(
+          return const GlassCard(
             child: EmptyState(
               message:
                   'Unable to load race results and no cache is available yet.',
@@ -100,7 +100,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         }
         final results = snapshot.data;
         if (results == null) {
-          return GlassCard(
+          return const GlassCard(
             child: EmptyState(
               message: 'No recent race results available.',
               type: EmptyStateType.results,
@@ -123,14 +123,14 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
           onTap: () => _setSelected(SessionType.race),
           colors: colors,
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         _buildChip(
           label: 'Qualifying',
           selected: _selected == SessionType.qualifying,
           onTap: () => _setSelected(SessionType.qualifying),
           colors: colors,
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         _buildChip(
           label: 'Sprint',
           selected: _selected == SessionType.sprint,
@@ -185,12 +185,12 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return GlassCard(
             child: Column(
-              children: List.generate(6, (_) => ResultRowSkeleton()),
+              children: List.generate(6, (_) => const ResultRowSkeleton()),
             ),
           );
         }
         if (snapshot.hasError) {
-          return GlassCard(
+          return const GlassCard(
             child: EmptyState(
               message: 'Unable to load results and no cache is available yet.',
               type: EmptyStateType.network,
@@ -212,7 +212,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
           children: [
             if (results.lastUpdated != null)
               Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -248,7 +248,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildResultsHeader(session),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           ...results.map((result) => _buildResultRow(session, result)),
         ],
       ),
@@ -277,12 +277,12 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
             letterSpacing: 0.4,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           '${session.race.raceName} • $dateLabel',
           style: TextStyle(color: colors.textMuted, fontSize: 12),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         _buildHeaderRow(session.type),
       ],
     );
@@ -342,7 +342,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
     switch (session.type) {
       case SessionType.qualifying:
         return Padding(
-          padding: EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 8),
           child: Row(
             children: [
               SizedBox(
@@ -383,7 +383,7 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
       case SessionType.sprint:
       case SessionType.race:
         return Padding(
-          padding: EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 8),
           child: Row(
             children: [
               SizedBox(

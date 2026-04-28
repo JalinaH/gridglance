@@ -47,7 +47,7 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 250),
     );
     _animation = _controller.drive(Tween(begin: 0.0, end: 0.0));
   }
@@ -120,7 +120,10 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
             if (offset != 0)
               Positioned.fill(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
                     child: Container(
@@ -131,7 +134,7 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
                       alignment: isRight
                           ? Alignment.centerLeft
                           : Alignment.centerRight,
-                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Opacity(
                         opacity: progress,
                         child: Row(
@@ -143,10 +146,10 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
                                     color: Colors.white,
                                     size: 22 + (progress * 4),
                                   ),
-                                  SizedBox(width: 8),
+                                  const SizedBox(width: 8),
                                   Text(
                                     widget.label,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
@@ -156,13 +159,13 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
                               : [
                                   Text(
                                     widget.secondaryLabel ?? '',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                     ),
                                   ),
-                                  SizedBox(width: 8),
+                                  const SizedBox(width: 8),
                                   Icon(
                                     widget.secondaryIcon,
                                     color: Colors.white,

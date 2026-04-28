@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../data/api_service.dart';
+import '../services/analytics.dart';
 import '../utils/haptics.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
@@ -45,7 +47,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _season = DateTime.now().year.toString();
+  late String _season;
   late Future<SeasonOverview> _overview;
   bool _didUpdateWidget = false;
   String? _favoriteDriverId;
@@ -54,28 +56,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    final storedSeason = UserPreferences.seasonSync;
+    _season = (storedSeason != null && storedSeason.isNotEmpty)
+        ? storedSeason
+        : DateTime.now().year.toString();
+    _favoriteDriverId = UserPreferences.favoriteDriverIdSync;
+    _favoriteTeamId = UserPreferences.favoriteTeamIdSync;
     _overview = ApiService().getSeasonOverview(season: _season);
-    _loadPreferences();
-  }
-
-  Future<void> _loadPreferences() async {
-    final storedSeason = await UserPreferences.getSeason();
-    final favoriteDriverId = await UserPreferences.getFavoriteDriverId();
-    final favoriteTeamId = await UserPreferences.getFavoriteTeamId();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _favoriteDriverId = favoriteDriverId;
-      _favoriteTeamId = favoriteTeamId;
-      if (storedSeason != null &&
-          storedSeason.isNotEmpty &&
-          storedSeason != _season) {
-        _season = storedSeason;
-        _overview = ApiService().getSeasonOverview(season: _season);
-        _didUpdateWidget = false;
-      }
-    });
   }
 
   Future<void> _refresh() async {
@@ -109,13 +96,13 @@ class _HomeScreenState extends State<HomeScreen> {
           height: MediaQuery.of(context).size.height * 0.6,
           decoration: BoxDecoration(
             color: colors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border.all(color: colors.border),
           ),
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Row(
                   children: [
                     Expanded(
@@ -167,7 +154,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (selection == null || selection == _season) {
       return;
     }
+    final previousSeason = _season;
     await UserPreferences.setSeason(selection);
+    unawaited(
+      Analytics.track(
+        'season_changed',
+        properties: {'from': previousSeason, 'to': selection},
+      ),
+    );
     if (!mounted) {
       return;
     }
@@ -240,6 +234,12 @@ class _HomeScreenState extends State<HomeScreen> {
       driver: selection,
       season: _season,
     );
+    unawaited(
+      Analytics.track(
+        'favorite_driver_set',
+        properties: {'source': 'home_screen'},
+      ),
+    );
     if (!mounted) {
       return;
     }
@@ -306,6 +306,12 @@ class _HomeScreenState extends State<HomeScreen> {
       drivers: selection.drivers,
       season: _season,
     );
+    unawaited(
+      Analytics.track(
+        'favorite_team_set',
+        properties: {'source': 'home_screen'},
+      ),
+    );
     if (!mounted) {
       return;
     }
@@ -341,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return F1Scaffold(
       appBar: AppBar(
-        title: Text("GridGlance"),
+        title: const Text("GridGlance"),
         actions: [
           IconButton(
             icon: Icon(
@@ -368,25 +374,23 @@ class _HomeScreenState extends State<HomeScreen> {
       future: _overview,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return HomeScreenSkeleton();
+          return const HomeScreenSkeleton();
         } else if (snapshot.hasError) {
-          return Center(
-            child: EmptyState(
-              message:
-                  "Unable to reach live data and no cache is available yet.",
-              type: EmptyStateType.network,
-            ),
-          );
+          return _buildErrorState(colors, error: snapshot.error);
         }
 
         final overview = snapshot.data;
         if (overview == null) {
-          return Center(
-            child: EmptyState(
-              message: "No data available",
-              type: EmptyStateType.generic,
-            ),
-          );
+          return _buildErrorState(colors, error: null);
+        }
+
+        final hasAnyContent =
+            overview.driverStandings.isNotEmpty ||
+            overview.constructorStandings.isNotEmpty ||
+            overview.raceSchedule.isNotEmpty ||
+            overview.nextRace != null;
+        if (!hasAnyContent) {
+          return _buildEmptySeasonState(colors);
         }
 
         final topDrivers = overview.driverStandings.take(3).toList();
@@ -535,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Full-width header widgets (season selector, last-updated, favorites).
         final headerWidgets = <Widget>[
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               children: [
                 Text(
@@ -546,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     letterSpacing: 1.6,
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 InkWell(
                   onTap: () {
                     Haptics.light();
@@ -554,7 +558,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.surfaceAlt,
                       borderRadius: BorderRadius.circular(16),
@@ -571,7 +578,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Icon(
                           Icons.keyboard_arrow_down,
                           size: 16,
@@ -586,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (overview.lastUpdated != null)
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -613,8 +620,8 @@ class _HomeScreenState extends State<HomeScreen> {
           onRefresh: _refresh,
           color: colors.f1Red,
           child: ListView(
-            padding: EdgeInsets.only(bottom: 24),
-            physics: AlwaysScrollableScrollPhysics(
+            padding: const EdgeInsets.only(bottom: 24),
+            physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
             children: [
@@ -636,7 +643,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         )
                       else
-                        Expanded(child: SizedBox.shrink()),
+                        const Expanded(child: SizedBox.shrink()),
                     ],
                   )
               else
@@ -702,13 +709,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (subtitle != null)
             Padding(
-              padding: EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.only(top: 4),
               child: Text(
                 subtitle,
                 style: TextStyle(color: colors.textMuted, fontSize: 12),
               ),
             ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           child,
         ],
       ),
@@ -743,7 +750,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Icon(Icons.star, color: colors.f1RedBright, size: 18),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Favorites',
                 style: TextStyle(
@@ -755,7 +762,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           _buildFavoriteRow(
             label: 'Driver',
             title: driverTitle,
@@ -770,7 +777,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _selectFavoriteDriver(drivers);
                   },
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           _buildFavoriteRow(
             label: 'Team',
             title: teamTitle,
@@ -810,14 +817,14 @@ class _HomeScreenState extends State<HomeScreen> {
             letterSpacing: 1.2,
           ),
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: colors.surfaceAlt,
                 borderRadius: BorderRadius.circular(12),
@@ -826,7 +833,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 children: [
                   leading,
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -839,7 +846,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           subtitle,
                           style: TextStyle(
@@ -903,14 +910,14 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(child: _podiumDriver(second, 2, colors)),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.only(bottom: 18),
+                padding: const EdgeInsets.only(bottom: 18),
                 child: _podiumDriver(first, 1, colors),
               ),
             ),
             Expanded(child: _podiumDriver(third, 3, colors)),
           ],
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         // ── Podium blocks ──
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -940,19 +947,19 @@ class _HomeScreenState extends State<HomeScreen> {
               '${driver.givenName.isNotEmpty ? driver.givenName[0] : ''}${driver.familyName.isNotEmpty ? driver.familyName[0] : ''}',
           size: position == 1 ? 56 : 44,
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         if (driver.permanentNumber != null)
           DriverNumberBadge(
             number: driver.permanentNumber!,
             teamName: driver.teamName,
             size: position == 1 ? 28 : 24,
           ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (flag != null) Text(flag, style: TextStyle(fontSize: 10)),
-            if (flag != null) SizedBox(width: 3),
+            if (flag != null) Text(flag, style: const TextStyle(fontSize: 10)),
+            if (flag != null) const SizedBox(width: 3),
             Flexible(
               child: Text(
                 driver.familyName.toUpperCase(),
@@ -969,7 +976,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(
           "${driver.points} PTS",
           style: TextStyle(
@@ -991,13 +998,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final positionColors = {
       1: colors.f1Red,
       2: colors.textMuted,
-      3: Color(0xFFCD7F32),
+      3: const Color(0xFFCD7F32),
     };
     final blockColor = positionColors[position] ?? colors.surfaceAlt;
 
     return Container(
       height: height,
-      margin: EdgeInsets.symmetric(horizontal: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -1007,7 +1014,7 @@ class _HomeScreenState extends State<HomeScreen> {
             blockColor.withValues(alpha: 0.15),
           ],
         ),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
         border: Border.all(color: blockColor.withValues(alpha: 0.3)),
       ),
       alignment: Alignment.center,
@@ -1065,14 +1072,14 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(child: _podiumTeam(second, 2, colors)),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.only(bottom: 18),
+                padding: const EdgeInsets.only(bottom: 18),
                 child: _podiumTeam(first, 1, colors),
               ),
             ),
             Expanded(child: _podiumTeam(third, 3, colors)),
           ],
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         // Podium blocks
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -1105,9 +1112,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 2),
           child: Text(
             team.teamName.toUpperCase(),
             style: TextStyle(
@@ -1121,7 +1128,7 @@ class _HomeScreenState extends State<HomeScreen> {
             textAlign: TextAlign.center,
           ),
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(
           "${team.points} PTS",
           style: TextStyle(
@@ -1143,13 +1150,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final positionColors = {
       1: colors.f1Red,
       2: colors.textMuted,
-      3: Color(0xFFCD7F32),
+      3: const Color(0xFFCD7F32),
     };
     final blockColor = positionColors[position] ?? colors.surfaceAlt;
 
     return Container(
       height: height,
-      margin: EdgeInsets.symmetric(horizontal: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -1159,7 +1166,7 @@ class _HomeScreenState extends State<HomeScreen> {
             blockColor.withValues(alpha: 0.15),
           ],
         ),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
         border: Border.all(color: blockColor.withValues(alpha: 0.3)),
       ),
       alignment: Alignment.center,
@@ -1224,7 +1231,7 @@ class _HomeScreenState extends State<HomeScreen> {
               text: "Round ${race.round}",
               color: AppColors.of(context).f1Red,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 dateLabel,
@@ -1239,7 +1246,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         if (start != null)
           Padding(
-            padding: EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.only(top: 6),
             child: CountdownText(
               target: start,
               style: TextStyle(
@@ -1248,7 +1255,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Text(
           race.raceName,
           style: TextStyle(
@@ -1258,7 +1265,7 @@ class _HomeScreenState extends State<HomeScreen> {
             letterSpacing: 0.4,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           "${race.circuitName} - ${race.location}",
           style: TextStyle(
@@ -1279,7 +1286,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1295,7 +1302,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          if (prefix != null) ...[prefix, SizedBox(width: 8)],
+          if (prefix != null) ...[prefix, const SizedBox(width: 8)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1341,6 +1348,98 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     return EmptyState(message: message, type: type, iconSize: 36);
   }
+
+  Widget _buildErrorState(AppColors colors, {required Object? error}) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: colors.f1Red,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        children: [
+          const EmptyState(
+            message:
+                'Unable to reach live data and no cache is available yet.\n'
+                'Check your connection and try again.',
+            type: EmptyStateType.network,
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: FilledButton.icon(
+              onPressed: _refresh,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.f1Red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                error.toString(),
+                style: TextStyle(color: colors.textMuted, fontSize: 11),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptySeasonState(AppColors colors) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: colors.f1Red,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        children: [
+          EmptyState(
+            message:
+                'No data for season $_season yet.\n'
+                'It may not have started — try a different season or refresh.',
+            type: EmptyStateType.generic,
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _selectSeason,
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  label: const Text('Change season'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    side: BorderSide(color: colors.border),
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: _refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.f1Red,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _TeamSelection {
@@ -1368,13 +1467,13 @@ class _SelectionSheet<T> extends StatelessWidget {
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(color: colors.border),
       ),
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Row(
               children: [
                 Expanded(
@@ -1404,7 +1503,7 @@ class _SelectionSheet<T> extends StatelessWidget {
                   );
                 }
                 if (snapshot.hasError || snapshot.data == null) {
-                  return Center(
+                  return const Center(
                     child: EmptyState(
                       message: 'Failed to load',
                       type: EmptyStateType.network,
@@ -1413,7 +1512,7 @@ class _SelectionSheet<T> extends StatelessWidget {
                 }
                 final items = snapshot.data!;
                 if (items.isEmpty) {
-                  return Center(
+                  return const Center(
                     child: EmptyState(
                       message: 'No data available',
                       type: EmptyStateType.generic,

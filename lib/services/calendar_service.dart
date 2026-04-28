@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/services.dart';
 import '../models/race.dart';
+import 'analytics.dart';
 
 class CalendarImportResult {
   final int added;
@@ -17,6 +20,27 @@ class CalendarService {
     required RaceSession session,
     required String season,
   }) async {
+    final added = await _addSession(
+      race: race,
+      session: session,
+      season: season,
+    );
+    if (added) {
+      unawaited(
+        Analytics.track(
+          'calendar_exported',
+          properties: {'kind': 'session', 'session_type': session.name},
+        ),
+      );
+    }
+    return added;
+  }
+
+  static Future<bool> _addSession({
+    required Race race,
+    required RaceSession session,
+    required String season,
+  }) async {
     final start = session.startDateTime;
     if (start == null) {
       return false;
@@ -24,7 +48,7 @@ class CalendarService {
     final isAllDay = session.time == null || session.time!.isEmpty;
     final startLocal = start.toLocal();
     final end = isAllDay
-        ? startLocal.add(Duration(days: 1))
+        ? startLocal.add(const Duration(days: 1))
         : startLocal.add(_sessionDuration(session));
     final event = Event(
       title: '${race.raceName} - ${session.name}',
@@ -54,7 +78,7 @@ class CalendarService {
 
     var added = 0;
     for (final session in sessions) {
-      final success = await addSessionToCalendar(
+      final success = await _addSession(
         race: race,
         session: session,
         season: season,
@@ -63,23 +87,33 @@ class CalendarService {
         added += 1;
       }
     }
+    unawaited(
+      Analytics.track(
+        'calendar_exported',
+        properties: {
+          'kind': 'weekend',
+          'sessions_added': added,
+          'sessions_total': sessions.length,
+        },
+      ),
+    );
     return CalendarImportResult(added: added, total: sessions.length);
   }
 
   static Duration _sessionDuration(RaceSession session) {
     final name = session.name.toLowerCase();
     if (name.contains('race')) {
-      return Duration(hours: 2);
+      return const Duration(hours: 2);
     }
     if (name.contains('sprint')) {
-      return Duration(hours: 1);
+      return const Duration(hours: 1);
     }
     if (name.contains('qualifying')) {
-      return Duration(hours: 1, minutes: 30);
+      return const Duration(hours: 1, minutes: 30);
     }
     if (name.contains('practice')) {
-      return Duration(hours: 1);
+      return const Duration(hours: 1);
     }
-    return Duration(hours: 2);
+    return const Duration(hours: 2);
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
@@ -5,6 +7,8 @@ import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../services/analytics.dart';
+import '../services/background_task_health.dart';
 import '../services/widget_update_service.dart';
 import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
@@ -41,16 +45,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   bool _addingRaceWeekend = false;
   String? _raceWeekendStatusMessage;
   bool _raceWeekendWidgetTransparent = false;
-  String? _favoriteDriverId;
-  String? _favoriteTeamId;
+  final String? _favoriteDriverId = UserPreferences.favoriteDriverIdSync;
+  final String? _favoriteTeamId = UserPreferences.favoriteTeamIdSync;
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
   _WidgetPreviewData? _previewData;
+  BackgroundTaskHealthSnapshot? _backgroundHealth;
 
   @override
   void initState() {
     super.initState();
-    _loadFavoriteIds();
     _previewFuture = _loadPreviewData();
     _previewFuture.then((value) {
       if (!mounted) {
@@ -61,16 +65,80 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       });
     });
     _loadTransparency();
+    _loadBackgroundHealth();
   }
 
-  Future<void> _loadFavoriteIds() async {
-    final driverId = await UserPreferences.getFavoriteDriverId();
-    final teamId = await UserPreferences.getFavoriteTeamId();
+  Future<void> _loadBackgroundHealth() async {
+    final snapshot = await BackgroundTaskHealth.getSnapshot();
     if (!mounted) return;
     setState(() {
-      _favoriteDriverId = driverId;
-      _favoriteTeamId = teamId;
+      _backgroundHealth = snapshot;
     });
+  }
+
+  Widget _buildStaleBanner(
+    BuildContext context,
+    BackgroundTaskHealthSnapshot health,
+  ) {
+    final colors = AppColors.of(context);
+    final lastSuccess = health.lastSuccessAt;
+    final lastSuccessText = lastSuccess == null
+        ? 'never'
+        : _formatRelativeTime(lastSuccess);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: Colors.amber,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Widget data may be stale',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Background updates have failed '
+                  '${health.consecutiveFailures} times in a row. '
+                  'Last success: $lastSuccessText.',
+                  style: TextStyle(
+                    color: colors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatRelativeTime(DateTime time) {
+    final delta = DateTime.now().difference(time);
+    if (delta.inMinutes < 1) return 'just now';
+    if (delta.inHours < 1) return '${delta.inMinutes}m ago';
+    if (delta.inDays < 1) return '${delta.inHours}h ago';
+    return '${delta.inDays}d ago';
   }
 
   Future<_WidgetPreviewData> _loadPreviewData() async {
@@ -168,10 +236,17 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
 
   Future<void> _requestPinWidget({
     required String qualifiedAndroidName,
+    required String widgetType,
     required ValueSetter<String> onStatus,
   }) async {
     if (_isIosWidgetPickerFlow) {
       onStatus(_iosWidgetPickerMessage);
+      unawaited(
+        Analytics.track(
+          'widget_prepared',
+          properties: {'type': widgetType, 'platform': 'ios'},
+        ),
+      );
       return;
     }
     final supported = await HomeWidget.isRequestPinWidgetSupported() ?? false;
@@ -183,6 +258,12 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       qualifiedAndroidName: qualifiedAndroidName,
     );
     onStatus('Widget add request sent');
+    unawaited(
+      Analytics.track(
+        'widget_added',
+        properties: {'type': widgetType, 'platform': 'android'},
+      ),
+    );
   }
 
   Future<void> _addDriverWidget() async {
@@ -200,6 +281,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedDriverWidgetProvider,
+        widgetType: 'driver_standings',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -240,6 +322,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedRaceWeekendWidgetProvider,
+        widgetType: 'race_weekend',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -279,6 +362,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedTeamWidgetProvider,
+        widgetType: 'team_standings',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -329,6 +413,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedFavoriteDriverWidgetProvider,
+        widgetType: 'favorite_driver',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -387,6 +472,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       await _requestPinWidget(
         qualifiedAndroidName:
             WidgetUpdateService.androidQualifiedFavoriteTeamWidgetProvider,
+        widgetType: 'favorite_team',
         onStatus: (message) {
           if (!mounted) {
             return;
@@ -669,7 +755,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               letterSpacing: 0.3,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             'Add live F1 widgets to your home screen',
             style: TextStyle(
@@ -678,11 +764,13 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
+          if (_backgroundHealth?.isStale ?? false)
+            _buildStaleBanner(context, _backgroundHealth!),
           if (_isIosWidgetPickerFlow) ...[
             Container(
-              margin: EdgeInsets.only(bottom: 16),
-              padding: EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: colors.f1Red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
@@ -691,7 +779,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               child: Row(
                 children: [
                   Icon(Icons.info_outline, size: 16, color: colors.f1Red),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'iOS uses the widget picker. These buttons prepare live widget data.',
@@ -709,7 +797,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         ];
 
         return ListView(
-          padding: EdgeInsets.fromLTRB(20, 12, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           children: [
             ...headerWidgets,
 
@@ -723,16 +811,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 label: 'Favorites',
                 description: 'Track your favorite driver and team',
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(child: favDriverCard),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(child: favTeamCard),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Standings + Race Weekend row
               Row(
@@ -749,19 +837,19 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                           label: 'Standings',
                           description: 'Championship leaderboards',
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(child: driverStandingsCard),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Expanded(child: teamStandingsCard),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   // Race Weekend column (right)
                   Expanded(
                     child: Column(
@@ -773,7 +861,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                           label: 'Race Weekend',
                           description: 'Upcoming sessions and countdown',
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         raceWeekendCard,
                       ],
                     ),
@@ -790,11 +878,11 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 label: 'Favorites',
                 description: 'Track your favorite driver and team',
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               favDriverCard,
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               favTeamCard,
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Standings
               _buildSectionHeader(
@@ -803,16 +891,16 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 label: 'Standings',
                 description: 'Championship leaderboards at a glance',
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(child: driverStandingsCard),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(child: teamStandingsCard),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Race Weekend
               _buildSectionHeader(
@@ -821,7 +909,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                 label: 'Race Weekend',
                 description: 'Upcoming sessions and countdown',
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               raceWeekendCard,
             ],
           ],
@@ -836,7 +924,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     required bool hasError,
   }) {
     if (hasError) {
-      return _DriverPreviewData(
+      return const _DriverPreviewData(
         name: "Failed to load",
         familyName: '',
         team: "Check connection",
@@ -849,7 +937,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       );
     }
     if (isLoading) {
-      return _DriverPreviewData(
+      return const _DriverPreviewData(
         name: "Loading...",
         familyName: '',
         team: "Please wait",
@@ -863,7 +951,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     DriverStanding? driver;
     if (_favoriteDriverId != null &&
-        _favoriteDriverId!.isNotEmpty &&
+        _favoriteDriverId.isNotEmpty &&
         standings != null) {
       driver = standings.cast<DriverStanding?>().firstWhere(
         (d) => d!.driverId == _favoriteDriverId,
@@ -872,7 +960,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     driver ??= (standings ?? []).isEmpty ? null : standings!.first;
     if (driver == null) {
-      return _DriverPreviewData(
+      return const _DriverPreviewData(
         name: "Standings",
         familyName: '',
         team: "Coming soon",
@@ -904,7 +992,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     required bool hasError,
   }) {
     if (hasError) {
-      return _TeamPreviewData(
+      return const _TeamPreviewData(
         name: "Failed to load",
         points: "",
         position: "--",
@@ -912,7 +1000,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       );
     }
     if (isLoading) {
-      return _TeamPreviewData(
+      return const _TeamPreviewData(
         name: "Loading...",
         points: "",
         position: "--",
@@ -921,7 +1009,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     ConstructorStanding? team;
     if (_favoriteTeamId != null &&
-        _favoriteTeamId!.isNotEmpty &&
+        _favoriteTeamId.isNotEmpty &&
         standings != null) {
       team = standings.cast<ConstructorStanding?>().firstWhere(
         (t) => t!.constructorId == _favoriteTeamId,
@@ -930,7 +1018,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     team ??= (standings ?? []).isEmpty ? null : standings!.first;
     if (team == null) {
-      return _TeamPreviewData(
+      return const _TeamPreviewData(
         name: "Standings",
         points: "",
         position: "--",
@@ -952,29 +1040,29 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }) {
     if (hasError) {
       return [
-        _PreviewEntry(name: "Failed to load", points: ""),
-        _PreviewEntry(name: "TBD", points: ""),
-        _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "Failed to load", points: ""),
+        const _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "TBD", points: ""),
       ];
     }
     if (isLoading) {
       return [
-        _PreviewEntry(name: "Loading...", points: ""),
-        _PreviewEntry(name: "Please wait", points: ""),
-        _PreviewEntry(name: "Please wait", points: ""),
+        const _PreviewEntry(name: "Loading...", points: ""),
+        const _PreviewEntry(name: "Please wait", points: ""),
+        const _PreviewEntry(name: "Please wait", points: ""),
       ];
     }
     if (standings == null || standings.isEmpty) {
       return [
-        _PreviewEntry(name: "Drivers", points: "Coming soon"),
-        _PreviewEntry(name: "TBD", points: ""),
-        _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "Drivers", points: "Coming soon"),
+        const _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "TBD", points: ""),
       ];
     }
     final top = standings.take(3).toList();
     return List.generate(3, (index) {
       if (index >= top.length) {
-        return _PreviewEntry(name: "TBD", points: "");
+        return const _PreviewEntry(name: "TBD", points: "");
       }
       final driver = top[index];
       return _PreviewEntry(
@@ -995,29 +1083,29 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   }) {
     if (hasError) {
       return [
-        _PreviewEntry(name: "Failed to load", points: ""),
-        _PreviewEntry(name: "TBD", points: ""),
-        _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "Failed to load", points: ""),
+        const _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "TBD", points: ""),
       ];
     }
     if (isLoading) {
       return [
-        _PreviewEntry(name: "Loading...", points: ""),
-        _PreviewEntry(name: "Please wait", points: ""),
-        _PreviewEntry(name: "Please wait", points: ""),
+        const _PreviewEntry(name: "Loading...", points: ""),
+        const _PreviewEntry(name: "Please wait", points: ""),
+        const _PreviewEntry(name: "Please wait", points: ""),
       ];
     }
     if (standings == null || standings.isEmpty) {
       return [
-        _PreviewEntry(name: "Teams", points: "Coming soon"),
-        _PreviewEntry(name: "TBD", points: ""),
-        _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "Teams", points: "Coming soon"),
+        const _PreviewEntry(name: "TBD", points: ""),
+        const _PreviewEntry(name: "TBD", points: ""),
       ];
     }
     final top = standings.take(3).toList();
     return List.generate(3, (index) {
       if (index >= top.length) {
-        return _PreviewEntry(name: "TBD", points: "");
+        return const _PreviewEntry(name: "TBD", points: "");
       }
       final team = top[index];
       return _PreviewEntry(
@@ -1040,7 +1128,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
     }
     ConstructorStanding? topTeam;
     if (_favoriteTeamId != null &&
-        _favoriteTeamId!.isNotEmpty &&
+        _favoriteTeamId.isNotEmpty &&
         teams != null) {
       topTeam = teams.cast<ConstructorStanding?>().firstWhere(
         (t) => t!.constructorId == _favoriteTeamId,
@@ -1114,14 +1202,14 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
         Row(
           children: [
             Container(
-              padding: EdgeInsets.all(6),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: colors.f1Red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, size: 16, color: colors.f1Red),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Text(
               label.toUpperCase(),
               style: TextStyle(
@@ -1133,9 +1221,9 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
             ),
           ],
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Padding(
-          padding: EdgeInsets.only(left: 38),
+          padding: const EdgeInsets.only(left: 38),
           child: Text(
             description,
             style: TextStyle(
@@ -1173,7 +1261,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 12,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1190,7 +1278,10 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               GestureDetector(
                 onTap: () => onTransparentChanged(!transparentValue),
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: transparentValue
                         ? colors.f1Red.withValues(alpha: 0.1)
@@ -1214,7 +1305,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                             ? colors.f1Red
                             : colors.textMuted,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
                         'BG',
                         style: TextStyle(
@@ -1229,7 +1320,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                   ),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               // Add button
               Expanded(
                 child: SizedBox(
@@ -1241,13 +1332,13 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                     onPressed: onAction,
                     icon: Icon(isAdding ? null : Icons.add_rounded, size: 16),
                     label: Text(
                       isAdding ? "Adding..." : actionLabel,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1258,7 +1349,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
             ],
           ),
           if (statusMessage != null) ...[
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               statusMessage,
               style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -1298,7 +1389,7 @@ class _DriverStandingsPreview extends StatelessWidget {
       aspectRatio: 18 / 10,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [_bg, _bgAlt],
@@ -1345,7 +1436,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                           ),
                           child: Text(
                             preview.driverNumber,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: _textPrimary,
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -1353,7 +1444,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                             ),
                           ),
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             preview.familyName.toUpperCase(),
@@ -1368,7 +1459,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                                 Shadow(
                                   color: Colors.black.withValues(alpha: 0.8),
                                   blurRadius: 4,
-                                  offset: Offset(0, 1),
+                                  offset: const Offset(0, 1),
                                 ),
                               ],
                             ),
@@ -1390,7 +1481,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                   // Details
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 6,
                       ),
@@ -1402,26 +1493,29 @@ class _DriverStandingsPreview extends StatelessWidget {
                             preview.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: _textPrimary,
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          SizedBox(height: 1),
+                          const SizedBox(height: 1),
                           Text(
                             preview.team,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: _textMuted, fontSize: 9),
+                            style: const TextStyle(
+                              color: _textMuted,
+                              fontSize: 9,
+                            ),
                           ),
-                          SizedBox(height: 6),
+                          const SizedBox(height: 6),
                           // Stats row: Position + Points
                           Row(
                             children: [
                               Expanded(
                                 child: _statBox([
-                                  TextSpan(
+                                  const TextSpan(
                                     text: 'P',
                                     style: TextStyle(
                                       color: _textMuted,
@@ -1432,7 +1526,7 @@ class _DriverStandingsPreview extends StatelessWidget {
                                   ),
                                   TextSpan(
                                     text: preview.position,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: _textPrimary,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
@@ -1441,20 +1535,20 @@ class _DriverStandingsPreview extends StatelessWidget {
                                   ),
                                 ]),
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Expanded(
                                 flex: 2,
                                 child: _statBox([
                                   TextSpan(
                                     text: preview.points.replaceAll(' pts', ''),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: _textPrimary,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
-                                  TextSpan(
+                                  const TextSpan(
                                     text: ' PTS',
                                     style: TextStyle(
                                       color: _textMuted,
@@ -1481,7 +1575,7 @@ class _DriverStandingsPreview extends StatelessWidget {
 
   static Widget _seasonPill(String label) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: _surfaceAlt.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(8),
@@ -1489,7 +1583,7 @@ class _DriverStandingsPreview extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: const TextStyle(
           color: _textMuted,
           fontSize: 8,
           fontWeight: FontWeight.w600,
@@ -1500,7 +1594,7 @@ class _DriverStandingsPreview extends StatelessWidget {
 
   static Widget _statBox(List<TextSpan> spans) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
@@ -1541,7 +1635,7 @@ class _TeamStandingsPreview extends StatelessWidget {
       aspectRatio: 18 / 10,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [_bg, _bgAlt],
@@ -1589,7 +1683,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                                 Shadow(
                                   color: Colors.black.withValues(alpha: 0.8),
                                   blurRadius: 4,
-                                  offset: Offset(0, 1),
+                                  offset: const Offset(0, 1),
                                 ),
                               ],
                             ),
@@ -1609,7 +1703,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                   Container(width: 4, color: tColor),
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 5,
                       ),
@@ -1619,19 +1713,19 @@ class _TeamStandingsPreview extends StatelessWidget {
                         children: [
                           // Driver rows
                           for (int i = 0; i < 2; i++) ...[
-                            if (i > 0) SizedBox(height: 4),
+                            if (i > 0) const SizedBox(height: 4),
                             _driverRow(
                               i < drivers.length ? drivers[i] : null,
                               tColor,
                             ),
                           ],
-                          SizedBox(height: 5),
+                          const SizedBox(height: 5),
                           // Stats row
                           Row(
                             children: [
                               Expanded(
                                 child: _DriverStandingsPreview._statBox([
-                                  TextSpan(
+                                  const TextSpan(
                                     text: 'P',
                                     style: TextStyle(
                                       color: _textMuted,
@@ -1642,7 +1736,7 @@ class _TeamStandingsPreview extends StatelessWidget {
                                   ),
                                   TextSpan(
                                     text: preview.position,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: _textPrimary,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
@@ -1651,20 +1745,20 @@ class _TeamStandingsPreview extends StatelessWidget {
                                   ),
                                 ]),
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Expanded(
                                 flex: 2,
                                 child: _DriverStandingsPreview._statBox([
                                   TextSpan(
                                     text: preview.points.replaceAll(' pts', ''),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: _textPrimary,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
-                                  TextSpan(
+                                  const TextSpan(
                                     text: ' PTS',
                                     style: TextStyle(
                                       color: _textMuted,
@@ -1706,7 +1800,7 @@ class _TeamStandingsPreview extends StatelessWidget {
           ),
           child: Text(
             number,
-            style: TextStyle(
+            style: const TextStyle(
               color: _textPrimary,
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -1714,13 +1808,13 @@ class _TeamStandingsPreview extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: const TextStyle(
               color: _textPrimary,
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -1730,7 +1824,7 @@ class _TeamStandingsPreview extends StatelessWidget {
         ),
         Text(
           code,
-          style: TextStyle(
+          style: const TextStyle(
             color: _textMuted,
             fontSize: 9,
             fontWeight: FontWeight.w600,
@@ -1778,7 +1872,7 @@ class _RaceWeekendPreview extends StatelessWidget {
       aspectRatio: 16 / 14,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [_bg, _bgAlt],
@@ -1788,7 +1882,7 @@ class _RaceWeekendPreview extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: EdgeInsets.all(14),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1807,14 +1901,14 @@ class _RaceWeekendPreview extends StatelessWidget {
                               height: 3,
                               width: 36,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
+                                gradient: const LinearGradient(
                                   colors: [_red, _redBright],
                                 ),
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Flexible(
+                            const SizedBox(width: 8),
+                            const Flexible(
                               child: Text(
                                 'RACE WEEKEND',
                                 maxLines: 1,
@@ -1827,10 +1921,10 @@ class _RaceWeekendPreview extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                             if (roundLabel.isNotEmpty)
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 6,
                                   vertical: 2,
                                 ),
@@ -1840,7 +1934,7 @@ class _RaceWeekendPreview extends StatelessWidget {
                                 ),
                                 child: Text(
                                   roundLabel,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: _red,
                                     fontSize: 9,
                                     fontWeight: FontWeight.w700,
@@ -1849,24 +1943,27 @@ class _RaceWeekendPreview extends StatelessWidget {
                               ),
                           ],
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         // Race name
                         Text(
                           raceName,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: _textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: _textMuted, fontSize: 10),
+                          style: const TextStyle(
+                            color: _textMuted,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),
@@ -1874,7 +1971,7 @@ class _RaceWeekendPreview extends StatelessWidget {
                   // Track layout image
                   if (race != null && race!.circuitId.isNotEmpty)
                     Padding(
-                      padding: EdgeInsets.only(left: 12),
+                      padding: const EdgeInsets.only(left: 12),
                       child: Opacity(
                         opacity: 0.6,
                         child: CircuitTrack(
@@ -1887,11 +1984,11 @@ class _RaceWeekendPreview extends StatelessWidget {
                     ),
                 ],
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               // Countdown row
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
                   color: _surfaceAlt,
                   borderRadius: BorderRadius.circular(10),
@@ -1903,18 +2000,18 @@ class _RaceWeekendPreview extends StatelessWidget {
                     Container(
                       width: 8,
                       height: 8,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(colors: [_red, _redBright]),
                       ),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         countdownLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: _textPrimary,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -1924,7 +2021,7 @@ class _RaceWeekendPreview extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
               // Session timeline
               Expanded(
                 child: Column(
@@ -1945,11 +2042,13 @@ class _RaceWeekendPreview extends StatelessWidget {
                                   ? null
                                   : _textMuted.withValues(alpha: 0.4),
                               gradient: isNext
-                                  ? LinearGradient(colors: [_red, _redBright])
+                                  ? const LinearGradient(
+                                      colors: [_red, _redBright],
+                                    )
                                   : null,
                             ),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               sessionLines[i],
@@ -2098,7 +2197,7 @@ class _StandingsListPreview extends StatelessWidget {
       aspectRatio: 3 / 4,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [_bg, _bgAlt],
@@ -2108,7 +2207,7 @@ class _StandingsListPreview extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2119,17 +2218,19 @@ class _StandingsListPreview extends StatelessWidget {
                     height: 3,
                     width: 30,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [_red, _redBright]),
+                      gradient: const LinearGradient(
+                        colors: [_red, _redBright],
+                      ),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  SizedBox(width: 6),
+                  const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       title.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: _textPrimary,
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
@@ -2137,11 +2238,11 @@ class _StandingsListPreview extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   _DriverStandingsPreview._seasonPill(seasonLabel),
                 ],
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               // Podium section
               Expanded(child: _buildPodium()),
             ],
@@ -2165,25 +2266,25 @@ class _StandingsListPreview extends StatelessWidget {
               Expanded(
                 child: second != null
                     ? _podiumColumn(second, 2)
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.only(bottom: 6),
                   child: first != null
                       ? _podiumColumn(first, 1)
-                      : SizedBox.shrink(),
+                      : const SizedBox.shrink(),
                 ),
               ),
               Expanded(
                 child: third != null
                     ? _podiumColumn(third, 3)
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
             ],
           ),
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -2207,7 +2308,7 @@ class _StandingsListPreview extends StatelessWidget {
           _teamLogo(entry, photoSize)
         else
           _driverAvatar(entry, photoSize, isP1),
-        SizedBox(height: 3),
+        const SizedBox(height: 3),
         // Name
         Text(
           entry.name.split(' ').last.toUpperCase(),
@@ -2220,7 +2321,7 @@ class _StandingsListPreview extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
-        SizedBox(height: 1),
+        const SizedBox(height: 1),
         if (entry.points.isNotEmpty)
           Text(
             entry.points,
@@ -2274,7 +2375,10 @@ class _StandingsListPreview extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: _surfaceAlt),
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: _surfaceAlt,
+      ),
       child: Icon(Icons.directions_car, color: _textMuted, size: size * 0.5),
     );
   }
@@ -2285,7 +2389,7 @@ class _StandingsListPreview extends StatelessWidget {
 
     return Container(
       height: height,
-      margin: EdgeInsets.symmetric(horizontal: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -2295,7 +2399,7 @@ class _StandingsListPreview extends StatelessWidget {
             blockColor.withValues(alpha: 0.15),
           ],
         ),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(6)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
         border: Border.all(color: blockColor.withValues(alpha: 0.3)),
       ),
       alignment: Alignment.center,
@@ -2352,13 +2456,13 @@ class _SelectionSheet<T> extends StatelessWidget {
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(color: colors.border),
       ),
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Row(
               children: [
                 Expanded(
@@ -2388,7 +2492,7 @@ class _SelectionSheet<T> extends StatelessWidget {
                   );
                 }
                 if (snapshot.hasError || snapshot.data == null) {
-                  return Center(
+                  return const Center(
                     child: EmptyState(
                       message: 'Failed to load',
                       type: EmptyStateType.network,
@@ -2397,7 +2501,7 @@ class _SelectionSheet<T> extends StatelessWidget {
                 }
                 final items = snapshot.data!;
                 if (items.isEmpty) {
-                  return Center(
+                  return const Center(
                     child: EmptyState(
                       message: 'No data available',
                       type: EmptyStateType.generic,

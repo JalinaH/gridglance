@@ -47,7 +47,7 @@ class _MainShellState extends State<MainShell> {
         if (wide)
           Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 1000),
+              constraints: const BoxConstraints(maxWidth: 1000),
               child: HomeScreen(
                 isDarkMode: widget.isDarkMode,
                 onToggleTheme: widget.onToggleTheme,
@@ -61,16 +61,16 @@ class _MainShellState extends State<MainShell> {
             onToggleTheme: widget.onToggleTheme,
             showAppBar: false,
           ),
-        WidgetsScreen(),
+        const WidgetsScreen(),
         if (wide)
           Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 800),
-              child: AboutScreen(),
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: const AboutScreen(),
             ),
           )
         else
-          AboutScreen(),
+          const AboutScreen(),
       ],
     );
     return F1Scaffold(
@@ -106,7 +106,7 @@ class _MainShellState extends State<MainShell> {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     const barHeight = 56.0;
     return ClipRRect(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
       child: Container(
         height: barHeight + bottomInset,
         decoration: BoxDecoration(
@@ -123,7 +123,7 @@ class _MainShellState extends State<MainShell> {
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
               blurRadius: 14,
-              offset: Offset(0, -6),
+              offset: const Offset(0, -6),
             ),
           ],
         ),
@@ -195,7 +195,7 @@ class _MainShellState extends State<MainShell> {
               color: selected ? activeColor : inactiveColor,
               size: 24,
             ),
-            SizedBox(height: 3),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(

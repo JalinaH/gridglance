@@ -1,4 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
+
+import '../services/image_cache_manager.dart';
 import 'package:flutter/material.dart';
 
 import '../services/f1_image_service.dart';
@@ -61,7 +63,7 @@ class DriverPhoto extends StatelessWidget {
           BoxShadow(
             color: color.withValues(alpha: 0.25),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -83,6 +85,7 @@ class DriverPhoto extends StatelessWidget {
     if (url != null && url.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: url,
+        cacheManager: GridGlanceImageCache.instance,
         width: size,
         height: size,
         fit: BoxFit.cover,

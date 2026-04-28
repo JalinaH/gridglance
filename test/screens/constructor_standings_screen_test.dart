@@ -108,7 +108,7 @@ void main() {
     testWidgets('shows empty state when no standings', (tester) async {
       await tester.pumpWidget(
         _wrapWithTheme(
-          ConstructorStandingsScreen(standings: const [], season: '2025'),
+          const ConstructorStandingsScreen(standings: [], season: '2025'),
         ),
       );
       await tester.pump();

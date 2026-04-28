@@ -65,8 +65,8 @@ class _CelebrationAnimationState extends State<_CelebrationAnimation>
         AnimationController(
             vsync: this,
             duration: widget.variant == CelebrationType.confetti
-                ? Duration(milliseconds: 1200)
-                : Duration(milliseconds: 800),
+                ? const Duration(milliseconds: 1200)
+                : const Duration(milliseconds: 800),
           )
           ..forward()
           ..addStatusListener((status) {
@@ -166,7 +166,7 @@ class _ConfettiPainter extends CustomPainter {
             width: particleSize,
             height: particleSize * 0.6,
           ),
-          Radius.circular(1.5),
+          const Radius.circular(1.5),
         ),
         paint,
       );
@@ -258,14 +258,14 @@ class _PulsePainter extends CustomPainter {
 
     // Outer ring
     final paint = Paint()
-      ..color = Color(0xFFE10600).withValues(alpha: fade * 0.4)
+      ..color = const Color(0xFFE10600).withValues(alpha: fade * 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0 * (1.0 - ease * 0.5);
     canvas.drawCircle(center, ease * maxRadius, paint);
 
     // Inner glow
     final glowPaint = Paint()
-      ..color = Color(0xFFFF3B30).withValues(alpha: fade * 0.15)
+      ..color = const Color(0xFFFF3B30).withValues(alpha: fade * 0.15)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, ease * maxRadius * 0.7, glowPaint);
 
@@ -273,7 +273,7 @@ class _PulsePainter extends CustomPainter {
     final dotFade = (1.0 - progress * 2).clamp(0.0, 1.0);
     if (dotFade > 0) {
       final dotPaint = Paint()
-        ..color = Color(0xFFE10600).withValues(alpha: dotFade * 0.6)
+        ..color = const Color(0xFFE10600).withValues(alpha: dotFade * 0.6)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(center, 6.0 * (1.0 - ease), dotPaint);
     }

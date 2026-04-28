@@ -1,25 +1,33 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/main_shell.dart';
 import 'screens/splash_screen.dart';
 import 'screens/widget_config_screen.dart';
+import 'services/analytics.dart';
 import 'services/background_task_service.dart';
+import 'services/crash_reporting.dart';
 import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/f1_image_service.dart';
+import 'services/user_preferences.dart';
 import 'services/widget_update_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await WidgetUpdateService.ensureHomeWidgetSetup();
-  await NotificationService.init();
-  await BackgroundTaskService.initializeAndSchedule();
-  await F1ImageService.instance.init();
-  runApp(const MyApp());
+  await CrashReporting.runWithCrashReporting(() async {
+    await UserPreferences.init();
+    await Analytics.init();
+    await WidgetUpdateService.ensureHomeWidgetSetup();
+    await NotificationService.init();
+    await BackgroundTaskService.initializeAndSchedule();
+    await F1ImageService.instance.init();
+    runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatefulWidget {
@@ -87,13 +95,34 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _themeKey,
       nextMode == ThemeMode.dark ? 'dark' : 'light',
     );
+    unawaited(
+      Analytics.track(
+        'theme_toggled',
+        properties: {'to': nextMode == ThemeMode.dark ? 'dark' : 'light'},
+      ),
+    );
   }
 
   bool get _isDarkMode => _themeMode == ThemeMode.dark;
 
   Future<void> _checkForWidgetClick() async {
-    final result = await _widgetIntentChannel
-        .invokeMethod<Map<dynamic, dynamic>?>('consumeWidgetClick');
+    Map<dynamic, dynamic>? result;
+    try {
+      result = await _widgetIntentChannel.invokeMethod<Map<dynamic, dynamic>?>(
+        'consumeWidgetClick',
+      );
+    } on PlatformException catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Widget intent channel error: $error');
+        debugPrint('$stackTrace');
+      }
+      return;
+    } on MissingPluginException catch (error) {
+      if (kDebugMode) {
+        debugPrint('Widget intent channel missing plugin: $error');
+      }
+      return;
+    }
     if (result == null) {
       return;
     }
