@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,8 +93,23 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool get _isDarkMode => _themeMode == ThemeMode.dark;
 
   Future<void> _checkForWidgetClick() async {
-    final result = await _widgetIntentChannel
-        .invokeMethod<Map<dynamic, dynamic>?>('consumeWidgetClick');
+    Map<dynamic, dynamic>? result;
+    try {
+      result = await _widgetIntentChannel.invokeMethod<Map<dynamic, dynamic>?>(
+        'consumeWidgetClick',
+      );
+    } on PlatformException catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Widget intent channel error: $error');
+        debugPrint('$stackTrace');
+      }
+      return;
+    } on MissingPluginException catch (error) {
+      if (kDebugMode) {
+        debugPrint('Widget intent channel missing plugin: $error');
+      }
+      return;
+    }
     if (result == null) {
       return;
     }
