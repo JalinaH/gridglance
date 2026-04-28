@@ -20,9 +20,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     FavoriteResultAlertService.resetForTesting();
-    TestDefaultBinaryMessengerBinding
-        .instance
-        .defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(notificationsChannel, (call) async {
           // The plugin's `initialize` expects a non-null bool; everything
           // else can return null.
@@ -32,9 +30,7 @@ void main() {
   });
 
   tearDown(() {
-    TestDefaultBinaryMessengerBinding
-        .instance
-        .defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(notificationsChannel, null);
   });
 
@@ -57,8 +53,7 @@ void main() {
   });
 
   group('checkForUpdates - notification settings gate', () {
-    test('does no work when both notification toggles are disabled',
-        () async {
+    test('does no work when both notification toggles are disabled', () async {
       // Both flags default to false, so no SharedPreferences keys for the
       // baselines should be written even if a favorite is configured.
       SharedPreferences.setMockInitialValues({
@@ -77,33 +72,35 @@ void main() {
   });
 
   group('checkForUpdates - session finished alerts', () {
-    test('seeds the session baseline on the first run, no alerts fired',
-        () async {
-      SharedPreferences.setMockInitialValues({
-        'favorite_driver_id': 'verstappen',
-        'notify_favorite_session_finished': true,
-      });
-      final fake = _FakeApiService(
-        lastRace: _buildSession(
-          type: SessionType.race,
-          round: '5',
-          raceName: 'Spanish GP',
-        ),
-      );
-      FavoriteResultAlertService.apiFactory = () => fake;
+    test(
+      'seeds the session baseline on the first run, no alerts fired',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'favorite_driver_id': 'verstappen',
+          'notify_favorite_session_finished': true,
+        });
+        final fake = _FakeApiService(
+          lastRace: _buildSession(
+            type: SessionType.race,
+            round: '5',
+            raceName: 'Spanish GP',
+          ),
+        );
+        FavoriteResultAlertService.apiFactory = () => fake;
 
-      await FavoriteResultAlertService.checkForUpdates(season: '2026');
+        await FavoriteResultAlertService.checkForUpdates(season: '2026');
 
-      final prefs = await SharedPreferences.getInstance();
-      // Seeded flag flips on so subsequent runs go through the alert path.
-      expect(prefs.getBool('favorite_alert_session_seeded|2026'), isTrue);
-      // Baseline contains the seeded event key for the race session.
-      final raceKey = prefs.getString(
-        'favorite_alert_last_session|2026|race',
-      );
-      expect(raceKey, isNotNull);
-      expect(raceKey, contains('Spanish GP'));
-    });
+        final prefs = await SharedPreferences.getInstance();
+        // Seeded flag flips on so subsequent runs go through the alert path.
+        expect(prefs.getBool('favorite_alert_session_seeded|2026'), isTrue);
+        // Baseline contains the seeded event key for the race session.
+        final raceKey = prefs.getString(
+          'favorite_alert_last_session|2026|race',
+        );
+        expect(raceKey, isNotNull);
+        expect(raceKey, contains('Spanish GP'));
+      },
+    );
 
     test('updates the baseline when a new race is reported', () async {
       SharedPreferences.setMockInitialValues({
@@ -144,41 +141,43 @@ void main() {
       expect(newKey, contains('Canadian GP'));
     });
 
-    test('a second run with unchanged data leaves the baseline alone',
-        () async {
-      SharedPreferences.setMockInitialValues({
-        'favorite_driver_id': 'verstappen',
-        'notify_favorite_session_finished': true,
-      });
-      final fake = _FakeApiService(
-        lastRace: _buildSession(
-          type: SessionType.race,
-          round: '5',
-          raceName: 'Spanish GP',
-        ),
-      );
-      FavoriteResultAlertService.apiFactory = () => fake;
+    test(
+      'a second run with unchanged data leaves the baseline alone',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'favorite_driver_id': 'verstappen',
+          'notify_favorite_session_finished': true,
+        });
+        final fake = _FakeApiService(
+          lastRace: _buildSession(
+            type: SessionType.race,
+            round: '5',
+            raceName: 'Spanish GP',
+          ),
+        );
+        FavoriteResultAlertService.apiFactory = () => fake;
 
-      await FavoriteResultAlertService.checkForUpdates(season: '2026');
-      final prefs = await SharedPreferences.getInstance();
-      final firstKey = prefs.getString(
-        'favorite_alert_last_session|2026|race',
-      );
+        await FavoriteResultAlertService.checkForUpdates(season: '2026');
+        final prefs = await SharedPreferences.getInstance();
+        final firstKey = prefs.getString(
+          'favorite_alert_last_session|2026|race',
+        );
 
-      await prefs.setInt(
-        'favorite_alert_last_check_at',
-        DateTime.now()
-            .subtract(const Duration(minutes: 5))
-            .millisecondsSinceEpoch,
-      );
+        await prefs.setInt(
+          'favorite_alert_last_check_at',
+          DateTime.now()
+              .subtract(const Duration(minutes: 5))
+              .millisecondsSinceEpoch,
+        );
 
-      await FavoriteResultAlertService.checkForUpdates(season: '2026');
-      final secondKey = prefs.getString(
-        'favorite_alert_last_session|2026|race',
-      );
+        await FavoriteResultAlertService.checkForUpdates(season: '2026');
+        final secondKey = prefs.getString(
+          'favorite_alert_last_session|2026|race',
+        );
 
-      expect(secondKey, firstKey);
-    });
+        expect(secondKey, firstKey);
+      },
+    );
   });
 
   group('checkForUpdates - standings change detection', () {
@@ -278,14 +277,12 @@ class _FakeApiService extends ApiService {
   @override
   Future<SessionResults?> getLastSprintResults({
     required String season,
-  }) async =>
-      lastSprint;
+  }) async => lastSprint;
 
   @override
   Future<SessionResults?> getLastQualifyingResults({
     required String season,
-  }) async =>
-      lastQualifying;
+  }) async => lastQualifying;
 
   @override
   Future<List<DriverStanding>> getDriverStandings({String? season}) async =>
@@ -294,8 +291,7 @@ class _FakeApiService extends ApiService {
   @override
   Future<List<ConstructorStanding>> getConstructorStandings({
     String? season,
-  }) async =>
-      constructorStandings;
+  }) async => constructorStandings;
 }
 
 SessionResults _buildSession({
