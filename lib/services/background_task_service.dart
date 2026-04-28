@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'background_task_health.dart';
+import 'crash_reporting.dart';
 import 'favorite_result_alert_service.dart';
 import 'notification_service.dart';
 import 'widget_update_service.dart';
@@ -25,6 +26,14 @@ void backgroundTaskDispatcher() {
       return true;
     } catch (error, stackTrace) {
       await BackgroundTaskHealth.recordFailure(error, stackTrace);
+      // Background isolate runs outside the main Sentry zone, so unhandled
+      // failures need an explicit capture or they're invisible.
+      await CrashReporting.captureException(
+        error,
+        stackTrace: stackTrace,
+        hint: 'background_task_dispatcher',
+        tags: {'task': task},
+      );
       return false;
     }
   });

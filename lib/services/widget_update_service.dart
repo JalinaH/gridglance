@@ -12,6 +12,7 @@ import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
 import '../utils/team_colors.dart';
+import 'crash_reporting.dart';
 import 'f1_image_service.dart';
 
 class WidgetUpdateService {
@@ -186,9 +187,18 @@ class WidgetUpdateService {
     Object error,
     StackTrace stackTrace,
   ) {
-    if (!kDebugMode) return;
-    debugPrint('WidgetUpdateService [$context] failed: $error');
-    debugPrint('$stackTrace');
+    if (kDebugMode) {
+      debugPrint('WidgetUpdateService [$context] failed: $error');
+      debugPrint('$stackTrace');
+    }
+    unawaited(
+      CrashReporting.captureException(
+        error,
+        stackTrace: stackTrace,
+        hint: 'widget_update_service.$context',
+        tags: {'context': context},
+      ),
+    );
   }
 
   static Future<void> updateDriverStandings(

@@ -6,13 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 flutter pub get              # Install dependencies
-flutter run                  # Run app (auto-detects device)
+flutter run --dart-define-from-file=secrets.json   # Run app with Sentry/analytics keys
+flutter run                  # Run app without secrets (Sentry/analytics no-op)
 flutter analyze              # Static analysis (uses flutter_lints)
 flutter test                 # Run all tests
 flutter test test/models/race_model_test.dart  # Run a single test file
-flutter build apk --release  # Android release build
-flutter build ios --release  # iOS release build
+flutter build apk --release --dart-define-from-file=secrets.json
+flutter build ios --release --dart-define-from-file=secrets.json
 ```
+
+**Secrets**: `secrets.json` (gitignored) holds `SENTRY_DSN`, `POSTHOG_KEY`, `POSTHOG_HOST`. Copy `secrets.json.example` and fill in real values. Without it, crash reporting / analytics silently no-op so dev builds keep working.
 
 No code generation (build_runner, freezed, json_serializable) is used — models have manual `fromJson()` factories.
 

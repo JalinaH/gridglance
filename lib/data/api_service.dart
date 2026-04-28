@@ -13,6 +13,7 @@ import '../models/race.dart';
 import '../models/race_result.dart';
 import '../models/session_results.dart';
 import '../models/season_overview.dart';
+import '../services/crash_reporting.dart';
 import '../utils/json_safe.dart';
 
 Map<String, dynamic> _decodeJsonInIsolate(String body) {
@@ -495,10 +496,24 @@ class ApiService {
     StackTrace stackTrace, {
     bool fromCache = false,
   }) {
-    if (!kDebugMode) return;
     final source = fromCache ? 'cache' : 'network';
     final classification = _classifyError(error);
-    debugPrint('ApiService [$source/$classification] ${uri.path}: $error');
+    if (kDebugMode) {
+      debugPrint('ApiService [$source/$classification] ${uri.path}: $error');
+    }
+    // Only report failures that are likely a real bug or a backend
+    // contract change. Network blips and 5xx are expected on flaky
+    // connections and would just create Sentry noise.
+    const reportableClassifications = {'parse', 'http-4xx', 'unknown'};
+    if (!reportableClassifications.contains(classification)) return;
+    unawaited(
+      CrashReporting.captureException(
+        error,
+        stackTrace: stackTrace,
+        hint: 'api_service.${uri.path}',
+        tags: {'classification': classification, 'source': source},
+      ),
+    );
   }
 
   static String _classifyError(Object error) {
