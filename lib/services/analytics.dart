@@ -76,10 +76,7 @@ class Analytics {
   }) async {
     if (!_initialized || _optedOut) return;
     try {
-      await Posthog().capture(
-        eventName: event,
-        properties: properties,
-      );
+      await Posthog().capture(eventName: event, properties: properties);
     } catch (error) {
       if (kDebugMode) {
         debugPrint('Analytics.track($event) failed: $error');

@@ -98,9 +98,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     unawaited(
       Analytics.track(
         'theme_toggled',
-        properties: {
-          'to': nextMode == ThemeMode.dark ? 'dark' : 'light',
-        },
+        properties: {'to': nextMode == ThemeMode.dark ? 'dark' : 'light'},
       ),
     );
   }
