@@ -41,8 +41,7 @@ class FavoriteResultAlertService {
     final favoriteTeamId = await UserPreferences.getFavoriteTeamId();
     final hasFavoriteDriver =
         favoriteDriverId != null && favoriteDriverId.isNotEmpty;
-    final hasFavoriteTeam =
-        favoriteTeamId != null && favoriteTeamId.isNotEmpty;
+    final hasFavoriteTeam = favoriteTeamId != null && favoriteTeamId.isNotEmpty;
     if (!hasFavoriteDriver && !hasFavoriteTeam) {
       return;
     }
