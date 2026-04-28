@@ -95,8 +95,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Future<void> _checkForWidgetClick() async {
     Map<dynamic, dynamic>? result;
     try {
-      result = await _widgetIntentChannel
-          .invokeMethod<Map<dynamic, dynamic>?>('consumeWidgetClick');
+      result = await _widgetIntentChannel.invokeMethod<Map<dynamic, dynamic>?>(
+        'consumeWidgetClick',
+      );
     } on PlatformException catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('Widget intent channel error: $error');
