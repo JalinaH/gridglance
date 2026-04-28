@@ -370,18 +370,12 @@ class _HomeScreenState extends State<HomeScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const HomeScreenSkeleton();
         } else if (snapshot.hasError) {
-          return _buildErrorState(
-            colors,
-            error: snapshot.error,
-          );
+          return _buildErrorState(colors, error: snapshot.error);
         }
 
         final overview = snapshot.data;
         if (overview == null) {
-          return _buildErrorState(
-            colors,
-            error: null,
-          );
+          return _buildErrorState(colors, error: null);
         }
 
         final hasAnyContent =
