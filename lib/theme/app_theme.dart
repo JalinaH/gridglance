@@ -117,7 +117,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         titleTextStyle: GoogleFonts.bebasNeue(
           color: Colors.white,
           fontSize: 26,
@@ -156,7 +156,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black87),
+        iconTheme: const IconThemeData(color: Colors.black87),
         titleTextStyle: GoogleFonts.bebasNeue(
           color: Colors.black87,
           fontSize: 26,

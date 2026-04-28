@@ -37,7 +37,7 @@ class _CountdownTextState extends State<CountdownText>
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 900),
     );
     _pulseScale = Tween(begin: 1.0, end: 1.12).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
@@ -105,10 +105,10 @@ class _CountdownTextState extends State<CountdownText>
   Widget build(BuildContext context) {
     final target = widget.target;
     if (target == null) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
     if (_remaining.isNegative && widget.hideIfPast) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
     final label = _formatCountdown(_remaining);
     final text = Text(label, style: widget.style);

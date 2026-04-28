@@ -86,9 +86,9 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: colors.surface,
                 borderRadius: BorderRadius.circular(12),

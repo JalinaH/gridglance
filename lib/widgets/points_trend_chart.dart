@@ -39,14 +39,14 @@ class PointsTrendChart extends StatelessWidget {
             child: Container(),
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Row(
           children: [
             Text(
               labels.first,
               style: TextStyle(color: colors.textMuted, fontSize: 11),
             ),
-            Spacer(),
+            const Spacer(),
             Text(
               labels.last,
               style: TextStyle(color: colors.textMuted, fontSize: 11),

@@ -62,7 +62,10 @@ class ShimmerCircle extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
     );
   }
 }
@@ -77,7 +80,7 @@ class StandingCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return const GlassCard(
       child: _ShimmerWrap(
         child: Row(
           children: [
@@ -116,7 +119,7 @@ class RaceCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return const GlassCard(
       child: _ShimmerWrap(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,21 +155,21 @@ class SummaryCardSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Expanded(child: ShimmerBox(width: 130, height: 16)),
                 ShimmerBox(width: 20, height: 20, radius: 4),
               ],
             ),
-            SizedBox(height: 4),
-            ShimmerBox(width: 100, height: 12),
-            SizedBox(height: 10),
+            const SizedBox(height: 4),
+            const ShimmerBox(width: 100, height: 12),
+            const SizedBox(height: 10),
             for (int i = 0; i < contentLines; i++) ...[
               ShimmerBox(
                 width: i == contentLines - 1 ? 160 : double.infinity,
                 height: 12,
               ),
-              if (i < contentLines - 1) SizedBox(height: 8),
+              if (i < contentLines - 1) const SizedBox(height: 8),
             ],
           ],
         ),
@@ -182,9 +185,9 @@ class HomeScreenSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.only(bottom: 24),
-      physics: NeverScrollableScrollPhysics(),
-      children: [
+      padding: const EdgeInsets.only(bottom: 24),
+      physics: const NeverScrollableScrollPhysics(),
+      children: const [
         SizedBox(height: 12),
         SummaryCardSkeleton(contentLines: 3), // Favorites
         SummaryCardSkeleton(contentLines: 2), // Next Race
@@ -204,7 +207,7 @@ class ChartSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _ShimmerWrap(
+    return const _ShimmerWrap(
       child: Column(
         children: [
           Row(
@@ -230,7 +233,7 @@ class ResultRowSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return const Padding(
       padding: EdgeInsets.symmetric(vertical: 6),
       child: _ShimmerWrap(
         child: Row(
@@ -258,11 +261,11 @@ class RaceResultsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        RaceCardSkeleton(),
-        SizedBox(height: 4),
+        const RaceCardSkeleton(),
+        const SizedBox(height: 4),
         GlassCard(
           child: Column(
-            children: List.generate(rowCount, (_) => ResultRowSkeleton()),
+            children: List.generate(rowCount, (_) => const ResultRowSkeleton()),
           ),
         ),
       ],
@@ -276,7 +279,7 @@ class WeatherSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _ShimmerWrap(
+    return const _ShimmerWrap(
       child: Row(
         children: [
           ShimmerBox(width: 32, height: 32, radius: 8),
@@ -305,9 +308,9 @@ class CompareModeSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.only(bottom: 24),
-      physics: NeverScrollableScrollPhysics(),
-      children: [
+      padding: const EdgeInsets.only(bottom: 24),
+      physics: const NeverScrollableScrollPhysics(),
+      children: const [
         // Mode card
         GlassCard(
           child: _ShimmerWrap(
@@ -356,7 +359,7 @@ class StandingsListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: List.generate(count, (_) => StandingCardSkeleton()),
+      children: List.generate(count, (_) => const StandingCardSkeleton()),
     );
   }
 }

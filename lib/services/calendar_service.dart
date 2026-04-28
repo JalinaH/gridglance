@@ -24,7 +24,7 @@ class CalendarService {
     final isAllDay = session.time == null || session.time!.isEmpty;
     final startLocal = start.toLocal();
     final end = isAllDay
-        ? startLocal.add(Duration(days: 1))
+        ? startLocal.add(const Duration(days: 1))
         : startLocal.add(_sessionDuration(session));
     final event = Event(
       title: '${race.raceName} - ${session.name}',
@@ -69,17 +69,17 @@ class CalendarService {
   static Duration _sessionDuration(RaceSession session) {
     final name = session.name.toLowerCase();
     if (name.contains('race')) {
-      return Duration(hours: 2);
+      return const Duration(hours: 2);
     }
     if (name.contains('sprint')) {
-      return Duration(hours: 1);
+      return const Duration(hours: 1);
     }
     if (name.contains('qualifying')) {
-      return Duration(hours: 1, minutes: 30);
+      return const Duration(hours: 1, minutes: 30);
     }
     if (name.contains('practice')) {
-      return Duration(hours: 1);
+      return const Duration(hours: 1);
     }
-    return Duration(hours: 2);
+    return const Duration(hours: 2);
   }
 }

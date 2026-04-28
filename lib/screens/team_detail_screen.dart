@@ -55,8 +55,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         ),
       ),
       body: ListView(
-        padding: EdgeInsets.only(bottom: 24),
-        physics: BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        physics: const BouncingScrollPhysics(),
         children: [
           GlassCard(
             child: Column(
@@ -68,7 +68,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                   width: double.infinity,
                   height: 80,
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -76,7 +76,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       tag: 'team-logo-${widget.team.constructorId}',
                       child: TeamLogo(teamName: widget.team.teamName, size: 42),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +95,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             'Constructor standings',
                             style: TextStyle(
@@ -115,13 +115,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                           animateValue: double.tryParse(widget.team.position),
                           animatePrefix: 'P',
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         StatPill(
                           text: '${widget.team.points} PTS',
                           animateValue: double.tryParse(widget.team.points),
                           animateSuffix: ' PTS',
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         StatPill(
                           text: '${widget.team.wins} W',
                           animateValue: double.tryParse(widget.team.wins),
@@ -147,12 +147,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     letterSpacing: 0.4,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 FutureBuilder<List<TeamRaceResult>>(
                   future: _resultsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Padding(
+                      return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
                         child: ChartSkeleton(),
                       );
@@ -180,7 +180,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildChartStats(points),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         PointsTrendChart(points: points, labels: labels),
                       ],
                     );
@@ -202,20 +202,20 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     letterSpacing: 0.4,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 FutureBuilder<List<TeamRaceResult>>(
                   future: _resultsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           child: CircularProgressIndicator(color: colors.f1Red),
                         ),
                       );
                     }
                     if (snapshot.hasError) {
-                      return EmptyState(
+                      return const EmptyState(
                         message: 'Failed to load recent results.',
                         type: EmptyStateType.network,
                         iconSize: 36,
@@ -223,7 +223,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     }
                     final results = _recentResults(snapshot.data ?? []);
                     if (results.isEmpty) {
-                      return EmptyState(
+                      return const EmptyState(
                         message: 'No results available.',
                         type: EmptyStateType.results,
                         iconSize: 36,
@@ -271,7 +271,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     final driverLabel = _driverPositionsLabel(result.drivers);
     final totalPoints = _totalPoints(result.drivers);
     return Padding(
-      padding: EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -298,7 +298,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   '$dateLabel${driverLabel.isEmpty ? '' : ' • $driverLabel'}',
                   style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -317,7 +317,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     ? 0
                     : 1,
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 '${result.drivers.length} drivers',
                 style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -389,9 +389,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
     return Row(
       children: [
         _statChip(colors, 'Races', points.length.toString()),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         _statChip(colors, 'Avg', _formatPoints(avg)),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         _statChip(colors, 'Best', _formatPoints(best)),
       ],
     );
@@ -399,7 +399,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
   Widget _statChip(AppColors colors, String label, String value) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
@@ -417,7 +417,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
               letterSpacing: 0.4,
             ),
           ),
-          SizedBox(width: 6),
+          const SizedBox(width: 6),
           Text(
             value,
             style: TextStyle(

@@ -144,7 +144,7 @@ class NotificationService {
         session: session,
         season: season,
       );
-      final details = NotificationDetails(
+      const details = NotificationDetails(
         android: AndroidNotificationDetails(
           'session_start',
           'Session start',
@@ -152,7 +152,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(),
       );
       await _scheduleZoned(
         id: id,
@@ -275,7 +275,7 @@ class NotificationService {
       session: session,
       season: season,
     );
-    final details = NotificationDetails(
+    const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'session_start',
         'Session start',
@@ -283,7 +283,7 @@ class NotificationService {
         importance: Importance.high,
         priority: Priority.high,
       ),
-      iOS: const DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(),
     );
     return _scheduleZoned(
       id: id,
@@ -381,7 +381,7 @@ class NotificationService {
   }
 
   static NotificationDetails _weekendDigestNotificationDetails() {
-    return NotificationDetails(
+    return const NotificationDetails(
       android: AndroidNotificationDetails(
         'weekend_digest',
         'Weekend digest',
@@ -389,12 +389,12 @@ class NotificationService {
         importance: Importance.defaultImportance,
         priority: Priority.defaultPriority,
       ),
-      iOS: const DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(),
     );
   }
 
   static NotificationDetails _favoriteResultsNotificationDetails() {
-    return NotificationDetails(
+    return const NotificationDetails(
       android: AndroidNotificationDetails(
         'favorite_results',
         'Favorite results',
@@ -403,7 +403,7 @@ class NotificationService {
         importance: Importance.high,
         priority: Priority.high,
       ),
-      iOS: const DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(),
     );
   }
 

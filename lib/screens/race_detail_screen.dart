@@ -124,7 +124,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Race Weekend Center"),
+            const Text("Race Weekend Center"),
             Text(
               "${widget.race.raceName} • ${widget.season}",
               style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -151,11 +151,11 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         ],
       ),
       body: ListView(
-        padding: EdgeInsets.only(bottom: 24),
-        physics: BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        physics: const BouncingScrollPhysics(),
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 6, 16, 6),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
             child: RepaintBoundary(
               key: _countdownShareCardKey,
               child: RaceCountdownShareCard(
@@ -177,7 +177,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 _buildDetailRow(context, "Round", widget.race.round),
                 if (raceStart != null)
                   _buildDetailRow(
@@ -260,7 +260,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 ..._buildSessionRows(context),
               ],
             ),
@@ -310,8 +310,8 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 10),
-                WeatherSkeleton(),
+                const SizedBox(height: 10),
+                const WeatherSkeleton(),
               ],
             );
           }
@@ -329,7 +329,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   "Weather data is unavailable right now.",
                   style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -352,7 +352,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   "Weather preview unavailable for this track.",
                   style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -375,14 +375,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 ),
               ),
               if (current != null) ...[
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Icon(
                       _weatherIcon(current.weatherCode),
                       color: colors.f1RedBright,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         WeatherService.labelForCode(current.weatherCode),
@@ -405,7 +405,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 ),
                 if (current.windSpeedKph != null)
                   Padding(
-                    padding: EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       'Wind ${current.windSpeedKph!.round()} km/h',
                       style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -413,7 +413,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   ),
               ],
               if (weather.daily.isNotEmpty) ...[
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -433,7 +433,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     final colors = AppColors.of(context);
     return Container(
       width: 128,
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
@@ -446,7 +446,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             formatLocalDate(context, day.date),
             style: TextStyle(color: colors.textMuted, fontSize: 11),
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Row(
             children: [
               Icon(
@@ -454,7 +454,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 size: 16,
                 color: colors.f1Red,
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   _temperatureRangeLabel(day.lowC, day.highC),
@@ -467,7 +467,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
               ),
             ],
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             WeatherService.labelForCode(day.weatherCode),
             style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -502,7 +502,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 letterSpacing: 0.5,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               "Session reminders are unavailable until schedule data is published.",
               style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -527,7 +527,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   letterSpacing: 0.5,
                 ),
               ),
-              Spacer(),
+              const Spacer(),
               if (_loadingNotificationPreferences)
                 SizedBox(
                   width: 16,
@@ -539,19 +539,19 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 ),
             ],
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
             "Manage pre-session reminders and favorite result alerts.",
             style: TextStyle(color: colors.textMuted, fontSize: 12),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           ..._buildSessionReminderRows(context),
           Divider(color: colors.border),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           _buildWeekendDigestRow(context),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Divider(color: colors.border),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           _buildFavoriteResultAlerts(context),
         ],
       ),
@@ -587,7 +587,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         : formatLocalDateTime(context, start);
 
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
@@ -611,14 +611,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       valueLabel,
                       style: TextStyle(color: colors.textMuted, fontSize: 11),
                     ),
                     if (start != null)
                       Padding(
-                        padding: EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: 2),
                         child: CountdownText(
                           target: start,
                           hideIfPast: false,
@@ -630,7 +630,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                       ),
                     if (!hasTimedStart)
                       Padding(
-                        padding: EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           "Reminder unavailable until start time is published.",
                           style: TextStyle(
@@ -641,7 +641,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                       ),
                     if (hasTimedStart && !sessionIsFuture)
                       Padding(
-                        padding: EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           "Session already started.",
                           style: TextStyle(
@@ -666,7 +666,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
               ),
             ],
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -708,14 +708,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
                 "One summary reminder 24h before the first upcoming session.",
                 style: TextStyle(color: colors.textMuted, fontSize: 11),
               ),
               if (!canEnable && !_weekendDigestEnabled)
                 Padding(
-                  padding: EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     "No upcoming timed sessions available for digest.",
                     style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -751,12 +751,12 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(
           "Get alerts for your favorite driver/team after sessions and standings updates.",
           style: TextStyle(color: colors.textMuted, fontSize: 11),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         _buildFavoriteAlertToggle(
           context: context,
           title: "Session finished",
@@ -764,7 +764,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           value: _favoriteSessionFinishedAlertsEnabled,
           onChanged: canInteract ? _toggleFavoriteSessionFinishedAlerts : null,
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         _buildFavoriteAlertToggle(
           context: context,
           title: "Position / points updates",
@@ -786,7 +786,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   }) {
     final colors = AppColors.of(context);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
@@ -807,7 +807,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -847,7 +847,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   letterSpacing: 0.5,
                 ),
               ),
-              Spacer(),
+              const Spacer(),
               if (_loadingPredictions || _savingPrediction)
                 SizedBox(
                   width: 16,
@@ -859,14 +859,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 ),
             ],
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
             'Predict qualifying and race top 3 to build your season score.',
             style: TextStyle(color: colors.textMuted, fontSize: 12),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: colors.surfaceAlt,
               borderRadius: BorderRadius.circular(12),
@@ -882,7 +882,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 Text(
                   '${_seasonPredictionScore.totalPoints} pts',
                   style: TextStyle(
@@ -894,14 +894,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
               ],
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             _seasonPredictionScore.totalPredictions == 0
                 ? 'No predictions saved yet.'
                 : '${_seasonPredictionScore.gradedPredictions} graded • ${_seasonPredictionScore.pendingPredictions} pending',
             style: TextStyle(color: colors.textMuted, fontSize: 11),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           _buildPredictionRow(
             context: context,
             label: 'Qualifying top 3',
@@ -914,7 +914,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 ? () => _pickTop3Prediction(isQualifying: true)
                 : null,
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           _buildPredictionRow(
             context: context,
             label: 'Race podium',
@@ -929,7 +929,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           ),
           if (_predictionDrivers.length < 3)
             Padding(
-              padding: EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 8),
               child: Text(
                 'Prediction options load from current driver standings.',
                 style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -962,7 +962,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
               .join('   ')
         : 'No picks yet';
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
@@ -1008,7 +1008,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
           ),
           if (locked && lockMessage != null)
             Padding(
-              padding: EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.only(top: 4),
               child: Text(
                 lockMessage,
                 style: TextStyle(color: colors.textMuted, fontSize: 11),
@@ -1062,18 +1062,18 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     'Pick one driver for each position.',
                     style: TextStyle(color: colors.textMuted, fontSize: 12),
                   ),
-                  SizedBox(height: 14),
+                  const SizedBox(height: 14),
                   for (var index = 0; index < 3; index += 1) ...[
                     DropdownButtonFormField<String>(
                       initialValue: selections[index],
                       decoration: InputDecoration(
                         labelText: 'P${index + 1}',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       items: _buildPredictionDropdownItems(
                         selections: selections,
@@ -1085,11 +1085,11 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                         });
                       },
                     ),
-                    if (index < 2) SizedBox(height: 10),
+                    if (index < 2) const SizedBox(height: 10),
                   ],
                   if (hasDuplicates)
                     Padding(
-                      padding: EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         'Each position must have a different driver.',
                         style: TextStyle(
@@ -1098,7 +1098,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                         ),
                       ),
                     ),
-                  SizedBox(height: 14),
+                  const SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
                     child: BounceTap(
@@ -1110,7 +1110,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                                 );
                               }
                             : null,
-                        child: Text('Save prediction'),
+                        child: const Text('Save prediction'),
                       ),
                     ),
                   ),
@@ -1366,7 +1366,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     double labelWidth = 70,
   }) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1392,7 +1392,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         ? session.displayDateTime
         : formatLocalDateTime(context, start);
     return Padding(
-      padding: EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1420,7 +1420,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                 ),
                 if (start != null)
                   Padding(
-                    padding: EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 4),
                     child: CountdownText(
                       target: start,
                       hideIfPast: false,

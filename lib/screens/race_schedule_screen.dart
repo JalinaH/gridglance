@@ -88,7 +88,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Race Schedule"),
+            const Text("Race Schedule"),
             Text(
               "Season ${widget.season}",
               style: TextStyle(color: colors.textMuted, fontSize: 12),
@@ -97,7 +97,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
         ),
       ),
       body: widget.races.isEmpty
-          ? Center(
+          ? const Center(
               child: EmptyState(
                 message: "No race schedule available.",
                 type: EmptyStateType.schedule,
@@ -107,7 +107,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
               children: [
                 if (widget.lastUpdated != null)
                   Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -119,7 +119,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                     ),
                   ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 6),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                   child: CompactSearchField(
                     controller: _controller,
                     hintText: 'Search races or circuits',
@@ -139,7 +139,7 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       _buildFilterChip(
@@ -147,13 +147,13 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                         selected: _filter == RaceFilter.all,
                         onTap: () => _setFilter(RaceFilter.all),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       _buildFilterChip(
                         label: 'Upcoming',
                         selected: _filter == RaceFilter.upcoming,
                         onTap: () => _setFilter(RaceFilter.upcoming),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       _buildFilterChip(
                         label: 'Completed',
                         selected: _filter == RaceFilter.completed,
@@ -171,8 +171,8 @@ class _RaceScheduleScreenState extends State<RaceScheduleScreen> {
                           ),
                         )
                       : AdaptiveCardList(
-                          padding: EdgeInsets.only(bottom: 24),
-                          physics: BouncingScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 24),
+                          physics: const BouncingScrollPhysics(),
                           itemCount: races.length,
                           itemBuilder: (context, index) {
                             final race = races[index];

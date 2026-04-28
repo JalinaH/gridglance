@@ -127,7 +127,7 @@ void main() {
 
     testWidgets('shows empty state when no races', (tester) async {
       await tester.pumpWidget(
-        _wrapWithTheme(RaceScheduleScreen(races: const [], season: '2025')),
+        _wrapWithTheme(const RaceScheduleScreen(races: [], season: '2025')),
       );
       await tester.pump();
 
