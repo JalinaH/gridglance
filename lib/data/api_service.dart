@@ -84,9 +84,7 @@ class ApiService {
     return snapshot.data;
   }
 
-  Future<CachedApiResponse<Race?>> getNextRaceSnapshot({
-    String? season,
-  }) async {
+  Future<CachedApiResponse<Race?>> getNextRaceSnapshot({String? season}) async {
     season ??= DateTime.now().year.toString();
     final response = await _getJsonWithCache(
       uri: Uri.parse('$_baseUrl$season/next/'),
