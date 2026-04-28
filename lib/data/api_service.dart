@@ -491,9 +491,7 @@ class ApiService {
     if (!kDebugMode) return;
     final source = fromCache ? 'cache' : 'network';
     final classification = _classifyError(error);
-    debugPrint(
-      'ApiService [$source/$classification] ${uri.path}: $error',
-    );
+    debugPrint('ApiService [$source/$classification] ${uri.path}: $error');
   }
 
   static String _classifyError(Object error) {
