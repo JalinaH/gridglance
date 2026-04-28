@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:home_widget/home_widget.dart';
@@ -109,13 +110,18 @@ class WidgetUpdateService {
       Race? nextRace;
       try {
         nextRace = await api.getNextRace(season: season);
-      } catch (_) {
-        // Fall back to first upcoming race in the schedule if the dedicated
-        // endpoint fails — updateRaceWeekend handles a null nextRace.
+      } catch (error, stackTrace) {
+        // Intentional: updateRaceWeekend handles a null nextRace by falling
+        // back to the first upcoming race in the schedule, so a failure on
+        // the /next endpoint shouldn't block the widget refresh.
+        _logWidgetError('refreshRaceWeekend.getNextRace', error, stackTrace);
       }
       await updateRaceWeekend(races, nextRace: nextRace, season: season);
-    } catch (_) {
-      // Ignore refresh errors to keep periodic updates alive.
+    } catch (error, stackTrace) {
+      // Intentional: keep periodic background runs alive even if a single
+      // refresh fails. The error is logged so a blank widget can be
+      // diagnosed via debug builds.
+      _logWidgetError('refreshRaceWeekend', error, stackTrace);
     }
   }
 
@@ -131,33 +137,58 @@ class WidgetUpdateService {
         final standings = await api.getDriverStandings(season: season);
         await updateDriverStandings(standings, season: season);
         await updateFavoriteDrivers(standings, season: season);
-      } catch (_) {
-        // Ignore driver update errors.
+      } catch (error, stackTrace) {
+        // Intentional: a single widget's update failure must not block the
+        // others; each `try` below targets one widget so they fail
+        // independently. Log so a blank widget can be traced to its
+        // specific endpoint.
+        _logWidgetError('refreshDriverStandings.driver', error, stackTrace);
       }
       try {
         final standings = await api.getConstructorStandings(season: season);
         await updateTeamStandings(standings, season: season);
         await updateFavoriteTeams(standings, season: season);
-      } catch (_) {
-        // Ignore team update errors.
+      } catch (error, stackTrace) {
+        _logWidgetError('refreshDriverStandings.team', error, stackTrace);
       }
       try {
         final nextRace = await api.getNextRace(season: season);
         await updateNextRaceCountdown(nextRace, season: season);
-      } catch (_) {
-        // Ignore next race update errors.
+      } catch (error, stackTrace) {
+        _logWidgetError(
+          'refreshDriverStandings.nextRaceCountdown',
+          error,
+          stackTrace,
+        );
       }
       try {
         final races = await api.getRaceSchedule(season: season);
         await updateNextSessionWidget(races, season: season);
-      } catch (_) {
-        // Ignore next session update errors.
+      } catch (error, stackTrace) {
+        _logWidgetError(
+          'refreshDriverStandings.nextSession',
+          error,
+          stackTrace,
+        );
       }
-    } catch (_) {
-      // Ignore refresh errors to keep periodic updates alive.
+    } catch (error, stackTrace) {
+      // Intentional: keep periodic background runs alive. Inner catches
+      // already isolated per-widget failures; this catches anything outside
+      // those (e.g. the season lookup itself).
+      _logWidgetError('refreshDriverStandings', error, stackTrace);
     } finally {
       _driverRefreshInFlight = false;
     }
+  }
+
+  static void _logWidgetError(
+    String context,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (!kDebugMode) return;
+    debugPrint('WidgetUpdateService [$context] failed: $error');
+    debugPrint('$stackTrace');
   }
 
   static Future<void> updateDriverStandings(
