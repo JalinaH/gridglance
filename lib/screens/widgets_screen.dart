@@ -5,6 +5,7 @@ import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../services/background_task_health.dart';
 import '../services/widget_update_service.dart';
 import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
@@ -46,6 +47,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
   late final String _season = DateTime.now().year.toString();
   late final Future<_WidgetPreviewData> _previewFuture;
   _WidgetPreviewData? _previewData;
+  BackgroundTaskHealthSnapshot? _backgroundHealth;
 
   @override
   void initState() {
@@ -61,6 +63,76 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       });
     });
     _loadTransparency();
+    _loadBackgroundHealth();
+  }
+
+  Future<void> _loadBackgroundHealth() async {
+    final snapshot = await BackgroundTaskHealth.getSnapshot();
+    if (!mounted) return;
+    setState(() {
+      _backgroundHealth = snapshot;
+    });
+  }
+
+  Widget _buildStaleBanner(
+    BuildContext context,
+    BackgroundTaskHealthSnapshot health,
+  ) {
+    final colors = AppColors.of(context);
+    final lastSuccess = health.lastSuccessAt;
+    final lastSuccessText = lastSuccess == null
+        ? 'never'
+        : _formatRelativeTime(lastSuccess);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber_rounded, size: 18, color: Colors.amber),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Widget data may be stale',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Background updates have failed '
+                  '${health.consecutiveFailures} times in a row. '
+                  'Last success: $lastSuccessText.',
+                  style: TextStyle(
+                    color: colors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatRelativeTime(DateTime time) {
+    final delta = DateTime.now().difference(time);
+    if (delta.inMinutes < 1) return 'just now';
+    if (delta.inHours < 1) return '${delta.inMinutes}m ago';
+    if (delta.inDays < 1) return '${delta.inHours}h ago';
+    return '${delta.inDays}d ago';
   }
 
   Future<void> _loadFavoriteIds() async {
@@ -679,6 +751,8 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
             ),
           ),
           SizedBox(height: 16),
+          if (_backgroundHealth?.isStale ?? false)
+            _buildStaleBanner(context, _backgroundHealth!),
           if (_isIosWidgetPickerFlow) ...[
             Container(
               margin: EdgeInsets.only(bottom: 16),
