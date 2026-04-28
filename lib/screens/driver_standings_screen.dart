@@ -277,6 +277,7 @@ class _DriverStandingsScreenState extends State<DriverStandingsScreen> {
         fileName: 'driver-standings-${widget.season}',
         text: 'F1 driver standings (${widget.season}) via GridGlance',
         subject: 'F1 Driver Standings',
+        kind: 'driver_standings',
       );
     } on ShareCardException catch (error) {
       _showSnackBar(error.message);

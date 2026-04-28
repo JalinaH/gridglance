@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/analytics.dart';
 import '../theme/app_theme.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -12,11 +13,17 @@ class AboutScreen extends StatefulWidget {
 
 class _AboutScreenState extends State<AboutScreen> {
   String _version = '';
+  bool _analyticsOptedOut = Analytics.isOptedOut;
 
   @override
   void initState() {
     super.initState();
     _loadPackageInfo();
+  }
+
+  Future<void> _toggleAnalyticsOptOut(bool optOut) async {
+    setState(() => _analyticsOptedOut = optOut);
+    await Analytics.setOptOut(optOut);
   }
 
   Future<void> _loadPackageInfo() async {
@@ -198,6 +205,13 @@ class _AboutScreenState extends State<AboutScreen> {
           onTap: () => _launchUrl('mailto:info.gridglance@gmail.com'),
         ),
 
+        const SizedBox(height: 24),
+
+        // Privacy section — anonymous usage data opt-out.
+        _buildSectionHeader(context, 'PRIVACY'),
+        const SizedBox(height: 10),
+        _buildAnalyticsOptOutTile(context),
+
         const SizedBox(height: 28),
 
         // Footer
@@ -322,6 +336,53 @@ class _AboutScreenState extends State<AboutScreen> {
               ),
               textAlign: TextAlign.end,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsOptOutTile(BuildContext context) {
+    final colors = AppColors.of(context);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final sendingEnabled = !_analyticsOptedOut;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.analytics_outlined, color: colors.f1Red, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Send anonymous usage data',
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Helps improve the app. No personal info, no driver/team picks.',
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: sendingEnabled,
+            activeThumbColor: colors.f1Red,
+            onChanged: (value) => _toggleAnalyticsOptOut(!value),
           ),
         ],
       ),

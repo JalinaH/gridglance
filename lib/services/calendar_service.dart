@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/services.dart';
 import '../models/race.dart';
+import 'analytics.dart';
 
 class CalendarImportResult {
   final int added;
@@ -13,6 +16,27 @@ class CalendarImportResult {
 
 class CalendarService {
   static Future<bool> addSessionToCalendar({
+    required Race race,
+    required RaceSession session,
+    required String season,
+  }) async {
+    final added = await _addSession(
+      race: race,
+      session: session,
+      season: season,
+    );
+    if (added) {
+      unawaited(
+        Analytics.track(
+          'calendar_exported',
+          properties: {'kind': 'session', 'session_type': session.name},
+        ),
+      );
+    }
+    return added;
+  }
+
+  static Future<bool> _addSession({
     required Race race,
     required RaceSession session,
     required String season,
@@ -54,7 +78,7 @@ class CalendarService {
 
     var added = 0;
     for (final session in sessions) {
-      final success = await addSessionToCalendar(
+      final success = await _addSession(
         race: race,
         session: session,
         season: season,
@@ -63,6 +87,16 @@ class CalendarService {
         added += 1;
       }
     }
+    unawaited(
+      Analytics.track(
+        'calendar_exported',
+        properties: {
+          'kind': 'weekend',
+          'sessions_added': added,
+          'sessions_total': sessions.length,
+        },
+      ),
+    );
     return CalendarImportResult(added: added, total: sessions.length);
   }
 

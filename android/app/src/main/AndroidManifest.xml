@@ -123,6 +123,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- PostHog: disable auto-init so the SDK is configured from Dart.
+             The API key comes via dart-define-from-file=secrets.json
+             instead of being baked into the manifest. -->
+        <meta-data
+            android:name="com.posthog.posthog.AUTO_INIT"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
