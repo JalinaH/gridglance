@@ -15,6 +15,17 @@ import '../models/session_results.dart';
 import '../models/season_overview.dart';
 import '../utils/json_safe.dart';
 
+Map<String, dynamic> _decodeJsonInIsolate(String body) {
+  final decoded = jsonDecode(body);
+  if (decoded is Map<String, dynamic>) {
+    return decoded;
+  }
+  if (decoded is Map) {
+    return decoded.cast<String, dynamic>();
+  }
+  throw const FormatException('Unexpected response body');
+}
+
 class CachedApiResponse<T> {
   final T data;
   final DateTime? lastUpdated;
@@ -174,7 +185,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final data = _decodeJsonMap(response.body);
+      final data = await _decodeJsonMap(response.body);
       final racesJson = _extractRaces(data);
       return racesJson
           .map((json) => JsonSafe.asMapOrNull(json))
@@ -195,7 +206,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final data = _decodeJsonMap(response.body);
+      final data = await _decodeJsonMap(response.body);
       final racesJson = _extractRaces(data);
       return racesJson
           .map((json) => JsonSafe.asMapOrNull(json))
@@ -216,7 +227,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final data = _decodeJsonMap(response.body);
+      final data = await _decodeJsonMap(response.body);
       final racesJson = _extractRaces(data);
       return racesJson
           .map((json) => JsonSafe.asMapOrNull(json))
@@ -237,7 +248,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final data = _decodeJsonMap(response.body);
+      final data = await _decodeJsonMap(response.body);
       final racesJson = _extractRaces(data);
       return racesJson
           .map((json) => JsonSafe.asMapOrNull(json))
@@ -258,7 +269,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final data = _decodeJsonMap(response.body);
+      final data = await _decodeJsonMap(response.body);
       final racesJson = _extractRaces(data);
       return racesJson
           .map((json) => JsonSafe.asMapOrNull(json))
@@ -279,7 +290,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final data = _decodeJsonMap(response.body);
+      final data = await _decodeJsonMap(response.body);
       final racesJson = _extractRaces(data);
       return racesJson
           .map((json) => JsonSafe.asMapOrNull(json))
@@ -304,7 +315,7 @@ class ApiService {
     if (response.statusCode != 200) {
       throw Exception('Failed to load race results');
     }
-    final data = _decodeJsonMap(response.body);
+    final data = await _decodeJsonMap(response.body);
     final racesJson = _extractRaces(data);
     if (racesJson.isEmpty) {
       return [];
@@ -338,7 +349,7 @@ class ApiService {
     if (response.statusCode != 200) {
       throw Exception('Failed to load qualifying results');
     }
-    final data = _decodeJsonMap(response.body);
+    final data = await _decodeJsonMap(response.body);
     final racesJson = _extractRaces(data);
     if (racesJson.isEmpty) {
       return [];
@@ -461,7 +472,7 @@ class ApiService {
         if (!acceptedStatusCodes.contains(response.statusCode)) {
           throw _ApiHttpException(response.statusCode);
         }
-        final data = _decodeJsonMap(response.body);
+        final data = await _decodeJsonMap(response.body);
         final parsed = parse(data);
         final updatedAt = DateTime.now();
         await _writeCachedBody(cacheKey, response.body, updatedAt);
@@ -493,7 +504,7 @@ class ApiService {
     final cached = await _readCachedBody(cacheKey);
     if (cached != null) {
       try {
-        final cachedData = _decodeJsonMap(cached.body);
+        final cachedData = await _decodeJsonMap(cached.body);
         return CachedApiResponse(
           data: parse(cachedData),
           lastUpdated: cached.updatedAt,
@@ -681,14 +692,12 @@ class ApiService {
     return _CachedBody(body: body, updatedAt: updatedAt);
   }
 
-  static Map<String, dynamic> _decodeJsonMap(String body) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map<String, dynamic>) {
-      return decoded;
+  static const int _isolateDecodeThreshold = 8 * 1024;
+
+  static Future<Map<String, dynamic>> _decodeJsonMap(String body) async {
+    if (body.length < _isolateDecodeThreshold) {
+      return _decodeJsonInIsolate(body);
     }
-    if (decoded is Map) {
-      return decoded.cast<String, dynamic>();
-    }
-    throw const FormatException('Unexpected response body');
+    return compute(_decodeJsonInIsolate, body);
   }
 }
