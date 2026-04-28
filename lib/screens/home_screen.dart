@@ -370,23 +370,21 @@ class _HomeScreenState extends State<HomeScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const HomeScreenSkeleton();
         } else if (snapshot.hasError) {
-          return const Center(
-            child: EmptyState(
-              message:
-                  "Unable to reach live data and no cache is available yet.",
-              type: EmptyStateType.network,
-            ),
-          );
+          return _buildErrorState(colors, error: snapshot.error);
         }
 
         final overview = snapshot.data;
         if (overview == null) {
-          return const Center(
-            child: EmptyState(
-              message: "No data available",
-              type: EmptyStateType.generic,
-            ),
-          );
+          return _buildErrorState(colors, error: null);
+        }
+
+        final hasAnyContent =
+            overview.driverStandings.isNotEmpty ||
+            overview.constructorStandings.isNotEmpty ||
+            overview.raceSchedule.isNotEmpty ||
+            overview.nextRace != null;
+        if (!hasAnyContent) {
+          return _buildEmptySeasonState(colors);
         }
 
         final topDrivers = overview.driverStandings.take(3).toList();
@@ -1343,6 +1341,98 @@ class _HomeScreenState extends State<HomeScreen> {
     EmptyStateType type = EmptyStateType.generic,
   }) {
     return EmptyState(message: message, type: type, iconSize: 36);
+  }
+
+  Widget _buildErrorState(AppColors colors, {required Object? error}) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: colors.f1Red,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        children: [
+          const EmptyState(
+            message:
+                'Unable to reach live data and no cache is available yet.\n'
+                'Check your connection and try again.',
+            type: EmptyStateType.network,
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: FilledButton.icon(
+              onPressed: _refresh,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.f1Red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                error.toString(),
+                style: TextStyle(color: colors.textMuted, fontSize: 11),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptySeasonState(AppColors colors) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: colors.f1Red,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        children: [
+          EmptyState(
+            message:
+                'No data for season $_season yet.\n'
+                'It may not have started — try a different season or refresh.',
+            type: EmptyStateType.generic,
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _selectSeason,
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  label: const Text('Change season'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    side: BorderSide(color: colors.border),
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: _refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.f1Red,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
