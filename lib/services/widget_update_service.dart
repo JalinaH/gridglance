@@ -142,11 +142,7 @@ class WidgetUpdateService {
         // others; each `try` below targets one widget so they fail
         // independently. Log so a blank widget can be traced to its
         // specific endpoint.
-        _logWidgetError(
-          'refreshDriverStandings.driver',
-          error,
-          stackTrace,
-        );
+        _logWidgetError('refreshDriverStandings.driver', error, stackTrace);
       }
       try {
         final standings = await api.getConstructorStandings(season: season);
