@@ -1,3 +1,5 @@
+import '../utils/json_safe.dart';
+
 class DriverStanding {
   final String position;
   final String points;
@@ -26,11 +28,11 @@ class DriverStanding {
   });
 
   factory DriverStanding.fromJson(Map<String, dynamic> json) {
-    final constructors = json['Constructors'] as List? ?? [];
+    final constructors = JsonSafe.asList(json['Constructors']);
     final team = constructors.isNotEmpty
-        ? constructors[0] as Map<String, dynamic>?
+        ? JsonSafe.asMapOrNull(constructors[0])
         : null;
-    final driver = json['Driver'] as Map<String, dynamic>? ?? {};
+    final driver = JsonSafe.asMap(json['Driver']);
 
     return DriverStanding(
       position: json['position'] ?? '-',

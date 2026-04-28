@@ -1,3 +1,5 @@
+import '../utils/json_safe.dart';
+
 class DriverRaceResult {
   final String round;
   final String raceName;
@@ -16,10 +18,10 @@ class DriverRaceResult {
   });
 
   factory DriverRaceResult.fromRaceJson(Map<String, dynamic> json) {
-    final results = json['Results'] as List? ?? [];
+    final results = JsonSafe.asList(json['Results']);
     final result = results.isNotEmpty
-        ? results.first as Map<String, dynamic>? ?? {}
-        : <String, dynamic>{};
+        ? JsonSafe.asMap(results.first)
+        : const <String, dynamic>{};
     return DriverRaceResult(
       round: json['round'] ?? '',
       raceName: json['raceName'] ?? '',
@@ -45,15 +47,15 @@ class TeamRaceResult {
   });
 
   factory TeamRaceResult.fromRaceJson(Map<String, dynamic> json) {
-    final results = json['Results'] as List? ?? [];
+    final results = JsonSafe.asList(json['Results']);
     return TeamRaceResult(
       round: json['round'] ?? '',
       raceName: json['raceName'] ?? '',
       date: json['date'] ?? '',
       drivers: results
-          .map(
-            (item) => TeamDriverResult.fromJson(item as Map<String, dynamic>),
-          )
+          .map((item) => JsonSafe.asMapOrNull(item))
+          .whereType<Map<String, dynamic>>()
+          .map(TeamDriverResult.fromJson)
           .toList(),
     );
   }
@@ -77,7 +79,7 @@ class TeamDriverResult {
   });
 
   factory TeamDriverResult.fromJson(Map<String, dynamic> json) {
-    final driver = json['Driver'] as Map<String, dynamic>? ?? {};
+    final driver = JsonSafe.asMap(json['Driver']);
     return TeamDriverResult(
       givenName: driver['givenName'] ?? '',
       familyName: driver['familyName'] ?? '',
@@ -103,10 +105,10 @@ class DriverSprintResult {
   });
 
   factory DriverSprintResult.fromRaceJson(Map<String, dynamic> json) {
-    final sprintResults = json['SprintResults'] as List? ?? [];
+    final sprintResults = JsonSafe.asList(json['SprintResults']);
     final result = sprintResults.isNotEmpty
-        ? sprintResults.first as Map<String, dynamic>? ?? {}
-        : <String, dynamic>{};
+        ? JsonSafe.asMap(sprintResults.first)
+        : const <String, dynamic>{};
     return DriverSprintResult(
       round: json['round'] ?? '',
       raceName: json['raceName'] ?? '',
@@ -130,9 +132,9 @@ class TeamSprintResult {
   });
 
   factory TeamSprintResult.fromRaceJson(Map<String, dynamic> json) {
-    final sprintResults = json['SprintResults'] as List? ?? [];
+    final sprintResults = JsonSafe.asList(json['SprintResults']);
     final points = sprintResults
-        .map((item) => '${(item as Map<String, dynamic>)['points'] ?? '0'}')
+        .map((item) => '${JsonSafe.asMap(item)['points'] ?? '0'}')
         .toList();
     return TeamSprintResult(
       round: json['round'] ?? '',
@@ -157,10 +159,10 @@ class DriverQualifyingResult {
   });
 
   factory DriverQualifyingResult.fromRaceJson(Map<String, dynamic> json) {
-    final qualifying = json['QualifyingResults'] as List? ?? [];
+    final qualifying = JsonSafe.asList(json['QualifyingResults']);
     final result = qualifying.isNotEmpty
-        ? qualifying.first as Map<String, dynamic>? ?? {}
-        : <String, dynamic>{};
+        ? JsonSafe.asMap(qualifying.first)
+        : const <String, dynamic>{};
     return DriverQualifyingResult(
       round: json['round'] ?? '',
       raceName: json['raceName'] ?? '',
@@ -184,9 +186,9 @@ class TeamQualifyingResult {
   });
 
   factory TeamQualifyingResult.fromRaceJson(Map<String, dynamic> json) {
-    final qualifying = json['QualifyingResults'] as List? ?? [];
+    final qualifying = JsonSafe.asList(json['QualifyingResults']);
     final positions = qualifying
-        .map((item) => '${(item as Map<String, dynamic>)['position'] ?? '-'}')
+        .map((item) => '${JsonSafe.asMap(item)['position'] ?? '-'}')
         .toList();
     return TeamQualifyingResult(
       round: json['round'] ?? '',
