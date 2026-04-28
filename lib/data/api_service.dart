@@ -511,10 +511,7 @@ class ApiService {
         error,
         stackTrace: stackTrace,
         hint: 'api_service.${uri.path}',
-        tags: {
-          'classification': classification,
-          'source': source,
-        },
+        tags: {'classification': classification, 'source': source},
       ),
     );
   }

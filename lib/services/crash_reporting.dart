@@ -31,25 +31,22 @@ class CrashReporting {
       await appRunner();
       return;
     }
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = _dsn;
-        // 100% of errors, 10% of performance traces.
-        options.tracesSampleRate = 0.1;
-        // Don't attach user PII — the app has no logins; any "user"
-        // breadcrumbs would just be device IDs which we already get from
-        // Sentry's default device context.
-        options.sendDefaultPii = false;
-        // Skip Sentry in debug to keep the dashboard clean — local dev
-        // crashes show up in the console anyway.
-        options.environment = kDebugMode ? 'debug' : 'production';
-        options.beforeSend = (event, hint) {
-          if (kDebugMode) return null;
-          return event;
-        };
-      },
-      appRunner: appRunner,
-    );
+    await SentryFlutter.init((options) {
+      options.dsn = _dsn;
+      // 100% of errors, 10% of performance traces.
+      options.tracesSampleRate = 0.1;
+      // Don't attach user PII — the app has no logins; any "user"
+      // breadcrumbs would just be device IDs which we already get from
+      // Sentry's default device context.
+      options.sendDefaultPii = false;
+      // Skip Sentry in debug to keep the dashboard clean — local dev
+      // crashes show up in the console anyway.
+      options.environment = kDebugMode ? 'debug' : 'production';
+      options.beforeSend = (event, hint) {
+        if (kDebugMode) return null;
+        return event;
+      };
+    }, appRunner: appRunner);
   }
 
   /// Reports a caught exception with optional context tags.
