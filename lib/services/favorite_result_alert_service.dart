@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/api_service.dart';
@@ -15,6 +16,19 @@ class FavoriteResultAlertService {
   static const String _standingsSeededPrefix =
       'favorite_alert_standings_seeded';
   static Future<void>? _inFlight;
+
+  /// Indirection so tests can swap in a fake `ApiService`. Production code
+  /// should not touch this — it stays at the default `ApiService.new`.
+  @visibleForTesting
+  static ApiService Function() apiFactory = ApiService.new;
+
+  /// Resets the in-flight slot and the api factory so each test starts
+  /// from a clean slate.
+  @visibleForTesting
+  static void resetForTesting() {
+    _inFlight = null;
+    apiFactory = ApiService.new;
+  }
 
   static Future<void> checkForUpdates({String? season}) {
     final existing = _inFlight;
@@ -55,7 +69,7 @@ class FavoriteResultAlertService {
         season ??
         await UserPreferences.getSeason() ??
         DateTime.now().year.toString();
-    final api = ApiService();
+    final api = apiFactory();
 
     final values = await Future.wait<Object?>([
       sessionFinishedEnabled
