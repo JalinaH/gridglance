@@ -8,6 +8,7 @@ import 'screens/main_shell.dart';
 import 'screens/splash_screen.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/background_task_service.dart';
+import 'services/crash_reporting.dart';
 import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/f1_image_service.dart';
@@ -17,12 +18,14 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await UserPreferences.init();
-  await WidgetUpdateService.ensureHomeWidgetSetup();
-  await NotificationService.init();
-  await BackgroundTaskService.initializeAndSchedule();
-  await F1ImageService.instance.init();
-  runApp(const MyApp());
+  await CrashReporting.runWithCrashReporting(() async {
+    await UserPreferences.init();
+    await WidgetUpdateService.ensureHomeWidgetSetup();
+    await NotificationService.init();
+    await BackgroundTaskService.initializeAndSchedule();
+    await F1ImageService.instance.init();
+    runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatefulWidget {

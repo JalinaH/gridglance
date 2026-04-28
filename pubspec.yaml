@@ -49,6 +49,7 @@ dependencies:
   flutter_svg: ^2.2.4
   cached_network_image: ^3.4.1
   flutter_cache_manager: ^3.4.1
+  sentry_flutter: ^8.13.2
 
 dev_dependencies:
   flutter_test:
