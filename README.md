@@ -39,6 +39,8 @@ GridGlance is a Flutter app for following Formula 1 standings and race weekends 
 - Timezone handling: `timezone`
 - Background tasks: `workmanager`
 - Typography: `google_fonts`
+- Crash reporting: `sentry_flutter`
+- Product analytics: `posthog_flutter`
 
 ## Data source
 
@@ -83,17 +85,31 @@ gridglance/
 flutter pub get
 ```
 
+### Configure secrets (optional for local dev)
+
+Sentry crash reporting and PostHog analytics are wired through compile-time
+constants populated from `secrets.json` (gitignored). Copy the template and
+fill in real values:
+
+```bash
+cp secrets.json.example secrets.json
+# edit secrets.json and set SENTRY_DSN, POSTHOG_KEY, POSTHOG_HOST
+```
+
+Without `secrets.json`, both SDKs silently no-op so dev builds keep working.
+
 ### Run the app
 
 ```bash
-flutter run
+flutter run --dart-define-from-file=secrets.json   # with telemetry
+flutter run                                        # no telemetry (no-op)
 ```
 
 To target a specific platform/device:
 
 ```bash
-flutter run -d android
-flutter run -d ios
+flutter run -d android --dart-define-from-file=secrets.json
+flutter run -d ios --dart-define-from-file=secrets.json
 ```
 
 ## Development commands
@@ -101,8 +117,8 @@ flutter run -d ios
 ```bash
 flutter analyze
 flutter test
-flutter build apk --release
-flutter build ios --release
+flutter build apk --release --dart-define-from-file=secrets.json
+flutter build ios --release --dart-define-from-file=secrets.json
 ```
 
 ## Platform notes
@@ -119,13 +135,20 @@ flutter build ios --release
 - WidgetKit extension target is `GridGlanceWidgets` (iOS 14+).
 - App and widget share data via App Group `group.com.gridglance.app`.
 
+## Privacy
+
+GridGlance collects anonymous usage data (PostHog) and crash reports (Sentry)
+to improve the app. No personal info, no driver/team picks, and no user IDs
+are sent. Users can disable analytics any time from **About → Privacy → Send
+anonymous usage data**.
+
 ## Testing
 
-176 automated tests covering:
+220 automated tests covering:
 
 - **Models** — Race, RaceSession, DriverStanding, ConstructorStanding, and all result types (race, sprint, qualifying)
 - **Screens** — SplashScreen (animation sequence, 5 starting lights, onComplete callback, racing stripes, logo fade-in, dark background, disposal), AboutScreen (sections, features, info cards, links, Season card removal, scrollability), DriverStandingsScreen (title/season rendering, search filtering, empty state, offline cache label, share button), ConstructorStandingsScreen (title/season rendering, search filtering, empty state, offline cache label, share button), RaceScheduleScreen (title/season, search, filter chips, empty state, offline cache), MainShell (bottom navigation tabs, theme toggle, IndexedStack tab persistence)
-- **Services** — NotificationService key generation and ID determinism, NotificationPreferences (session toggles, lead times, weekend digest, favorite alerts), UserPreferences (season, favorite driver/team), PredictionService (scoring, season aggregation, input validation)
+- **Services** — NotificationService key generation and ID determinism, NotificationPreferences (session toggles, lead times, weekend digest, favorite alerts), UserPreferences (season, favorite driver/team), PredictionService (scoring, season aggregation, input validation), FavoriteResultAlertService (in-flight dedup, ApiService injection seam), WidgetUpdateService (Sentry error reporting), BackgroundTaskHealth (failure streak persistence)
 - **Utils** — Date/time formatting (relative labels, localized dates), team logo asset lookup (case-insensitive matching, legacy names, 2026 roster)
 - **Widgets** — BounceTap (scale animation, event pass-through), AnimatedCounter (value animation, formatting, prefix/suffix), EmptyState (icon mapping for all 7 types), SwipeActionWrapper (primary/secondary swipe actions, threshold behavior), CelebrationOverlay (confetti/pulse variants, IgnorePointer), CompactSearchField (hint text, search icon, onChanged callback, clear button, rounded decoration), F1Scaffold (body rendering, AppBar, FAB, maxContentWidth constraint, transparent background, extendBodyBehindAppBar)
 
