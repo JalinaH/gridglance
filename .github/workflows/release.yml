@@ -41,11 +41,33 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore/upload-keystore.jks
           echo "$KEY_PROPERTIES" > android/key.properties
 
+      # The Sentry/PostHog SDKs read their keys at app startup via
+      # String.fromEnvironment, which is populated from this file at build
+      # time. Failing the build when a secret is missing prevents silently
+      # shipping releases with no telemetry.
+      - name: Write secrets.json
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+        run: |
+          if [ -z "$SENTRY_DSN" ] || [ -z "$POSTHOG_KEY" ] || [ -z "$POSTHOG_HOST" ]; then
+            echo "::error::Missing required secret(s). Set SENTRY_DSN, POSTHOG_KEY, and POSTHOG_HOST in repo settings."
+            exit 1
+          fi
+          cat > secrets.json <<EOF
+          {
+            "SENTRY_DSN": "$SENTRY_DSN",
+            "POSTHOG_KEY": "$POSTHOG_KEY",
+            "POSTHOG_HOST": "$POSTHOG_HOST"
+          }
+          EOF
+
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define-from-file=secrets.json
 
       - name: Build release App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --dart-define-from-file=secrets.json
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
