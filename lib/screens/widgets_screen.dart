@@ -94,7 +94,11 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.amber),
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: Colors.amber,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -1264,7 +1268,10 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
               GestureDetector(
                 onTap: () => onTransparentChanged(!transparentValue),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: transparentValue
                         ? colors.f1Red.withValues(alpha: 0.1)
@@ -1487,7 +1494,10 @@ class _DriverStandingsPreview extends StatelessWidget {
                             preview.team,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: _textMuted, fontSize: 9),
+                            style: const TextStyle(
+                              color: _textMuted,
+                              fontSize: 9,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           // Stats row: Position + Points
@@ -1940,7 +1950,10 @@ class _RaceWeekendPreview extends StatelessWidget {
                           location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: _textMuted, fontSize: 10),
+                          style: const TextStyle(
+                            color: _textMuted,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),
@@ -2019,7 +2032,9 @@ class _RaceWeekendPreview extends StatelessWidget {
                                   ? null
                                   : _textMuted.withValues(alpha: 0.4),
                               gradient: isNext
-                                  ? const LinearGradient(colors: [_red, _redBright])
+                                  ? const LinearGradient(
+                                      colors: [_red, _redBright],
+                                    )
                                   : null,
                             ),
                           ),
@@ -2193,7 +2208,9 @@ class _StandingsListPreview extends StatelessWidget {
                     height: 3,
                     width: 30,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [_red, _redBright]),
+                      gradient: const LinearGradient(
+                        colors: [_red, _redBright],
+                      ),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -2348,7 +2365,10 @@ class _StandingsListPreview extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(shape: BoxShape.circle, color: _surfaceAlt),
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: _surfaceAlt,
+      ),
       child: Icon(Icons.directions_car, color: _textMuted, size: size * 0.5),
     );
   }

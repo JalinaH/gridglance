@@ -120,7 +120,10 @@ class _SwipeActionWrapperState extends State<SwipeActionWrapper>
             if (offset != 0)
               Positioned.fill(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
                     child: Container(

@@ -383,7 +383,10 @@ class _CompareModeScreenState extends State<CompareModeScreen> {
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: colors.surfaceAlt,
                   borderRadius: BorderRadius.circular(12),
