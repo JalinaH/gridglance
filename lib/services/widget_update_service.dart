@@ -302,6 +302,7 @@ class WidgetUpdateService {
       await _saveDps('next_race_widget_days', '--');
       await _saveDps('next_race_widget_hours', '--');
       await _saveDps('next_race_widget_mins', '--');
+      await _saveDps('next_race_widget_target_ms', '');
       await _saveDps('next_race_widget_round', '');
       await _saveDps('next_race_widget_circuit', '');
     } else {
@@ -325,6 +326,14 @@ class WidgetUpdateService {
       );
       await _saveDps('next_race_widget_circuit', race.circuitName);
       await _saveDps('next_race_widget_round', 'R${race.round}');
+
+      // Persist target timestamp so the native widget can recompute the
+      // countdown locally on every onUpdate, even when the BG refresh hasn't
+      // run since the last app open.
+      await _saveDps(
+        'next_race_widget_target_ms',
+        race.startDateTime?.toUtc().millisecondsSinceEpoch.toString() ?? '',
+      );
 
       // Segmented countdown.
       final remaining = race.startDateTime != null
@@ -412,6 +421,8 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_name', 'No upcoming race');
       await _saveDps('race_weekend_widget_location', 'Season complete');
       await _saveDps('race_weekend_widget_countdown', 'Awaiting next calendar');
+      await _saveDps('race_weekend_widget_next_session_name', '');
+      await _saveDps('race_weekend_widget_target_ms', '');
       await _saveDps('race_weekend_widget_round', '');
       for (int i = 1; i <= 7; i++) {
         await _saveDps('race_weekend_widget_session_$i', '');
@@ -458,21 +469,30 @@ class WidgetUpdateService {
 
       await _saveDps('race_weekend_widget_next_index', nextIndex.toString());
 
-      // Countdown to the next upcoming session.
+      // Persist target timestamp + label so the native widget can recompute
+      // the countdown locally on every onUpdate. The formatted string is
+      // still saved as a fallback if the timestamp can't be parsed.
+      DateTime? countdownTarget;
+      String countdownLabel;
       if (nextIndex >= 0 && nextIndex < allSessions.length) {
         final nextSession = allSessions[nextIndex];
-        final countdownText = _formatCountdownLabel(nextSession.startDateTime);
-        final sessionName = nextSession.name;
+        countdownTarget = nextSession.startDateTime;
         await _saveDps(
-          'race_weekend_widget_countdown',
-          '$sessionName • $countdownText',
+          'race_weekend_widget_next_session_name',
+          nextSession.name,
         );
+        final countdownText = _formatCountdownLabel(countdownTarget);
+        countdownLabel = '${nextSession.name} • $countdownText';
       } else {
-        await _saveDps(
-          'race_weekend_widget_countdown',
-          _formatCountdownLabel(target.startDateTime),
-        );
+        countdownTarget = target.startDateTime;
+        await _saveDps('race_weekend_widget_next_session_name', '');
+        countdownLabel = _formatCountdownLabel(countdownTarget);
       }
+      await _saveDps('race_weekend_widget_countdown', countdownLabel);
+      await _saveDps(
+        'race_weekend_widget_target_ms',
+        countdownTarget?.toUtc().millisecondsSinceEpoch.toString() ?? '',
+      );
     }
 
     await _refreshRaceWeekendWidget();

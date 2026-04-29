@@ -3,6 +3,7 @@ package com.gridglance.app
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import android.util.Log
 import android.view.View
@@ -24,9 +25,9 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         val season = prefs.getString("race_weekend_widget_season", defaultSeason) ?: defaultSeason
         val raceName = prefs.getString("race_weekend_widget_name", "Race weekend") ?: "Race weekend"
         val raceLocation = prefs.getString("race_weekend_widget_location", "Location TBA") ?: "Location TBA"
-        val countdown = prefs.getString("race_weekend_widget_countdown", "Waiting for schedule") ?: "Waiting for schedule"
         val round = prefs.getString("race_weekend_widget_round", "") ?: ""
         val isTransparent = prefs.getString("race_weekend_widget_transparent", "false") == "true"
+        val countdown = computeCountdownText(prefs)
 
         val sessionTextIds = arrayOf(
             R.id.session_1, R.id.session_2, R.id.session_3,
@@ -92,6 +93,37 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
+        }
+    }
+
+    // Recomputes the countdown locally from the persisted target timestamp so
+    // the displayed value stays fresh even when the BG refresh hasn't run.
+    private fun computeCountdownText(prefs: SharedPreferences): String {
+        val fallback = prefs.getString("race_weekend_widget_countdown", "Waiting for schedule")
+            ?: "Waiting for schedule"
+        val targetMs = prefs.getString("race_weekend_widget_target_ms", "")?.toLongOrNull()
+            ?: return fallback
+        val sessionName = prefs.getString("race_weekend_widget_next_session_name", "") ?: ""
+        val remainingMs = targetMs - System.currentTimeMillis()
+        val phrase = formatCountdownPhrase(remainingMs)
+        return if (sessionName.isNotEmpty()) "$sessionName • $phrase" else phrase
+    }
+
+    private fun formatCountdownPhrase(remainingMs: Long): String {
+        if (remainingMs <= 0L) {
+            return "Weekend in progress"
+        }
+        val totalMinutes = remainingMs / 60_000L
+        if (totalMinutes <= 0L) {
+            return "Starting now"
+        }
+        val days = totalMinutes / (60L * 24L)
+        val hours = (totalMinutes / 60L) % 24L
+        val minutes = totalMinutes % 60L
+        return when {
+            days > 0L -> "Starts in ${days}d ${hours}h"
+            hours > 0L -> "Starts in ${hours}h ${minutes}m"
+            else -> "Starts in ${minutes}m"
         }
     }
 }
