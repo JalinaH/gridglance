@@ -121,7 +121,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         val hours = (totalMinutes / 60L) % 24L
         val minutes = totalMinutes % 60L
         return when {
-            days > 0L -> "Starts in ${days}d ${hours}h"
+            days > 0L -> "Starts in ${days}d ${hours}h ${minutes}m"
             hours > 0L -> "Starts in ${hours}h ${minutes}m"
             else -> "Starts in ${minutes}m"
         }

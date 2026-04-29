@@ -1056,7 +1056,7 @@ class WidgetUpdateService {
     final hours = remaining.inHours % 24;
     final minutes = remaining.inMinutes % 60;
     if (days > 0) {
-      return 'Starts in ${days}d ${hours}h';
+      return 'Starts in ${days}d ${hours}h ${minutes}m';
     }
     if (remaining.inHours > 0) {
       return 'Starts in ${remaining.inHours}h ${minutes}m';
