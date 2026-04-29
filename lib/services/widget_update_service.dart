@@ -31,10 +31,6 @@ class WidgetUpdateService {
       'FavoriteTeamWidgetProvider';
   static const String androidQualifiedFavoriteTeamWidgetProvider =
       'com.gridglance.app.FavoriteTeamWidgetProvider';
-  static const String androidNextRaceCountdownWidgetProvider =
-      'NextRaceCountdownWidgetProvider';
-  static const String androidQualifiedNextRaceCountdownWidgetProvider =
-      'com.gridglance.app.NextRaceCountdownWidgetProvider';
   static const String androidNextSessionWidgetProvider =
       'NextSessionWidgetProvider';
   static const String androidQualifiedNextSessionWidgetProvider =
@@ -51,7 +47,6 @@ class WidgetUpdateService {
       'GridGlanceFavoriteDriverWidget';
   static const String iOSFavoriteTeamWidgetKind =
       'GridGlanceFavoriteTeamWidget';
-  static const String iOSNextRaceWidgetKind = 'GridGlanceNextRaceWidget';
   static const String iOSNextSessionWidgetKind = 'GridGlanceNextSessionWidget';
   static const MethodChannel _dpsChannel = MethodChannel('gridglance/dps');
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
@@ -65,8 +60,6 @@ class WidgetUpdateService {
   static const String _favoriteTeamDefaultKey = 'favorite_team_default';
   static const String _driverWidgetTransparentKey = 'driver_widget_transparent';
   static const String _teamWidgetTransparentKey = 'team_widget_transparent';
-  static const String _nextRaceWidgetTransparentKey =
-      'next_race_widget_transparent';
   static const String _nextSessionWidgetTransparentKey =
       'next_session_widget_transparent';
   static const String _raceWeekendWidgetTransparentKey =
@@ -151,16 +144,6 @@ class WidgetUpdateService {
         await updateFavoriteTeams(standings, season: season);
       } catch (error, stackTrace) {
         _logWidgetError('refreshDriverStandings.team', error, stackTrace);
-      }
-      try {
-        final nextRace = await api.getNextRace(season: season);
-        await updateNextRaceCountdown(nextRace, season: season);
-      } catch (error, stackTrace) {
-        _logWidgetError(
-          'refreshDriverStandings.nextRaceCountdown',
-          error,
-          stackTrace,
-        );
       }
       try {
         final races = await api.getRaceSchedule(season: season);
@@ -282,81 +265,6 @@ class WidgetUpdateService {
     }
 
     await _refreshTeamWidget();
-  }
-
-  static Future<void> updateNextRaceCountdown(
-    Race? race, {
-    String? season,
-  }) async {
-    final seasonLabel =
-        season ?? _seasonOverride ?? DateTime.now().year.toString();
-    _seasonOverride = seasonLabel;
-    await _saveDps('next_race_widget_title', 'Next Race');
-    await _saveDps('next_race_widget_season', seasonLabel);
-
-    if (race == null) {
-      await _saveDps('next_race_widget_name', 'No upcoming race');
-      await _saveDps('next_race_widget_location', 'Season complete');
-      await _saveDps('next_race_widget_start', 'Time TBA');
-      await _saveDps('next_race_widget_countdown', 'Awaiting next calendar');
-      await _saveDps('next_race_widget_days', '--');
-      await _saveDps('next_race_widget_hours', '--');
-      await _saveDps('next_race_widget_mins', '--');
-      await _saveDps('next_race_widget_target_ms', '');
-      await _saveDps('next_race_widget_round', '');
-      await _saveDps('next_race_widget_circuit', '');
-    } else {
-      await _saveDps(
-        'next_race_widget_name',
-        race.raceName.isEmpty ? 'Race weekend' : race.raceName,
-      );
-      await _saveDps(
-        'next_race_widget_location',
-        race.location.isEmpty
-            ? (race.circuitName.isEmpty ? 'Location TBA' : race.circuitName)
-            : race.location,
-      );
-      await _saveDps(
-        'next_race_widget_start',
-        _formatDateTimeLabel(race.startDateTime),
-      );
-      await _saveDps(
-        'next_race_widget_countdown',
-        _formatCountdownLabel(race.startDateTime),
-      );
-      await _saveDps('next_race_widget_circuit', race.circuitName);
-      await _saveDps('next_race_widget_round', 'R${race.round}');
-
-      // Persist target timestamp so the native widget can recompute the
-      // countdown locally on every onUpdate, even when the BG refresh hasn't
-      // run since the last app open.
-      await _saveDps(
-        'next_race_widget_target_ms',
-        race.startDateTime?.toUtc().millisecondsSinceEpoch.toString() ?? '',
-      );
-
-      // Segmented countdown.
-      final remaining = race.startDateTime != null
-          ? race.startDateTime!.difference(DateTime.now())
-          : Duration.zero;
-      if (remaining.isNegative || remaining.inMinutes <= 0) {
-        await _saveDps('next_race_widget_days', '0');
-        await _saveDps('next_race_widget_hours', '0');
-        await _saveDps('next_race_widget_mins', '0');
-      } else {
-        await _saveDps('next_race_widget_days', remaining.inDays.toString());
-        await _saveDps(
-          'next_race_widget_hours',
-          (remaining.inHours % 24).toString(),
-        );
-        await _saveDps(
-          'next_race_widget_mins',
-          (remaining.inMinutes % 60).toString(),
-        );
-      }
-    }
-
-    await _refreshNextRaceWidget();
   }
 
   static Future<void> updateNextSessionWidget(
@@ -739,11 +647,6 @@ class WidgetUpdateService {
     await _refreshTeamWidget();
   }
 
-  static Future<void> setNextRaceWidgetTransparent(bool value) async {
-    await _saveDps(_nextRaceWidgetTransparentKey, value.toString());
-    await _refreshNextRaceWidget();
-  }
-
   static Future<void> setNextSessionWidgetTransparent(bool value) async {
     await _saveDps(_nextSessionWidgetTransparentKey, value.toString());
     await _refreshNextSessionWidget();
@@ -774,10 +677,6 @@ class WidgetUpdateService {
 
   static Future<bool> getTeamWidgetTransparent() async {
     return _getBool(_teamWidgetTransparentKey);
-  }
-
-  static Future<bool> getNextRaceWidgetTransparent() async {
-    return _getBool(_nextRaceWidgetTransparentKey);
   }
 
   static Future<bool> getNextSessionWidgetTransparent() async {
@@ -825,13 +724,6 @@ class WidgetUpdateService {
     await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
       iOSName: iOSFavoriteTeamWidgetKind,
-    );
-  }
-
-  static Future<void> _refreshNextRaceWidget() async {
-    await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedNextRaceCountdownWidgetProvider,
-      iOSName: iOSNextRaceWidgetKind,
     );
   }
 

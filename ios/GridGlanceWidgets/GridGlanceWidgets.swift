@@ -45,15 +45,6 @@ private struct GridGlanceProvider: TimelineProvider {
       "team_3": "Mercedes - 0 pts",
       "team_3_name": "Mercedes",
       "team_3_pts": "0",
-      "next_race_widget_title": "Next Race",
-      "next_race_widget_name": "Race weekend",
-      "next_race_widget_location": "Location TBA",
-      "next_race_widget_start": "Time TBA",
-      "next_race_widget_countdown": "Starts soon",
-      "next_race_widget_days": "--",
-      "next_race_widget_hours": "--",
-      "next_race_widget_mins": "--",
-      "next_race_widget_round": "",
       "next_session_widget_title": "Next Session",
       "next_session_widget_name": "Practice 1",
       "next_session_widget_race": "Race weekend",
@@ -399,66 +390,6 @@ private struct CountdownBox: View {
       RoundedRectangle(cornerRadius: 8)
         .stroke(f1Red.opacity(0.2), lineWidth: 1)
     )
-  }
-}
-
-private struct NextRaceWidgetView: View {
-  let entry: GridGlanceEntry
-
-  var body: some View {
-    WidgetSurface {
-      VStack(alignment: .leading, spacing: 0) {
-        HStack {
-          WidgetHeader(
-            title: entry.text("next_race_widget_title", fallback: "Next Race"),
-            trailing: entry.text("next_race_widget_round", fallback: "")
-          )
-        }
-        .foregroundColor(.white)
-
-        Spacer(minLength: 6)
-
-        Text(entry.text("next_race_widget_name", fallback: "No upcoming race"))
-          .font(.system(size: 13, weight: .bold))
-          .lineLimit(1)
-
-        Text(entry.text("next_race_widget_location", fallback: "Location TBA"))
-          .font(.system(size: 9))
-          .foregroundColor(textMuted)
-          .lineLimit(1)
-          .padding(.top, 1)
-
-        Text(entry.text("next_race_widget_start", fallback: "Time TBA"))
-          .font(.system(size: 8))
-          .foregroundColor(textMuted)
-          .lineLimit(1)
-
-        Spacer(minLength: 6)
-
-        // Countdown boxes
-        HStack(spacing: 4) {
-          CountdownBox(
-            value: entry.text("next_race_widget_days", fallback: "--"),
-            label: "Days"
-          )
-          Text(":")
-            .font(.system(size: 14, weight: .bold))
-            .foregroundColor(f1Red.opacity(0.3))
-          CountdownBox(
-            value: entry.text("next_race_widget_hours", fallback: "--"),
-            label: "Hrs"
-          )
-          Text(":")
-            .font(.system(size: 14, weight: .bold))
-            .foregroundColor(f1Red.opacity(0.3))
-          CountdownBox(
-            value: entry.text("next_race_widget_mins", fallback: "--"),
-            label: "Min"
-          )
-        }
-      }
-      .foregroundColor(.white)
-    }
   }
 }
 
@@ -982,19 +913,6 @@ struct GridGlanceTeamStandingsWidget: Widget {
   }
 }
 
-struct GridGlanceNextRaceWidget: Widget {
-  let kind: String = "GridGlanceNextRaceWidget"
-
-  var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
-      NextRaceWidgetView(entry: entry)
-    }
-    .configurationDisplayName("Next Race Countdown")
-    .description("Upcoming race with countdown timer.")
-    .supportedFamilies([.systemSmall, .systemMedium])
-  }
-}
-
 struct GridGlanceNextSessionWidget: Widget {
   let kind: String = "GridGlanceNextSessionWidget"
 
@@ -1054,7 +972,6 @@ struct GridGlanceWidgetsBundle: WidgetBundle {
     GridGlanceTeamStandingsWidget()
     GridGlanceFavoriteDriverWidget()
     GridGlanceFavoriteTeamWidget()
-    GridGlanceNextRaceWidget()
     GridGlanceNextSessionWidget()
     GridGlanceRaceWeekendWidget()
   }
