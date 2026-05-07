@@ -50,6 +50,7 @@ class WidgetUpdateService {
   static const String iOSNextSessionWidgetKind = 'GridGlanceNextSessionWidget';
   static const MethodChannel _dpsChannel = MethodChannel('gridglance/dps');
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
+  static const Duration _raceWeekendCompletionGrace = Duration(hours: 4);
   static Timer? _driverRefreshTimer;
   static bool _driverRefreshInFlight = false;
   static String? _seasonOverride;
@@ -148,9 +149,10 @@ class WidgetUpdateService {
       try {
         final races = await api.getRaceSchedule(season: season);
         await updateNextSessionWidget(races, season: season);
+        await updateRaceWeekend(races, season: season);
       } catch (error, stackTrace) {
         _logWidgetError(
-          'refreshDriverStandings.nextSession',
+          'refreshDriverStandings.scheduleWidgets',
           error,
           stackTrace,
         );
@@ -322,8 +324,12 @@ class WidgetUpdateService {
     await _saveDps('race_weekend_widget_title', 'Race Weekend');
     await _saveDps('race_weekend_widget_season', seasonLabel);
 
-    // Find the race whose weekend is next.
-    final target = nextRace ?? (races.isNotEmpty ? races.first : null);
+    final now = DateTime.now();
+    final target = _selectRaceWeekendTarget(
+      races,
+      preferred: nextRace,
+      now: now,
+    );
 
     if (target == null) {
       await _saveDps('race_weekend_widget_name', 'No upcoming race');
@@ -352,7 +358,6 @@ class WidgetUpdateService {
 
       // Build session lines for this race.
       final allSessions = target.sessions;
-      final now = DateTime.now();
       int nextIndex = -1;
 
       for (int i = 0; i < 7; i++) {
@@ -1080,6 +1085,74 @@ class WidgetUpdateService {
       (a, b) => a.session.startDateTime!.compareTo(b.session.startDateTime!),
     );
     return sessions;
+  }
+
+  static Race? _selectRaceWeekendTarget(
+    List<Race> races, {
+    Race? preferred,
+    DateTime? now,
+  }) {
+    final currentTime = now ?? DateTime.now();
+    final candidates = races
+        .where((race) => !_hasRaceWeekendEnded(race, currentTime))
+        .toList();
+    candidates.sort((a, b) {
+      final aStart = _raceWeekendStart(a);
+      final bStart = _raceWeekendStart(b);
+      if (aStart == null && bStart == null) {
+        return 0;
+      }
+      if (aStart == null) {
+        return 1;
+      }
+      if (bStart == null) {
+        return -1;
+      }
+      return aStart.compareTo(bStart);
+    });
+    if (candidates.isNotEmpty) {
+      return candidates.first;
+    }
+    if (preferred != null && !_hasRaceWeekendEnded(preferred, currentTime)) {
+      return preferred;
+    }
+    return null;
+  }
+
+  static bool _hasRaceWeekendEnded(Race race, DateTime now) {
+    final end = _raceWeekendEnd(race);
+    if (end == null) {
+      return false;
+    }
+    return !end.add(_raceWeekendCompletionGrace).isAfter(now);
+  }
+
+  static DateTime? _raceWeekendStart(Race race) {
+    DateTime? earliest;
+    for (final session in race.sessions) {
+      final start = session.startDateTime;
+      if (start == null) {
+        continue;
+      }
+      if (earliest == null || start.isBefore(earliest)) {
+        earliest = start;
+      }
+    }
+    return earliest;
+  }
+
+  static DateTime? _raceWeekendEnd(Race race) {
+    DateTime? latest;
+    for (final session in race.sessions) {
+      final start = session.startDateTime;
+      if (start == null) {
+        continue;
+      }
+      if (latest == null || start.isAfter(latest)) {
+        latest = start;
+      }
+    }
+    return latest;
   }
 
   static String? _formatSessionLine(_UpcomingSession? item) {
