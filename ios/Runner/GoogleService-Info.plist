@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.gridglance.app.GridGlanceWidgets</string>
+	<string>com.gridglance.app</string>
 	<key>PROJECT_ID</key>
 	<string>gridglance-da872</string>
 	<key>STORAGE_BUCKET</key>
