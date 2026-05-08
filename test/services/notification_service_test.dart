@@ -165,6 +165,22 @@ void main() {
       expect(sessionId, isNot(standingsId));
     });
   });
+
+  group('NotificationService.notificationIdForAppUpdate', () {
+    test('returns deterministic non-negative ids', () {
+      final first = NotificationService.notificationIdForAppUpdate(
+        title: 'GridGlance update available',
+        body: 'Version 1.2.2 is ready.',
+      );
+      final second = NotificationService.notificationIdForAppUpdate(
+        title: 'GridGlance update available',
+        body: 'Version 1.2.2 is ready.',
+      );
+
+      expect(first, second);
+      expect(first, greaterThanOrEqualTo(0));
+    });
+  });
 }
 
 Race _buildRace({required String round}) {

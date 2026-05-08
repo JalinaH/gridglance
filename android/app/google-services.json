@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "857514136830",
+    "project_id": "gridglance-da872",
+    "storage_bucket": "gridglance-da872.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:857514136830:android:2538716b53de8ce22701af",
+        "android_client_info": {
+          "package_name": "com.gridglance.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIVQFG0kVsShJsTTnyFJCmOOyfqk6LbIU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

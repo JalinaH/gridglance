@@ -1,13 +1,18 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'firebase_options.dart';
 import 'screens/main_shell.dart';
 import 'screens/splash_screen.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/analytics.dart';
+import 'services/app_update_messaging_service.dart';
+import 'services/app_update_service.dart';
 import 'services/background_task_service.dart';
 import 'services/crash_reporting.dart';
 import 'services/favorite_result_alert_service.dart';
@@ -19,9 +24,11 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await CrashReporting.runWithCrashReporting(() async {
     await UserPreferences.init();
     await Analytics.init();
+    await AppUpdateMessagingService.init();
     await WidgetUpdateService.ensureHomeWidgetSetup();
     await NotificationService.init();
     await BackgroundTaskService.initializeAndSchedule();
@@ -44,6 +51,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   );
   ThemeMode _themeMode = ThemeMode.dark;
   bool _showSplash = true;
+  bool _checkingAppUpdate = false;
+  final AppUpdateService _appUpdateService = AppUpdateService();
+  final Set<int> _promptedUpdateBuilds = <int>{};
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -66,6 +76,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _checkForWidgetClick();
       _runBackgroundChecks();
+      if (!_showSplash) {
+        unawaited(_checkForAppUpdate());
+      }
     }
   }
 
@@ -147,6 +160,70 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     unawaited(FavoriteResultAlertService.checkForUpdates());
   }
 
+  Future<void> _checkForAppUpdate() async {
+    if (_checkingAppUpdate) {
+      return;
+    }
+    _checkingAppUpdate = true;
+    try {
+      final notice = await _appUpdateService.checkForUpdate();
+      if (!mounted || notice == null) {
+        return;
+      }
+      if (!_promptedUpdateBuilds.add(notice.latestBuild)) {
+        return;
+      }
+      final context = _navigatorKey.currentContext;
+      if (context == null || !context.mounted) {
+        return;
+      }
+      await _showAppUpdateDialog(context, notice);
+    } finally {
+      _checkingAppUpdate = false;
+    }
+  }
+
+  Future<void> _showAppUpdateDialog(
+    BuildContext context,
+    AppUpdateNotice notice,
+  ) async {
+    final versionLabel = notice.latestVersion.isEmpty
+        ? 'Build ${notice.latestBuild}'
+        : 'Version ${notice.latestVersion}';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Update available'),
+          content: Text('$versionLabel is ready.\n\n${notice.releaseNotes}'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await _appUpdateService.dismiss(notice);
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+              child: const Text('Later'),
+            ),
+            FilledButton(
+              onPressed: () {
+                unawaited(
+                  launchUrl(
+                    notice.storeUrl,
+                    mode: LaunchMode.externalApplication,
+                  ),
+                );
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -163,6 +240,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   setState(() {
                     _showSplash = false;
                   });
+                  unawaited(_checkForAppUpdate());
                 }
               },
             )
