@@ -63,6 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '857514136830',
     projectId: 'gridglance-da872',
     storageBucket: 'gridglance-da872.firebasestorage.app',
-    iosBundleId: 'com.gridglance.app.GridGlanceWidgets',
+    iosBundleId: 'com.gridglance.app',
   );
 }
