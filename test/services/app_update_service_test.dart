@@ -15,8 +15,7 @@ void main() {
 
     test('returns notice when hosted build is newer', () async {
       final client = MockClient(
-        (_) async => http.Response(
-          '''
+        (_) async => http.Response('''
           {
             "android": {
               "latestBuild": 7,
@@ -24,9 +23,7 @@ void main() {
               "releaseNotes": "Fresh race fixes."
             }
           }
-          ''',
-          200,
-        ),
+          ''', 200),
       );
 
       final notice = await service.checkForUpdate(
