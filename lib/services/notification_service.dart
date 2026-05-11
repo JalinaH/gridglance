@@ -118,6 +118,42 @@ class NotificationService {
     }
   }
 
+  static Future<bool> showAppUpdateNotification({
+    required String title,
+    required String body,
+  }) async {
+    await init();
+    try {
+      const details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          'app_updates',
+          'App updates',
+          channelDescription: 'GridGlance release announcements',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      );
+      await _plugin.show(
+        notificationIdForAppUpdate(title: title, body: body),
+        title,
+        body,
+        details,
+      );
+      return true;
+    } on PlatformException catch (error) {
+      _lastError = 'Platform error: ${error.code} ${error.message ?? ''}'
+          .trim();
+      return false;
+    } on MissingPluginException catch (error) {
+      _lastError = 'Missing plugin: $error';
+      return false;
+    } catch (error) {
+      _lastError = 'Unexpected error: $error';
+      return false;
+    }
+  }
+
   static Future<void> scheduleRaceWeekend({
     required Race race,
     required String season,
@@ -351,6 +387,13 @@ class NotificationService {
       eventKey,
     ].join('|');
     return _stableHash(raw);
+  }
+
+  static int notificationIdForAppUpdate({
+    required String title,
+    required String body,
+  }) {
+    return _stableHash('app_update|$title|$body');
   }
 
   static String sessionKey({
