@@ -36,6 +36,8 @@ dependencies:
   http: ^1.6.0
   google_fonts: ^8.0.0
   home_widget: ^0.6.0
+  path_provider: ^2.1.5
+  path_provider_foundation: ^2.4.3
   shared_preferences: ^2.5.4
   share_plus: ^10.1.4
   url_launcher: ^6.2.5

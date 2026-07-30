@@ -18,8 +18,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray,
     ) {
         Log.d("RaceWeekendWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
-        val deviceContext = context.createDeviceProtectedStorageContext()
-        val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
+        val prefs = WidgetPreferences.get(context)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
         val title = prefs.getString("race_weekend_widget_title", "Race Weekend") ?: "Race Weekend"
         val season = prefs.getString("race_weekend_widget_season", defaultSeason) ?: defaultSeason

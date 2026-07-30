@@ -27,9 +27,10 @@ No code generation (build_runner, freezed, json_serializable) is used — models
 
 **Theme system:** Custom `AppColors` as `ThemeExtension` in `lib/theme/`. Dark mode is the default, toggled via SharedPreferences (`theme_mode` key). F1 brand red (#E10600) is the primary accent.
 
-**Platform channels:** Two MethodChannels for Android widget integration:
+**Widget integration:** Widget data and reloads use the registered `home_widget`
+plugin so foreground and Workmanager engines share the same storage. One custom
+MethodChannel remains for Android widget navigation:
 
-- `gridglance/dps` — widget data persistence via DeviceProtectedStorage
 - `gridglance/widget_intent` — routes widget clicks back to Flutter
 
 **Navigation:** Standard `Navigator.push()` — no named routes or router packages. `MainShell` provides bottom navigation between Home, Widgets, and About tabs.

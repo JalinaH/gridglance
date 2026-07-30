@@ -22,15 +22,14 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     // Stub method channels used by home_widget and other plugins
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('home_widget'),
-          (call) async => null,
-        );
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-          const MethodChannel('gridglance/dps'),
-          (call) async => null,
-        );
+        .setMockMethodCallHandler(const MethodChannel('home_widget'), (
+          call,
+        ) async {
+          if (call.method == 'getWidgetData') {
+            return call.arguments['defaultValue'];
+          }
+          return true;
+        });
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('gridglance/widget_intent'),
@@ -41,8 +40,6 @@ void main() {
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel('home_widget'), null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(const MethodChannel('gridglance/dps'), null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('gridglance/widget_intent'),

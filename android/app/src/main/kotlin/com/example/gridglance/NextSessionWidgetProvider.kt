@@ -14,8 +14,7 @@ class NextSessionWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray,
     ) {
         Log.d("NextSessionWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
-        val deviceContext = context.createDeviceProtectedStorageContext()
-        val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
+        val prefs = WidgetPreferences.get(context)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
         val title = prefs.getString("next_session_widget_title", "Next Session") ?: "Next Session"
         val season = prefs.getString("next_session_widget_season", defaultSeason) ?: defaultSeason

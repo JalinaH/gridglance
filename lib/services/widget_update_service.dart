@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:path_provider_foundation/path_provider_foundation.dart';
 
 import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
@@ -14,6 +17,53 @@ import '../models/race.dart';
 import '../utils/team_colors.dart';
 import 'crash_reporting.dart';
 import 'f1_image_service.dart';
+
+enum WidgetRefreshPhase { fetch, persist, reload }
+
+@immutable
+class WidgetRefreshStepResult {
+  final String dataset;
+  final WidgetRefreshPhase phase;
+  final bool succeeded;
+  final bool required;
+  final Object? error;
+  final StackTrace? stackTrace;
+
+  const WidgetRefreshStepResult({
+    required this.dataset,
+    required this.phase,
+    required this.succeeded,
+    this.required = true,
+    this.error,
+    this.stackTrace,
+  });
+}
+
+@immutable
+class WidgetRefreshResult {
+  final List<WidgetRefreshStepResult> steps;
+
+  const WidgetRefreshResult(this.steps);
+
+  bool get succeeded =>
+      steps.where((step) => step.required).every((step) => step.succeeded);
+
+  List<WidgetRefreshStepResult> get failures =>
+      steps.where((step) => !step.succeeded).toList(growable: false);
+
+  String get failureSummary => failures
+      .map((step) => '${step.dataset}.${step.phase.name}: ${step.error}')
+      .join('; ');
+}
+
+class WidgetRefreshException implements Exception {
+  final WidgetRefreshResult result;
+
+  const WidgetRefreshException(this.result);
+
+  @override
+  String toString() => 'Widget refresh failed: ${result.failureSummary}';
+}
 
 class WidgetUpdateService {
   static const String androidDriverWidgetProvider =
@@ -48,7 +98,6 @@ class WidgetUpdateService {
   static const String iOSFavoriteTeamWidgetKind =
       'GridGlanceFavoriteTeamWidget';
   static const String iOSNextSessionWidgetKind = 'GridGlanceNextSessionWidget';
-  static const MethodChannel _dpsChannel = MethodChannel('gridglance/dps');
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
   static const Duration _raceWeekendCompletionGrace = Duration(hours: 4);
   static Timer? _driverRefreshTimer;
@@ -70,11 +119,15 @@ class WidgetUpdateService {
   static const String _favoriteTeamDefaultTransparentKey =
       '${_favoriteTeamDefaultKey}_transparent';
 
-  static Future<void> ensureHomeWidgetSetup() async {
+  static Future<void> ensureHomeWidgetSetup({bool strict = false}) async {
     try {
-      await HomeWidget.setAppGroupId(iOSAppGroupId);
+      final configured = await HomeWidget.setAppGroupId(iOSAppGroupId);
+      if (strict && configured != true) {
+        throw StateError('home_widget app group setup returned $configured');
+      }
     } catch (_) {
       // App group setup is required for iOS widgets but should not block app startup.
+      if (strict) rethrow;
     }
   }
 
@@ -93,31 +146,249 @@ class WidgetUpdateService {
     _driverRefreshTimer = null;
   }
 
-  /// Fetches fresh schedule + next race and pushes updated data to the
-  /// Race Weekend widget. Safe to call from a background isolate — used by
-  /// [BackgroundTaskService] so the widget's date/time/countdown stay current
-  /// without requiring the user to open the app.
-  static Future<void> refreshRaceWeekend() async {
-    try {
-      final season = _seasonOverride ?? DateTime.now().year.toString();
-      final api = ApiService();
-      final races = await api.getRaceSchedule(season: season);
-      Race? nextRace;
+  /// Refreshes every widget dataset and reports each fetch, persistence, and
+  /// native reload phase independently.
+  ///
+  /// Unlike the foreground auto-refresh helpers, this method never hides a
+  /// required failure. Background workers must check [WidgetRefreshResult.succeeded]
+  /// before recording a healthy run.
+  static Future<WidgetRefreshResult> refreshAllWidgets({
+    ApiService? apiService,
+  }) async {
+    final api = apiService ?? ApiService();
+    final season = _seasonOverride ?? DateTime.now().year.toString();
+    final steps = <WidgetRefreshStepResult>[];
+
+    Future<T?> fetch<T>(
+      String dataset,
+      Future<T> Function() operation, {
+      bool required = true,
+    }) async {
       try {
-        nextRace = await api.getNextRace(season: season);
+        final value = await operation();
+        steps.add(
+          WidgetRefreshStepResult(
+            dataset: dataset,
+            phase: WidgetRefreshPhase.fetch,
+            succeeded: true,
+            required: required,
+          ),
+        );
+        return value;
       } catch (error, stackTrace) {
-        // Intentional: updateRaceWeekend handles a null nextRace by falling
-        // back to the first upcoming race in the schedule, so a failure on
-        // the /next endpoint shouldn't block the widget refresh.
-        _logWidgetError('refreshRaceWeekend.getNextRace', error, stackTrace);
+        steps.add(
+          WidgetRefreshStepResult(
+            dataset: dataset,
+            phase: WidgetRefreshPhase.fetch,
+            succeeded: false,
+            required: required,
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        );
+        _logWidgetError('refreshAllWidgets.$dataset.fetch', error, stackTrace);
+        return null;
       }
-      await updateRaceWeekend(races, nextRace: nextRace, season: season);
-    } catch (error, stackTrace) {
-      // Intentional: keep periodic background runs alive even if a single
-      // refresh fails. The error is logged so a blank widget can be
-      // diagnosed via debug builds.
-      _logWidgetError('refreshRaceWeekend', error, stackTrace);
     }
+
+    Future<bool> runPhase(
+      String dataset,
+      WidgetRefreshPhase phase,
+      Future<void> Function() operation,
+    ) async {
+      try {
+        await operation();
+        steps.add(
+          WidgetRefreshStepResult(
+            dataset: dataset,
+            phase: phase,
+            succeeded: true,
+          ),
+        );
+        return true;
+      } catch (error, stackTrace) {
+        steps.add(
+          WidgetRefreshStepResult(
+            dataset: dataset,
+            phase: phase,
+            succeeded: false,
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        );
+        _logWidgetError(
+          'refreshAllWidgets.$dataset.${phase.name}',
+          error,
+          stackTrace,
+        );
+        return false;
+      }
+    }
+
+    void recordSkipped(String dataset, WidgetRefreshPhase phase, String cause) {
+      steps.add(
+        WidgetRefreshStepResult(
+          dataset: dataset,
+          phase: phase,
+          succeeded: false,
+          error: StateError(cause),
+        ),
+      );
+    }
+
+    Future<void> persistAndReload(
+      String dataset,
+      Future<void> Function() persist,
+      Future<void> Function() reload,
+    ) async {
+      final persisted = await runPhase(
+        dataset,
+        WidgetRefreshPhase.persist,
+        persist,
+      );
+      if (persisted) {
+        await runPhase(dataset, WidgetRefreshPhase.reload, reload);
+      } else {
+        recordSkipped(
+          dataset,
+          WidgetRefreshPhase.reload,
+          'Reload skipped because persistence failed',
+        );
+      }
+    }
+
+    final driverStandings = await fetch<List<DriverStanding>>(
+      'driverStandings',
+      () => api.getDriverStandings(season: season),
+    );
+    final constructorStandings = await fetch<List<ConstructorStanding>>(
+      'teamStandings',
+      () => api.getConstructorStandings(season: season),
+    );
+    final races = await fetch<List<Race>>(
+      'raceSchedule',
+      () => api.getRaceSchedule(season: season),
+    );
+    final nextRace = await fetch<Race?>(
+      'nextRace',
+      () => api.getNextRace(season: season),
+      required: false,
+    );
+
+    if (driverStandings != null) {
+      await persistAndReload(
+        'driverStandings',
+        () => updateDriverStandings(
+          driverStandings,
+          season: season,
+          reload: false,
+        ),
+        _refreshDriverWidget,
+      );
+      await persistAndReload(
+        'favoriteDrivers',
+        () => updateFavoriteDrivers(
+          driverStandings,
+          season: season,
+          reload: false,
+        ),
+        _refreshFavoriteDriverWidget,
+      );
+    } else {
+      for (final dataset in ['driverStandings', 'favoriteDrivers']) {
+        recordSkipped(
+          dataset,
+          WidgetRefreshPhase.persist,
+          'Persistence skipped because driver standings fetch failed',
+        );
+        recordSkipped(
+          dataset,
+          WidgetRefreshPhase.reload,
+          'Reload skipped because driver standings fetch failed',
+        );
+      }
+    }
+
+    if (constructorStandings != null) {
+      await persistAndReload(
+        'teamStandings',
+        () => updateTeamStandings(
+          constructorStandings,
+          season: season,
+          reload: false,
+        ),
+        _refreshTeamWidget,
+      );
+      if (driverStandings != null) {
+        await persistAndReload(
+          'favoriteTeams',
+          () => updateFavoriteTeams(
+            constructorStandings,
+            season: season,
+            drivers: driverStandings,
+            reload: false,
+          ),
+          _refreshFavoriteTeamWidget,
+        );
+      } else {
+        recordSkipped(
+          'favoriteTeams',
+          WidgetRefreshPhase.persist,
+          'Persistence skipped because driver standings fetch failed',
+        );
+        recordSkipped(
+          'favoriteTeams',
+          WidgetRefreshPhase.reload,
+          'Reload skipped because driver standings fetch failed',
+        );
+      }
+    } else {
+      for (final dataset in ['teamStandings', 'favoriteTeams']) {
+        recordSkipped(
+          dataset,
+          WidgetRefreshPhase.persist,
+          'Persistence skipped because team standings fetch failed',
+        );
+        recordSkipped(
+          dataset,
+          WidgetRefreshPhase.reload,
+          'Reload skipped because team standings fetch failed',
+        );
+      }
+    }
+
+    if (races != null) {
+      await persistAndReload(
+        'nextSession',
+        () => updateNextSessionWidget(races, season: season, reload: false),
+        _refreshNextSessionWidget,
+      );
+      await persistAndReload(
+        'raceWeekend',
+        () => updateRaceWeekend(
+          races,
+          nextRace: nextRace,
+          season: season,
+          reload: false,
+        ),
+        _refreshRaceWeekendWidget,
+      );
+    } else {
+      for (final dataset in ['nextSession', 'raceWeekend']) {
+        recordSkipped(
+          dataset,
+          WidgetRefreshPhase.persist,
+          'Persistence skipped because race schedule fetch failed',
+        );
+        recordSkipped(
+          dataset,
+          WidgetRefreshPhase.reload,
+          'Reload skipped because race schedule fetch failed',
+        );
+      }
+    }
+
+    return WidgetRefreshResult(List.unmodifiable(steps));
   }
 
   static Future<void> refreshDriverStandings() async {
@@ -189,6 +460,7 @@ class WidgetUpdateService {
   static Future<void> updateDriverStandings(
     List<DriverStanding> standings, {
     String? season,
+    bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
@@ -232,12 +504,15 @@ class WidgetUpdateService {
       );
     }
 
-    await _refreshDriverWidget();
+    if (reload) {
+      await _refreshDriverWidget();
+    }
   }
 
   static Future<void> updateTeamStandings(
     List<ConstructorStanding> standings, {
     String? season,
+    bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
@@ -266,12 +541,15 @@ class WidgetUpdateService {
       }
     }
 
-    await _refreshTeamWidget();
+    if (reload) {
+      await _refreshTeamWidget();
+    }
   }
 
   static Future<void> updateNextSessionWidget(
     List<Race> races, {
     String? season,
+    bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
@@ -309,7 +587,9 @@ class WidgetUpdateService {
       );
     }
 
-    await _refreshNextSessionWidget();
+    if (reload) {
+      await _refreshNextSessionWidget();
+    }
   }
 
   /// Combined Race Weekend widget — shows race info + all sessions + countdown.
@@ -317,6 +597,7 @@ class WidgetUpdateService {
     List<Race> races, {
     Race? nextRace,
     String? season,
+    bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
@@ -408,12 +689,15 @@ class WidgetUpdateService {
       );
     }
 
-    await _refreshRaceWeekendWidget();
+    if (reload) {
+      await _refreshRaceWeekendWidget();
+    }
   }
 
   static Future<void> updateFavoriteDrivers(
     List<DriverStanding> standings, {
     String? season,
+    bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
@@ -455,18 +739,39 @@ class WidgetUpdateService {
       );
     }
 
-    await _refreshFavoriteDriverWidget();
+    final defaultDriverId = await _getDps(
+      '${_favoriteDriverDefaultKey}_driverId',
+    );
+    if (defaultDriverId != null && defaultDriverId.isNotEmpty) {
+      final defaultDriver = standings
+          .where((driver) => driver.driverId == defaultDriverId)
+          .firstOrNull;
+      if (defaultDriver != null) {
+        await setFavoriteDriverDefault(
+          driver: defaultDriver,
+          season: seasonLabel,
+          reload: false,
+        );
+      }
+    }
+
+    if (reload) {
+      await _refreshFavoriteDriverWidget();
+    }
   }
 
   static Future<void> updateFavoriteTeams(
     List<ConstructorStanding> standings, {
     String? season,
+    List<DriverStanding>? drivers,
+    bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
     final widgetIds = await _getWidgetIds(_favoriteTeamWidgetIdsKey);
-    final drivers = await ApiService().getDriverStandings(season: seasonLabel);
+    final currentDrivers =
+        drivers ?? await ApiService().getDriverStandings(season: seasonLabel);
     for (final widgetId in widgetIds) {
       final constructorId = await _getDps(
         _favoriteTeamKey(widgetId, 'constructorId'),
@@ -481,7 +786,7 @@ class WidgetUpdateService {
           constructorId: '',
         ),
       );
-      final teamDrivers = drivers
+      final teamDrivers = currentDrivers
           .where((driver) => driver.constructorId == team.constructorId)
           .take(2)
           .toList();
@@ -511,12 +816,37 @@ class WidgetUpdateService {
       );
     }
 
-    await _refreshFavoriteTeamWidget();
+    final defaultConstructorId = await _getDps(
+      '${_favoriteTeamDefaultKey}_constructorId',
+    );
+    if (defaultConstructorId != null && defaultConstructorId.isNotEmpty) {
+      final defaultTeam = standings
+          .where((team) => team.constructorId == defaultConstructorId)
+          .firstOrNull;
+      if (defaultTeam != null) {
+        await setFavoriteTeamDefault(
+          team: defaultTeam,
+          drivers: currentDrivers
+              .where(
+                (driver) => driver.constructorId == defaultTeam.constructorId,
+              )
+              .take(2)
+              .toList(),
+          season: seasonLabel,
+          reload: false,
+        );
+      }
+    }
+
+    if (reload) {
+      await _refreshFavoriteTeamWidget();
+    }
   }
 
   static Future<void> setFavoriteDriverDefault({
     required DriverStanding driver,
     required String season,
+    bool reload = true,
   }) async {
     await _saveDps('${_favoriteDriverDefaultKey}_driverId', driver.driverId);
     await _saveDps('${_favoriteDriverDefaultKey}_name', _driverName(driver));
@@ -533,13 +863,16 @@ class WidgetUpdateService {
       permanentNumber: driver.permanentNumber,
       code: driver.code,
     );
-    await _refreshFavoriteDriverWidget();
+    if (reload) {
+      await _refreshFavoriteDriverWidget();
+    }
   }
 
   static Future<void> setFavoriteTeamDefault({
     required ConstructorStanding team,
     required List<DriverStanding> drivers,
     required String season,
+    bool reload = true,
   }) async {
     await _saveDps(
       '${_favoriteTeamDefaultKey}_constructorId',
@@ -566,7 +899,9 @@ class WidgetUpdateService {
       '${_favoriteTeamDefaultKey}_car_image',
       team.constructorId,
     );
-    await _refreshFavoriteTeamWidget();
+    if (reload) {
+      await _refreshFavoriteTeamWidget();
+    }
   }
 
   static Future<void> setFavoriteDriverDefaultTransparent(bool value) async {
@@ -705,45 +1040,51 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshDriverWidget() async {
-    await HomeWidget.updateWidget(
+    final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedDriverWidgetProvider,
       iOSName: iOSDriverWidgetKind,
     );
+    _requirePluginSuccess('reload driver widget', updated);
   }
 
   static Future<void> _refreshTeamWidget() async {
-    await HomeWidget.updateWidget(
+    final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedTeamWidgetProvider,
       iOSName: iOSTeamWidgetKind,
     );
+    _requirePluginSuccess('reload team widget', updated);
   }
 
   static Future<void> _refreshFavoriteDriverWidget() async {
-    await HomeWidget.updateWidget(
+    final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
       iOSName: iOSFavoriteDriverWidgetKind,
     );
+    _requirePluginSuccess('reload favorite driver widget', updated);
   }
 
   static Future<void> _refreshFavoriteTeamWidget() async {
-    await HomeWidget.updateWidget(
+    final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
       iOSName: iOSFavoriteTeamWidgetKind,
     );
+    _requirePluginSuccess('reload favorite team widget', updated);
   }
 
   static Future<void> _refreshNextSessionWidget() async {
-    await HomeWidget.updateWidget(
+    final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
       iOSName: iOSNextSessionWidgetKind,
     );
+    _requirePluginSuccess('reload next session widget', updated);
   }
 
   static Future<void> _refreshRaceWeekendWidget() async {
-    await HomeWidget.updateWidget(
+    final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedRaceWeekendWidgetProvider,
       iOSName: iOSRaceWeekendWidgetKind,
     );
+    _requirePluginSuccess('reload race weekend widget', updated);
   }
 
   static Future<void> setRaceWeekendWidgetTransparent(bool value) async {
@@ -842,10 +1183,7 @@ class WidgetUpdateService {
       image.dispose();
       if (byteData == null) return;
 
-      await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
-        'id': imageKey,
-        'bytes': byteData.buffer.asUint8List(),
-      });
+      await _saveWidgetImage(imageKey, byteData.buffer.asUint8List());
     } catch (_) {
       // SVG not found or render failure — widget shows without track image.
     }
@@ -857,10 +1195,7 @@ class WidgetUpdateService {
     if (assetPath == null) return;
     try {
       final data = await rootBundle.load(assetPath);
-      await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
-        'id': imageKey,
-        'bytes': data.buffer.asUint8List(),
-      });
+      await _saveWidgetImage(imageKey, data.buffer.asUint8List());
     } catch (_) {
       // Asset load failure is non-fatal.
     }
@@ -912,10 +1247,10 @@ class WidgetUpdateService {
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
-          'id': imageKey,
-          'bytes': Uint8List.fromList(response.bodyBytes),
-        });
+        await _saveWidgetImage(
+          imageKey,
+          Uint8List.fromList(response.bodyBytes),
+        );
       }
     } catch (_) {
       // Image download failure is non-fatal — widget falls back to placeholder.
@@ -932,10 +1267,10 @@ class WidgetUpdateService {
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        await _dpsChannel.invokeMethod<void>('saveWidgetImage', {
-          'id': imageKey,
-          'bytes': Uint8List.fromList(response.bodyBytes),
-        });
+        await _saveWidgetImage(
+          imageKey,
+          Uint8List.fromList(response.bodyBytes),
+        );
       }
     } catch (_) {
       // Image download failure is non-fatal — widget falls back to placeholder.
@@ -943,17 +1278,38 @@ class WidgetUpdateService {
   }
 
   static Future<void> _saveDps(String id, String value) async {
-    await _dpsChannel.invokeMethod<void>('saveWidgetData', {
-      'id': id,
-      'data': value,
-    });
+    final saved = await HomeWidget.saveWidgetData<String>(id, value);
+    _requirePluginSuccess('save widget data "$id"', saved);
   }
 
   static Future<String?> _getDps(String id, {String? defaultValue}) async {
-    return _dpsChannel.invokeMethod<String>('getWidgetData', {
-      'id': id,
-      'defaultValue': defaultValue,
-    });
+    return HomeWidget.getWidgetData<String>(id, defaultValue: defaultValue);
+  }
+
+  static Future<void> _saveWidgetImage(String id, Uint8List bytes) async {
+    final String? rootPath;
+    if (Platform.isIOS) {
+      rootPath = await PathProviderFoundation().getContainerPath(
+        appGroupIdentifier: iOSAppGroupId,
+      );
+    } else {
+      rootPath = (await getApplicationSupportDirectory()).path;
+    }
+    if (rootPath == null || rootPath.isEmpty) {
+      throw StateError('Widget image storage is unavailable');
+    }
+
+    final file = File('$rootPath/home_widget/$id.png');
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes, flush: true);
+    final saved = await HomeWidget.saveWidgetData<String>(id, file.path);
+    _requirePluginSuccess('save widget image "$id"', saved);
+  }
+
+  static void _requirePluginSuccess(String operation, bool? succeeded) {
+    if (succeeded != true) {
+      throw StateError('$operation returned $succeeded');
+    }
   }
 
   static Future<bool> _getBool(String id) async {

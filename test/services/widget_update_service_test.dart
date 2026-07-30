@@ -1,42 +1,43 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gridglance/data/api_service.dart';
+import 'package:gridglance/models/constructor_standing.dart';
+import 'package:gridglance/models/driver_standing.dart';
 import 'package:gridglance/models/race.dart';
 import 'package:gridglance/services/widget_update_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // The service writes per-widget fields through this channel; the Android
-  // side persists them via DeviceProtectedStorage, but in tests we just
-  // capture the calls.
-  const dpsChannel = MethodChannel('gridglance/dps');
-  // The home_widget plugin's main channel handles `updateWidget` /
-  // `setAppGroupId`; we swallow these so the refresh call doesn't fail.
+  // Widget data and reloads share home_widget's engine-registered channel.
   const homeWidgetChannel = MethodChannel('home_widget');
 
-  late List<MethodCall> dpsCalls;
+  late List<MethodCall> homeWidgetCalls;
+  late bool pluginOperationSucceeds;
 
   Map<String, String> collectWrites() {
     return {
-      for (final call in dpsCalls.where((c) => c.method == 'saveWidgetData'))
+      for (final call in homeWidgetCalls.where(
+        (c) => c.method == 'saveWidgetData',
+      ))
         call.arguments['id'] as String: call.arguments['data'] as String,
     };
   }
 
   setUp(() {
-    dpsCalls = [];
+    homeWidgetCalls = [];
+    pluginOperationSucceeds = true;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(dpsChannel, (call) async {
-          dpsCalls.add(call);
-          return null;
+        .setMockMethodCallHandler(homeWidgetChannel, (call) async {
+          homeWidgetCalls.add(call);
+          if (call.method == 'getWidgetData') {
+            return call.arguments['defaultValue'];
+          }
+          return pluginOperationSucceeds;
         });
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(homeWidgetChannel, (_) async => true);
   });
 
   tearDown(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(dpsChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(homeWidgetChannel, null);
   });
@@ -138,6 +139,126 @@ void main() {
       },
     );
   });
+
+  group('refreshAllWidgets', () {
+    test('reports fetch, persistence, and reload success', () async {
+      final result = await WidgetUpdateService.refreshAllWidgets(
+        apiService: _FakeApiService(),
+      );
+
+      expect(result.succeeded, isTrue);
+      expect(result.failures, isEmpty);
+      expect(
+        result.steps
+            .where((step) => step.phase == WidgetRefreshPhase.fetch)
+            .map((step) => step.dataset),
+        containsAll(['driverStandings', 'teamStandings', 'raceSchedule']),
+      );
+      expect(
+        result.steps
+            .where((step) => step.phase == WidgetRefreshPhase.persist)
+            .map((step) => step.dataset),
+        containsAll([
+          'driverStandings',
+          'favoriteDrivers',
+          'teamStandings',
+          'favoriteTeams',
+          'nextSession',
+          'raceWeekend',
+        ]),
+      );
+      expect(
+        result.steps
+            .where((step) => step.phase == WidgetRefreshPhase.reload)
+            .every((step) => step.succeeded),
+        isTrue,
+      );
+    });
+
+    test('does not report success when a required fetch fails', () async {
+      final result = await WidgetUpdateService.refreshAllWidgets(
+        apiService: _FakeApiService(
+          driverFailure: StateError('driver endpoint unavailable'),
+        ),
+      );
+
+      expect(result.succeeded, isFalse);
+      expect(
+        result.failures.any(
+          (step) =>
+              step.dataset == 'driverStandings' &&
+              step.phase == WidgetRefreshPhase.fetch,
+        ),
+        isTrue,
+      );
+      expect(
+        result.failures.any(
+          (step) =>
+              step.dataset == 'favoriteDrivers' &&
+              step.phase == WidgetRefreshPhase.persist,
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not report success when widget persistence fails', () async {
+      pluginOperationSucceeds = false;
+
+      final result = await WidgetUpdateService.refreshAllWidgets(
+        apiService: _FakeApiService(),
+      );
+
+      expect(result.succeeded, isFalse);
+      expect(
+        result.failures.any(
+          (step) =>
+              step.phase == WidgetRefreshPhase.persist &&
+              step.error.toString().contains('returned false'),
+        ),
+        isTrue,
+      );
+      expect(
+        result.failures.any(
+          (step) =>
+              step.phase == WidgetRefreshPhase.reload &&
+              step.error.toString().contains('persistence failed'),
+        ),
+        isTrue,
+      );
+    });
+  });
+}
+
+class _FakeApiService extends ApiService {
+  final Object? driverFailure;
+
+  _FakeApiService({this.driverFailure});
+
+  @override
+  Future<List<DriverStanding>> getDriverStandings({String? season}) async {
+    final failure = driverFailure;
+    if (failure != null) {
+      throw failure;
+    }
+    return const [];
+  }
+
+  @override
+  Future<List<ConstructorStanding>> getConstructorStandings({
+    String? season,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<List<Race>> getRaceSchedule({String? season}) async {
+    return const [];
+  }
+
+  @override
+  Future<Race?> getNextRace({String? season}) async {
+    return null;
+  }
 }
 
 Race _race({
