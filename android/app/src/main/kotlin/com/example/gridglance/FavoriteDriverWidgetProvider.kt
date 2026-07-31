@@ -19,8 +19,7 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray,
     ) {
         Log.d("FavoriteDriverWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
-        val deviceContext = context.createDeviceProtectedStorageContext()
-        val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
+        val prefs = WidgetPreferences.get(context)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
 
         for (appWidgetId in appWidgetIds) {

@@ -15,8 +15,11 @@ void backgroundTaskDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       await NotificationService.init();
-      await WidgetUpdateService.ensureHomeWidgetSetup();
-      await WidgetUpdateService.refreshRaceWeekend();
+      await WidgetUpdateService.ensureHomeWidgetSetup(strict: true);
+      final widgetRefresh = await WidgetUpdateService.refreshAllWidgets();
+      if (!widgetRefresh.succeeded) {
+        throw WidgetRefreshException(widgetRefresh);
+      }
       await FavoriteResultAlertService.checkForUpdates();
       if (task == Workmanager.iOSBackgroundTask ||
           task == BackgroundTaskService.iOSBgProcessingTaskIdentifier) {
