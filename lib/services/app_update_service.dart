@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -32,6 +33,7 @@ class AppUpdateService {
     SharedPreferences? preferences,
     String? installedBuildNumber,
     Uri? configUri,
+    String? platform,
   }) async {
     final ownsClient = client == null;
     final httpClient = client ?? http.Client();
@@ -46,7 +48,10 @@ class AppUpdateService {
       if (decoded is! Map<String, dynamic>) {
         return null;
       }
-      final notice = _noticeFromJson(decoded);
+      final notice = _noticeFromJson(
+        decoded,
+        platform ?? (Platform.isIOS ? 'ios' : 'android'),
+      );
       if (notice == null) {
         return null;
       }
@@ -75,9 +80,20 @@ class AppUpdateService {
     await prefs.setInt(_dismissedBuildKey, notice.latestBuild);
   }
 
-  AppUpdateNotice? _noticeFromJson(Map<String, dynamic> json) {
-    final platformJson = json['android'];
-    final source = platformJson is Map<String, dynamic> ? platformJson : json;
+  /// Reads the update block for [platform] (`android` or `ios`).
+  ///
+  /// Android also accepts the legacy flat format (fields at the top level)
+  /// and falls back to the Play Store link. iOS needs its own block with an
+  /// explicit `storeUrl`, so iOS users are never sent to the Play Store.
+  AppUpdateNotice? _noticeFromJson(Map<String, dynamic> json, String platform) {
+    final isAndroid = platform == 'android';
+    final platformJson = json[platform];
+    final Map<String, dynamic>? source = platformJson is Map<String, dynamic>
+        ? platformJson
+        : (isAndroid ? json : null);
+    if (source == null) {
+      return null;
+    }
     final latestBuild = _readInt(source['latestBuild']);
     if (latestBuild == null) {
       return null;
@@ -87,12 +103,18 @@ class AppUpdateService {
         _readString(source['releaseNotes']) ??
         'A newer version of GridGlance is available.';
     final storeUrlValue = _readString(source['storeUrl']);
-    final storeUrl = storeUrlValue == null ? null : Uri.tryParse(storeUrlValue);
+    final parsedStoreUrl = storeUrlValue == null
+        ? null
+        : Uri.tryParse(storeUrlValue);
+    final storeUrl = parsedStoreUrl ?? (isAndroid ? defaultStoreUri : null);
+    if (storeUrl == null) {
+      return null;
+    }
     return AppUpdateNotice(
       latestBuild: latestBuild,
       latestVersion: latestVersion,
       releaseNotes: releaseNotes,
-      storeUrl: storeUrl ?? defaultStoreUri,
+      storeUrl: storeUrl,
     );
   }
 

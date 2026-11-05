@@ -13,31 +13,14 @@ import 'widget_update_service.dart';
 @pragma('vm:entry-point')
 void backgroundTaskDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    try {
-      await NotificationService.init();
-      await WidgetUpdateService.ensureHomeWidgetSetup();
-      await WidgetUpdateService.refreshRaceWeekend();
-      await FavoriteResultAlertService.checkForUpdates();
-      if (task == Workmanager.iOSBackgroundTask ||
-          task == BackgroundTaskService.iOSBgProcessingTaskIdentifier) {
-        await BackgroundTaskService.scheduleIOSProcessingTask();
-      }
-      await BackgroundTaskHealth.recordSuccess();
-      return true;
-    } catch (error, stackTrace) {
-      await BackgroundTaskHealth.recordFailure(error, stackTrace);
-      // Background isolate runs outside the main Sentry zone, so unhandled
-      // failures need an explicit capture or they're invisible.
-      await CrashReporting.captureException(
-        error,
-        stackTrace: stackTrace,
-        hint: 'background_task_dispatcher',
-        tags: {'task': task},
-      );
-      return false;
-    }
+    await CrashReporting.initForBackground();
+    return BackgroundTaskService.runTask(task);
   });
 }
+
+/// A single unit of background work. Steps run independently so one
+/// failure (e.g. notification setup) can't stop the others (e.g. widgets).
+typedef BackgroundStep = Future<void> Function();
 
 class BackgroundTaskService {
   static const String androidPeriodicUniqueName =
@@ -48,6 +31,67 @@ class BackgroundTaskService {
       'com.gridglance.app.favorite-result-sync';
 
   static bool _initialized = false;
+
+  /// Runs one background pass and returns the Workmanager result.
+  ///
+  /// Widgets refresh first and independently of notifications and alerts:
+  /// a failure in one step is recorded and reported but never skips the
+  /// next. The pass only counts as healthy when every step succeeded.
+  static Future<bool> runTask(
+    String task, {
+    BackgroundStep? refreshWidgets,
+    BackgroundStep? checkFavoriteAlerts,
+    BackgroundStep? rescheduleIOS,
+  }) async {
+    final steps = <String, BackgroundStep>{
+      'widgets': refreshWidgets ?? _refreshWidgets,
+      'favorite_alerts': checkFavoriteAlerts ?? _checkFavoriteAlerts,
+      if (task == Workmanager.iOSBackgroundTask ||
+          task == iOSBgProcessingTaskIdentifier)
+        'ios_reschedule': rescheduleIOS ?? scheduleIOSProcessingTask,
+    };
+
+    Object? firstError;
+    StackTrace? firstStackTrace;
+    for (final entry in steps.entries) {
+      try {
+        await entry.value();
+      } catch (error, stackTrace) {
+        firstError ??= error;
+        firstStackTrace ??= stackTrace;
+        await CrashReporting.captureException(
+          error,
+          stackTrace: stackTrace,
+          hint: 'background_task.${entry.key}',
+          tags: {'task': task, 'step': entry.key},
+        );
+      }
+    }
+
+    if (firstError == null) {
+      await BackgroundTaskHealth.recordSuccess();
+      return true;
+    }
+    await BackgroundTaskHealth.recordFailure(
+      firstError,
+      firstStackTrace ?? StackTrace.empty,
+    );
+    return false;
+  }
+
+  static Future<void> _refreshWidgets() async {
+    await WidgetUpdateService.ensureHomeWidgetSetup(strict: true);
+    final result = await WidgetUpdateService.refreshAllWidgets();
+    if (!result.succeeded) {
+      throw WidgetRefreshException(result);
+    }
+  }
+
+  static Future<void> _checkFavoriteAlerts() async {
+    await NotificationService.init();
+    await FavoriteResultAlertService.checkForUpdates();
+  }
+
   static bool _iosBgProcessingAvailable = true;
 
   static Future<void> initializeAndSchedule() async {

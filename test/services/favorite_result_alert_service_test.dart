@@ -17,7 +17,11 @@ void main() {
     'dexterous.com/flutter/local_notifications',
   );
 
+  // Every `show` call the service makes, i.e. notifications actually posted.
+  final shownNotifications = <MethodCall>[];
+
   setUp(() {
+    shownNotifications.clear();
     SharedPreferences.setMockInitialValues({});
     FavoriteResultAlertService.resetForTesting();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -25,6 +29,7 @@ void main() {
           // The plugin's `initialize` expects a non-null bool; everything
           // else can return null.
           if (call.method == 'initialize') return true;
+          if (call.method == 'show') shownNotifications.add(call);
           return null;
         });
   });
@@ -92,7 +97,11 @@ void main() {
 
         final prefs = await SharedPreferences.getInstance();
         // Seeded flag flips on so subsequent runs go through the alert path.
-        expect(prefs.getBool('favorite_alert_session_seeded|2026'), isTrue);
+        expect(
+          prefs.getBool('favorite_alert_session_seeded|2026|race'),
+          isTrue,
+        );
+        expect(shownNotifications, isEmpty);
         // Baseline contains the seeded event key for the race session.
         final raceKey = prefs.getString(
           'favorite_alert_last_session|2026|race',
@@ -178,6 +187,91 @@ void main() {
         expect(secondKey, firstKey);
       },
     );
+
+    test(
+      'does not seed when the fetch fails, so old sessions never alert',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'favorite_driver_id': 'verstappen',
+          'notify_favorite_session_finished': true,
+        });
+        final fake = _FakeApiService(
+          lastRace: _buildSession(
+            type: SessionType.race,
+            round: '5',
+            raceName: 'Spanish GP',
+          ),
+        )..failSessions = true;
+        FavoriteResultAlertService.apiFactory = () => fake;
+
+        // First run is offline: nothing may be marked as seeded.
+        await FavoriteResultAlertService.checkForUpdates(season: '2026');
+        final prefs = await SharedPreferences.getInstance();
+        expect(
+          prefs.getBool('favorite_alert_session_seeded|2026|race'),
+          isNull,
+        );
+
+        // Back online: this run must seed silently, not alert on round 5.
+        await _expireDebounce(prefs);
+        fake.failSessions = false;
+        await FavoriteResultAlertService.checkForUpdates(season: '2026');
+
+        expect(
+          prefs.getBool('favorite_alert_session_seeded|2026|race'),
+          isTrue,
+        );
+        expect(shownNotifications, isEmpty);
+      },
+    );
+
+    test('alerts when a new session finishes after seeding', () async {
+      SharedPreferences.setMockInitialValues({
+        'favorite_driver_id': 'verstappen',
+        'notify_favorite_session_finished': true,
+      });
+      final fake = _FakeApiService(
+        lastRace: _buildSession(
+          type: SessionType.race,
+          round: '5',
+          raceName: 'Spanish GP',
+        ),
+      );
+      FavoriteResultAlertService.apiFactory = () => fake;
+
+      await FavoriteResultAlertService.checkForUpdates(season: '2026');
+      final prefs = await SharedPreferences.getInstance();
+      await _expireDebounce(prefs);
+      fake.lastRace = _buildSession(
+        type: SessionType.race,
+        round: '6',
+        raceName: 'Canadian GP',
+      );
+      await FavoriteResultAlertService.checkForUpdates(season: '2026');
+
+      expect(shownNotifications, hasLength(1));
+    });
+
+    test('honours the legacy all-sessions seeded flag', () async {
+      SharedPreferences.setMockInitialValues({
+        'favorite_driver_id': 'verstappen',
+        'notify_favorite_session_finished': true,
+        'favorite_alert_session_seeded|2026': true,
+      });
+      FavoriteResultAlertService.apiFactory = () => _FakeApiService(
+        lastSprint: _buildSession(
+          type: SessionType.sprint,
+          round: '6',
+          raceName: 'Canadian GP',
+        ),
+      );
+
+      // Already seeded by an older build, so the first sprint result of the
+      // season is new and should alert rather than be silently baselined.
+      await FavoriteResultAlertService.checkForUpdates(season: '2026');
+
+      expect(shownNotifications, hasLength(1));
+    });
   });
 
   group('checkForUpdates - standings change detection', () {
@@ -255,7 +349,16 @@ void main() {
   });
 }
 
+Future<void> _expireDebounce(SharedPreferences prefs) {
+  return prefs.setInt(
+    'favorite_alert_last_check_at',
+    DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch,
+  );
+}
+
 class _FakeApiService extends ApiService {
+  /// When true, every session fetch throws, like an offline device.
+  bool failSessions = false;
   SessionResults? lastRace;
   SessionResults? lastSprint;
   SessionResults? lastQualifying;
@@ -272,17 +375,17 @@ class _FakeApiService extends ApiService {
 
   @override
   Future<SessionResults?> getLastRaceResults({required String season}) async =>
-      lastRace;
+      failSessions ? throw Exception('offline') : lastRace;
 
   @override
   Future<SessionResults?> getLastSprintResults({
     required String season,
-  }) async => lastSprint;
+  }) async => failSessions ? throw Exception('offline') : lastSprint;
 
   @override
   Future<SessionResults?> getLastQualifyingResults({
     required String season,
-  }) async => lastQualifying;
+  }) async => failSessions ? throw Exception('offline') : lastQualifying;
 
   @override
   Future<List<DriverStanding>> getDriverStandings({String? season}) async =>

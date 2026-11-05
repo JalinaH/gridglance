@@ -89,5 +89,67 @@ void main() {
 
       expect(notice, isNull);
     });
+
+    test('iOS reads the ios block and its store link', () async {
+      final client = MockClient(
+        (_) async => http.Response(
+          '{"android":{"latestBuild":9},'
+          '"ios":{"latestBuild":8,"storeUrl":"https://apps.apple.com/app/id123"}}',
+          200,
+        ),
+      );
+
+      final notice = await service.checkForUpdate(
+        client: client,
+        installedBuildNumber: '7',
+        platform: 'ios',
+      );
+
+      expect(notice, isNotNull);
+      expect(notice!.latestBuild, 8);
+      expect(notice.storeUrl, Uri.parse('https://apps.apple.com/app/id123'));
+    });
+
+    test('iOS ignores android-only config', () async {
+      final client = MockClient(
+        (_) async => http.Response('{"android":{"latestBuild":9}}', 200),
+      );
+
+      final notice = await service.checkForUpdate(
+        client: client,
+        installedBuildNumber: '7',
+        platform: 'ios',
+      );
+
+      expect(notice, isNull);
+    });
+
+    test('iOS never falls back to the Play Store link', () async {
+      final client = MockClient(
+        (_) async => http.Response('{"ios":{"latestBuild":9}}', 200),
+      );
+
+      final notice = await service.checkForUpdate(
+        client: client,
+        installedBuildNumber: '7',
+        platform: 'ios',
+      );
+
+      expect(notice, isNull);
+    });
+
+    test('Android still accepts the legacy flat format', () async {
+      final client = MockClient(
+        (_) async => http.Response('{"latestBuild":9}', 200),
+      );
+
+      final notice = await service.checkForUpdate(
+        client: client,
+        installedBuildNumber: '7',
+        platform: 'android',
+      );
+
+      expect(notice?.storeUrl, AppUpdateService.defaultStoreUri);
+    });
   });
 }

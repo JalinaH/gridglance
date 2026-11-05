@@ -16,8 +16,7 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray,
     ) {
         Log.d("TeamStandingsWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
-        val deviceContext = context.createDeviceProtectedStorageContext()
-        val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
+        val prefs = WidgetPreferences.get(context)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
         val title = prefs.getString("team_widget_title", "Team Standings") ?: "Team Standings"
         val season = prefs.getString("team_widget_season", defaultSeason) ?: defaultSeason

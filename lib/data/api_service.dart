@@ -248,7 +248,7 @@ class ApiService {
     required String failureMessage,
     required T Function(Map<String, dynamic>) fromRaceJson,
   }) async {
-    final response = await http.get(Uri.parse('$_baseUrl$endpoint'));
+    final response = await _getWithRetry(Uri.parse('$_baseUrl$endpoint'));
     if (response.statusCode != 200) {
       throw Exception(failureMessage);
     }
@@ -265,7 +265,7 @@ class ApiService {
     required String season,
     required String round,
   }) async {
-    final response = await http.get(
+    final response = await _getWithRetry(
       Uri.parse('$_baseUrl$season/$round/results/'),
     );
     if (response.statusCode == 404) {
@@ -299,7 +299,7 @@ class ApiService {
     required String season,
     required String round,
   }) async {
-    final response = await http.get(
+    final response = await _getWithRetry(
       Uri.parse('$_baseUrl$season/$round/qualifying/'),
     );
     if (response.statusCode == 404) {
@@ -474,6 +474,33 @@ class ApiService {
       }
     }
     throw Exception(failureMessage);
+  }
+
+  /// GET with the same timeout and transient-failure retries as the cached
+  /// endpoints, for calls that handle status codes themselves. 5xx responses
+  /// are retried; the final response (any status) is returned to the caller.
+  /// Throws the last error if every attempt failed at the network level.
+  static Future<http.Response> _getWithRetry(Uri uri) async {
+    for (var attempt = 0; ; attempt++) {
+      final canRetry = attempt < _maxRetries;
+      try {
+        final response = await http.get(uri).timeout(_requestTimeout);
+        if (response.statusCode >= 500 && canRetry) {
+          await Future.delayed(_retryDelay(attempt));
+          continue;
+        }
+        return response;
+      } catch (error) {
+        if (!canRetry || !_isTransient(error)) rethrow;
+        if (kDebugMode) {
+          debugPrint(
+            'ApiService retry ${attempt + 1}/$_maxRetries for ${uri.path}: '
+            '$error',
+          );
+        }
+        await Future.delayed(_retryDelay(attempt));
+      }
+    }
   }
 
   static bool _isTransient(Object error) {

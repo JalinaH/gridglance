@@ -50,19 +50,32 @@ class F1ImageService {
     return null;
   }
 
+  /// Season whose car artwork [carImageUrl] points at. F1 publishes new
+  /// artwork (and new path slugs) each season, so bump this together with
+  /// [_carSlugs] when the next season's images go live.
+  static const int carImageSeason = 2026;
+
   /// Returns a car image URL for a constructor using official F1 media.
+  ///
+  /// Requests PNG explicitly (`f_png`): the source is WebP, but the native
+  /// home screen widgets decode these bytes directly. Unknown or missing
+  /// cars resolve to F1's generic fallback car rather than a 404.
   String? carImageUrl(String constructorId) {
-    final slug = _constructorSlug(constructorId);
+    final slug = _carSlugs[constructorId];
     if (slug == null) return null;
-    return 'https://media.formula1.com/d_team_car_fallback_image.png'
-        '/content/dam/fom-website/teams/2025/$slug.png';
+    const season = carImageSeason;
+    return 'https://media.formula1.com/image/upload/c_lfill,h_224/f_png'
+        '/d_common:f1:$season:fallback:car:${season}fallbackcarright.webp'
+        '/common/f1/$season/$slug/$season${slug}carright.webp';
   }
 
   // ─── Private ───────────────────────────────────────────────
 
   Future<void> _fetchFromApi() async {
     try {
-      final response = await http.get(Uri.parse(_openF1Url));
+      final response = await http
+          .get(Uri.parse(_openF1Url))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return;
 
       final drivers = jsonDecode(response.body) as List;
@@ -130,20 +143,20 @@ class F1ImageService {
   }
 
   /// Maps Ergast constructor IDs to the F1 media URL slug.
-  static String? _constructorSlug(String constructorId) {
-    const mapping = {
-      'red_bull': 'red-bull-racing',
-      'ferrari': 'ferrari',
-      'mercedes': 'mercedes',
-      'mclaren': 'mclaren',
-      'aston_martin': 'aston-martin',
-      'alpine': 'alpine',
-      'haas': 'haas',
-      'rb': 'racing-bulls',
-      'williams': 'williams',
-      'sauber': 'kick-sauber',
-      'cadillac': 'cadillac',
-    };
-    return mapping[constructorId];
-  }
+  /// Jolpica constructorId -> F1 media slug for [carImageSeason].
+  static const Map<String, String> _carSlugs = {
+    'red_bull': 'redbullracing',
+    'ferrari': 'ferrari',
+    'mercedes': 'mercedes',
+    'mclaren': 'mclaren',
+    'aston_martin': 'astonmartin',
+    'alpine': 'alpine',
+    'haas': 'haasf1team',
+    'rb': 'racingbulls',
+    'williams': 'williams',
+    'audi': 'audi',
+    // Sauber became Audi for 2026; keep older seasons showing a car.
+    'sauber': 'audi',
+    'cadillac': 'cadillac',
+  };
 }

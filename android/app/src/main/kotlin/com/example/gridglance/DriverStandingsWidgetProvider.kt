@@ -16,8 +16,7 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray,
     ) {
         Log.d("DriverStandingsWidget", "onUpdate widgetIds=${appWidgetIds.joinToString()}")
-        val deviceContext = context.createDeviceProtectedStorageContext()
-        val prefs = deviceContext.getSharedPreferences("gridglance_widget", Context.MODE_PRIVATE)
+        val prefs = WidgetPreferences.get(context)
         val defaultSeason = Calendar.getInstance().get(Calendar.YEAR).toString()
         val title = prefs.getString("driver_widget_title", "Driver Standings") ?: "Driver Standings"
         val season = prefs.getString("driver_widget_season", defaultSeason) ?: defaultSeason

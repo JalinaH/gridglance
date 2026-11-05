@@ -49,6 +49,31 @@ class CrashReporting {
     }, appRunner: appRunner);
   }
 
+  /// Initializes Sentry for a background isolate (e.g. Workmanager).
+  ///
+  /// Background isolates don't run inside [runWithCrashReporting]'s zone, so
+  /// without this every [captureException] call there is silently dropped.
+  /// Uses the Dart-only SDK so it doesn't re-initialize the native SDK owned
+  /// by the foreground engine. Never throws.
+  static Future<void> initForBackground() async {
+    if (!isEnabled || Sentry.isEnabled) return;
+    try {
+      await Sentry.init((options) {
+        options.dsn = _dsn;
+        options.sendDefaultPii = false;
+        options.environment = kDebugMode ? 'debug' : 'production';
+        options.beforeSend = (event, hint) {
+          if (kDebugMode) return null;
+          return event;
+        };
+      });
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('CrashReporting.initForBackground failed: $error');
+      }
+    }
+  }
+
   /// Reports a caught exception with optional context tags.
   static Future<void> captureException(
     Object error, {

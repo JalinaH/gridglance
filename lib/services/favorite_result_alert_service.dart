@@ -43,6 +43,12 @@ class FavoriteResultAlertService {
   }
 
   static Future<void> _runCheck({String? season}) async {
+    // The foreground app and the Workmanager isolate each keep their own
+    // in-memory SharedPreferences cache. Reload so we see baselines the other
+    // isolate wrote; otherwise both notify for the same session.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+
     final sessionFinishedEnabled =
         await NotificationPreferences.isFavoriteSessionFinishedEnabled();
     final standingsUpdateEnabled =
@@ -60,82 +66,65 @@ class FavoriteResultAlertService {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
     if (!await _shouldRunNow(prefs)) {
       return;
     }
 
-    final selectedSeason =
-        season ??
-        await UserPreferences.getSeason() ??
-        DateTime.now().year.toString();
+    // Alerts are about what is happening now, never the season the user
+    // happens to be browsing in the app.
+    final selectedSeason = season ?? DateTime.now().year.toString();
     final api = apiFactory();
 
-    final values = await Future.wait<Object?>([
-      sessionFinishedEnabled
-          ? _safe<SessionResults?>(
-              api.getLastRaceResults(season: selectedSeason),
-            )
-          : Future.value(null),
-      sessionFinishedEnabled
-          ? _safe<SessionResults?>(
-              api.getLastSprintResults(season: selectedSeason),
-            )
-          : Future.value(null),
-      sessionFinishedEnabled
-          ? _safe<SessionResults?>(
-              api.getLastQualifyingResults(season: selectedSeason),
-            )
-          : Future.value(null),
-      standingsUpdateEnabled
-          ? _safe<List<DriverStanding>>(
-              api.getDriverStandings(season: selectedSeason),
-            )
-          : Future.value(null),
-      standingsUpdateEnabled
-          ? _safe<List<ConstructorStanding>>(
-              api.getConstructorStandings(season: selectedSeason),
-            )
-          : Future.value(null),
-    ]);
+    const skipped = _Fetched<Never>.failed();
+    final raceFetch = sessionFinishedEnabled
+        ? _safe(api.getLastRaceResults(season: selectedSeason))
+        : Future.value(skipped);
+    final sprintFetch = sessionFinishedEnabled
+        ? _safe(api.getLastSprintResults(season: selectedSeason))
+        : Future.value(skipped);
+    final qualifyingFetch = sessionFinishedEnabled
+        ? _safe(api.getLastQualifyingResults(season: selectedSeason))
+        : Future.value(skipped);
+    final driverStandingsFetch = standingsUpdateEnabled
+        ? _safe(api.getDriverStandings(season: selectedSeason))
+        : Future.value(skipped);
+    final teamStandingsFetch = standingsUpdateEnabled
+        ? _safe(api.getConstructorStandings(season: selectedSeason))
+        : Future.value(skipped);
 
-    final raceResults = values[0] as SessionResults?;
-    final sprintResults = values[1] as SessionResults?;
-    final qualifyingResults = values[2] as SessionResults?;
-    final driverStandings = values[3] as List<DriverStanding>?;
-    final teamStandings = values[4] as List<ConstructorStanding>?;
+    final sessions = <(SessionType, _Fetched<SessionResults?>)>[
+      (SessionType.race, await raceFetch),
+      (SessionType.sprint, await sprintFetch),
+      (SessionType.qualifying, await qualifyingFetch),
+    ];
+    final driverStandings = (await driverStandingsFetch).value;
+    final teamStandings = (await teamStandingsFetch).value;
 
     if (sessionFinishedEnabled) {
-      final sessionSeededKey = _sessionSeededKey(selectedSeason);
-      final sessionSeeded = prefs.getBool(sessionSeededKey) ?? false;
-      if (!sessionSeeded) {
-        await _storeSessionBaseline(
-          prefs: prefs,
-          season: selectedSeason,
-          raceResults: raceResults,
-          sprintResults: sprintResults,
-          qualifyingResults: qualifyingResults,
-        );
-        await prefs.setBool(sessionSeededKey, true);
-      } else {
+      // Builds before per-type seeding used one flag for all session types.
+      final legacySeeded =
+          prefs.getBool(_sessionSeededKey(selectedSeason)) ?? false;
+      for (final (type, fetched) in sessions) {
+        // A failed fetch tells us nothing: don't seed (that would leave an
+        // empty baseline and alert on old sessions later) and don't alert.
+        if (!fetched.ok) continue;
+        final typeSeededKey = _sessionTypeSeededKey(selectedSeason, type);
+        final seeded = legacySeeded || (prefs.getBool(typeSeededKey) ?? false);
+        if (!seeded) {
+          final session = fetched.value;
+          if (session != null) {
+            await prefs.setString(
+              _lastSessionKey(season: selectedSeason, type: type),
+              _sessionEventKey(session),
+            );
+          }
+          await prefs.setBool(typeSeededKey, true);
+          continue;
+        }
         await _processSessionFinishedAlerts(
           prefs: prefs,
           season: selectedSeason,
-          session: raceResults,
-          favoriteDriverId: favoriteDriverId,
-          favoriteTeamId: favoriteTeamId,
-        );
-        await _processSessionFinishedAlerts(
-          prefs: prefs,
-          season: selectedSeason,
-          session: sprintResults,
-          favoriteDriverId: favoriteDriverId,
-          favoriteTeamId: favoriteTeamId,
-        );
-        await _processSessionFinishedAlerts(
-          prefs: prefs,
-          season: selectedSeason,
-          session: qualifyingResults,
+          session: fetched.value,
           favoriteDriverId: favoriteDriverId,
           favoriteTeamId: favoriteTeamId,
         );
@@ -168,11 +157,11 @@ class FavoriteResultAlertService {
     }
   }
 
-  static Future<T?> _safe<T>(Future<T> future) async {
+  static Future<_Fetched<T>> _safe<T>(Future<T> future) async {
     try {
-      return await future;
+      return _Fetched.success(await future);
     } catch (_) {
-      return null;
+      return _Fetched<T>.failed();
     }
   }
 
@@ -191,6 +180,10 @@ class FavoriteResultAlertService {
 
   static String _sessionSeededKey(String season) {
     return '$_sessionSeededPrefix|$season';
+  }
+
+  static String _sessionTypeSeededKey(String season, SessionType type) {
+    return '$_sessionSeededPrefix|$season|${type.name}';
   }
 
   static String _standingsSeededKey(String season) {
@@ -224,33 +217,6 @@ class FavoriteResultAlertService {
         return session.race.qualifying?.startDateTime;
       case SessionType.sprint:
         return session.race.sprint?.startDateTime;
-    }
-  }
-
-  static Future<void> _storeSessionBaseline({
-    required SharedPreferences prefs,
-    required String season,
-    required SessionResults? raceResults,
-    required SessionResults? sprintResults,
-    required SessionResults? qualifyingResults,
-  }) async {
-    if (raceResults != null) {
-      await prefs.setString(
-        _lastSessionKey(season: season, type: SessionType.race),
-        _sessionEventKey(raceResults),
-      );
-    }
-    if (sprintResults != null) {
-      await prefs.setString(
-        _lastSessionKey(season: season, type: SessionType.sprint),
-        _sessionEventKey(sprintResults),
-      );
-    }
-    if (qualifyingResults != null) {
-      await prefs.setString(
-        _lastSessionKey(season: season, type: SessionType.qualifying),
-        _sessionEventKey(qualifyingResults),
-      );
     }
   }
 
@@ -564,4 +530,14 @@ class FavoriteResultAlertService {
       }
     }
   }
+}
+
+/// Result of a fetch that may have failed. Distinguishes "the API said there
+/// is no session yet" (`ok` with a null value) from "we couldn't ask".
+class _Fetched<T> {
+  final bool ok;
+  final T? value;
+
+  const _Fetched.success(T this.value) : ok = true;
+  const _Fetched.failed() : ok = false, value = null;
 }
