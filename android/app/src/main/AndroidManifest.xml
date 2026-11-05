@@ -10,8 +10,7 @@
     <application
         android:label="Gridglance"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:directBootAware="true">
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -37,8 +36,7 @@
         <receiver
             android:name=".DriverStandingsWidgetProvider"
             android:exported="true"
-            android:label="Driver Standings"
-            android:directBootAware="true">
+            android:label="Driver Standings">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -49,8 +47,7 @@
         <receiver
             android:name=".TeamStandingsWidgetProvider"
             android:exported="true"
-            android:label="Team Standings"
-            android:directBootAware="true">
+            android:label="Team Standings">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -61,8 +58,7 @@
         <receiver
             android:name=".FavoriteDriverWidgetProvider"
             android:exported="true"
-            android:label="Favorite Driver"
-            android:directBootAware="true">
+            android:label="Favorite Driver">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -73,8 +69,7 @@
         <receiver
             android:name=".NextSessionWidgetProvider"
             android:exported="true"
-            android:label="Next Session"
-            android:directBootAware="true">
+            android:label="Next Session">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -85,8 +80,7 @@
         <receiver
             android:name=".RaceWeekendWidgetProvider"
             android:exported="true"
-            android:label="Race Weekend"
-            android:directBootAware="true">
+            android:label="Race Weekend">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -97,8 +91,7 @@
         <receiver
             android:name=".FavoriteTeamWidgetProvider"
             android:exported="true"
-            android:label="Favorite Team"
-            android:directBootAware="true">
+            android:label="Favorite Team">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

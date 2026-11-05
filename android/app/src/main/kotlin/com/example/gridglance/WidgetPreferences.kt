@@ -7,6 +7,9 @@ import es.antonborri.home_widget.HomeWidgetPlugin
 /**
  * Uses home_widget's engine-registered storage and migrates values written by
  * older GridGlance builds from DeviceProtectedStorage on first access.
+ *
+ * This storage is credential-encrypted, so widget receivers must not be
+ * directBootAware: reading it before the first unlock after a reboot throws.
  */
 object WidgetPreferences {
     private const val legacyPreferencesName = "gridglance_widget"
@@ -22,6 +25,9 @@ object WidgetPreferences {
             )
             val editor = preferences.edit()
             legacy.all.forEach { (key, value) ->
+                // Never let legacy values overwrite data the Flutter side
+                // already wrote to the new store after the upgrade.
+                if (preferences.contains(key)) return@forEach
                 when (value) {
                     is String -> editor.putString(key, value)
                     is Boolean -> editor.putBoolean(key, value)
