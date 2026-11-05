@@ -99,6 +99,10 @@ class WidgetUpdateService {
       'GridGlanceFavoriteTeamWidget';
   static const String iOSNextSessionWidgetKind = 'GridGlanceNextSessionWidget';
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
+
+  /// Widget images download inside background tasks (iOS allows ~30s in
+  /// total), so a stuck request must not consume the whole budget.
+  static const Duration _imageDownloadTimeout = Duration(seconds: 10);
   static const Duration _raceWeekendCompletionGrace = Duration(hours: 4);
   static Timer? _driverRefreshTimer;
   static bool _driverRefreshInFlight = false;
@@ -1245,7 +1249,9 @@ class WidgetUpdateService {
     );
     if (url == null) return;
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(_imageDownloadTimeout);
       if (response.statusCode == 200) {
         await _saveWidgetImage(
           imageKey,
@@ -1265,7 +1271,9 @@ class WidgetUpdateService {
     final url = F1ImageService.instance.carImageUrl(constructorId);
     if (url == null) return;
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(_imageDownloadTimeout);
       if (response.statusCode == 200) {
         await _saveWidgetImage(
           imageKey,
