@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserPreferences {
   static const String _seasonKey = 'selected_season';
+  static const String _seasonSavedYearKey = 'selected_season_saved_year';
   static const String _favoriteDriverIdKey = 'favorite_driver_id';
   static const String _favoriteTeamIdKey = 'favorite_team_id';
 
@@ -11,13 +12,17 @@ class UserPreferences {
   static String? _favoriteTeamId;
   static bool _initialized = false;
 
+  /// Clock indirection so tests can simulate a new year.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
+
   /// Loads stored values into memory once at app boot. Subsequent reads can
   /// use the synchronous getters (`seasonSync`, etc.) instead of awaiting
   /// `SharedPreferences.getInstance()` on every screen `initState`.
   static Future<void> init() async {
     if (_initialized) return;
     final prefs = await SharedPreferences.getInstance();
-    _season = prefs.getString(_seasonKey);
+    _season = _readSeason(prefs);
     _favoriteDriverId = prefs.getString(_favoriteDriverIdKey);
     _favoriteTeamId = prefs.getString(_favoriteTeamIdKey);
     _initialized = true;
@@ -33,13 +38,32 @@ class UserPreferences {
   static Future<String?> getSeason() async {
     if (_initialized) return _season;
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_seasonKey);
+    return _readSeason(prefs);
   }
 
   static Future<void> setSeason(String season) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_seasonKey, season);
+    await prefs.setInt(_seasonSavedYearKey, clock().year);
     _season = season;
+  }
+
+  /// The season picker is a browsing choice, so it only sticks for the
+  /// calendar year it was made in. Once the year rolls over the app falls
+  /// back to the current season instead of staying on last year forever.
+  /// Selections saved before the year was recorded only survive if they
+  /// already match the current year.
+  static String? _readSeason(SharedPreferences prefs) {
+    final season = prefs.getString(_seasonKey);
+    if (season == null || season.isEmpty) {
+      return null;
+    }
+    final currentYear = clock().year;
+    final savedYear = prefs.getInt(_seasonSavedYearKey);
+    final stillValid = savedYear == null
+        ? season == currentYear.toString()
+        : savedYear == currentYear;
+    return stillValid ? season : null;
   }
 
   static Future<String?> getFavoriteDriverId() async {
@@ -81,6 +105,7 @@ class UserPreferences {
   @visibleForTesting
   static void resetForTesting() {
     _season = null;
+    clock = DateTime.now;
     _favoriteDriverId = null;
     _favoriteTeamId = null;
     _initialized = false;

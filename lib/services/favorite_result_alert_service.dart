@@ -70,10 +70,9 @@ class FavoriteResultAlertService {
       return;
     }
 
-    final selectedSeason =
-        season ??
-        await UserPreferences.getSeason() ??
-        DateTime.now().year.toString();
+    // Alerts are about what is happening now, never the season the user
+    // happens to be browsing in the app.
+    final selectedSeason = season ?? DateTime.now().year.toString();
     final api = apiFactory();
 
     const skipped = _Fetched<Never>.failed();
