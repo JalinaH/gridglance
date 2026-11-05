@@ -43,6 +43,7 @@ class WeatherDaily {
 
 class WeatherService {
   static const String _baseUrl = 'https://api.open-meteo.com/v1/forecast';
+  static const Duration _requestTimeout = Duration(seconds: 10);
 
   Future<WeekendWeather?> getRaceWeekendWeather(Race race) async {
     final latitude = race.latitude;
@@ -74,7 +75,7 @@ class WeatherService {
       '&start_date=$startDate&end_date=$endDate&timezone=auto',
     );
 
-    final response = await http.get(uri);
+    final response = await http.get(uri).timeout(_requestTimeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to load weather');
     }
