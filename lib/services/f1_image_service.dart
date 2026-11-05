@@ -62,7 +62,9 @@ class F1ImageService {
 
   Future<void> _fetchFromApi() async {
     try {
-      final response = await http.get(Uri.parse(_openF1Url));
+      final response = await http
+          .get(Uri.parse(_openF1Url))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return;
 
       final drivers = jsonDecode(response.body) as List;

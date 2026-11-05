@@ -22,19 +22,71 @@ import 'services/user_preferences.dart';
 import 'services/widget_update_service.dart';
 import 'theme/app_theme.dart';
 
+/// Upper bound on how long the first launch waits for driver headshot data
+/// before showing UI. The fetch keeps running afterwards and fills the cache.
+const Duration _imagePrefetchBudget = Duration(seconds: 3);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await CrashReporting.runWithCrashReporting(() async {
-    await UserPreferences.init();
-    await Analytics.init();
-    await AppUpdateMessagingService.init();
-    await WidgetUpdateService.ensureHomeWidgetSetup();
-    await NotificationService.init();
-    await BackgroundTaskService.initializeAndSchedule();
-    await F1ImageService.instance.init();
+    // Local-only setup the first frame depends on. Each step is isolated so a
+    // single failure degrades that feature instead of leaving a blank screen.
+    final firebaseReady = await _initStep(
+      'firebase',
+      () => Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ),
+    );
+    await _initStep('user_preferences', UserPreferences.init);
+    await _initStep('analytics', Analytics.init);
+    await _initStep('home_widget', WidgetUpdateService.ensureHomeWidgetSetup);
+    await _initStep(
+      'f1_images',
+      () => F1ImageService.instance.init().timeout(
+        _imagePrefetchBudget,
+        onTimeout: () {},
+      ),
+    );
+
     runApp(const MyApp());
+
+    // Everything below may hit the network or show a permission prompt, so it
+    // runs after the first frame is scheduled and never blocks launch.
+    unawaited(_initStep('notifications', NotificationService.init));
+    unawaited(
+      _initStep(
+        'background_tasks',
+        BackgroundTaskService.initializeAndSchedule,
+      ),
+    );
+    if (firebaseReady) {
+      unawaited(
+        _initStep('app_update_messaging', AppUpdateMessagingService.init),
+      );
+    }
   });
+}
+
+/// Runs one startup step, reporting failures instead of propagating them.
+/// Returns whether the step succeeded.
+Future<bool> _initStep(String name, Future<void> Function() step) async {
+  try {
+    await step();
+    return true;
+  } catch (error, stackTrace) {
+    if (kDebugMode) {
+      debugPrint('Startup step "$name" failed: $error');
+    }
+    unawaited(
+      CrashReporting.captureException(
+        error,
+        stackTrace: stackTrace,
+        hint: 'startup.$name',
+        tags: {'startup_step': name},
+      ),
+    );
+    return false;
+  }
 }
 
 class MyApp extends StatefulWidget {
