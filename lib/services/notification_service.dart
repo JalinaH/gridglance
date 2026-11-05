@@ -236,10 +236,20 @@ class NotificationService {
     );
   }
 
-  static Future<void> init() async {
+  static Future<void>? _initFuture;
+
+  /// Safe to call concurrently: callers share one initialization, and a
+  /// failed attempt is cleared so the next call retries.
+  static Future<void> init() {
     if (_initialized) {
-      return;
+      return Future.value();
     }
+    return _initFuture ??= _initialize().whenComplete(() {
+      if (!_initialized) _initFuture = null;
+    });
+  }
+
+  static Future<void> _initialize() async {
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.local);
     const androidSettings = AndroidInitializationSettings(
