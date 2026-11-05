@@ -29,6 +29,50 @@ void main() {
     });
   });
 
+  group('UserPreferences.season year rollover', () {
+    test('keeps a past season picked during the current year', () async {
+      SharedPreferences.setMockInitialValues({});
+      UserPreferences.clock = () => DateTime(2026, 6, 1);
+      await UserPreferences.setSeason('2023');
+
+      expect(await UserPreferences.getSeason(), '2023');
+    });
+
+    test('drops the selection once the year changes', () async {
+      SharedPreferences.setMockInitialValues({});
+      UserPreferences.clock = () => DateTime(2026, 6, 1);
+      await UserPreferences.setSeason('2026');
+
+      UserPreferences.clock = () => DateTime(2027, 1, 2);
+      expect(await UserPreferences.getSeason(), isNull);
+    });
+
+    test('init applies the same rollover rule', () async {
+      SharedPreferences.setMockInitialValues({
+        'selected_season': '2025',
+        'selected_season_saved_year': 2025,
+      });
+      UserPreferences.clock = () => DateTime(2026, 3, 1);
+
+      await UserPreferences.init();
+
+      expect(UserPreferences.seasonSync, isNull);
+    });
+
+    test(
+      'legacy selection without a saved year survives only if current',
+      () async {
+        UserPreferences.clock = () => DateTime(2026, 3, 1);
+
+        SharedPreferences.setMockInitialValues({'selected_season': '2026'});
+        expect(await UserPreferences.getSeason(), '2026');
+
+        SharedPreferences.setMockInitialValues({'selected_season': '2024'});
+        expect(await UserPreferences.getSeason(), isNull);
+      },
+    );
+  });
+
   group('UserPreferences.favoriteDriverId', () {
     test('returns null when no driver is stored', () async {
       SharedPreferences.setMockInitialValues({});
