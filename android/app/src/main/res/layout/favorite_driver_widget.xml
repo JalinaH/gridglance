@@ -70,6 +70,20 @@
                 android:textStyle="bold|italic" />
 
             <TextView
+                android:id="@+id/widget_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:shadowColor="#CC000000"
+                android:shadowRadius="3"
+                android:text=""
+                android:textColor="#FF5A4F"
+                android:textSize="8sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/widget_season"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -83,6 +97,26 @@
                 android:textColor="#B8C0CC"
                 android:textSize="8sp"
                 android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/refresh_button"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/widget_icon_button"
+                android:contentDescription="Refresh"
+                android:padding="5dp"
+                android:src="@drawable/ic_widget_refresh" />
+
+            <ImageView
+                android:id="@+id/settings_button"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/widget_icon_button"
+                android:contentDescription="Change"
+                android:padding="5dp"
+                android:src="@drawable/ic_widget_settings" />
         </LinearLayout>
     </FrameLayout>
 

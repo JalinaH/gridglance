@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solid red with white core: session on track right now. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="14"
+    android:viewportHeight="14">
+    <path
+        android:pathData="M7,0a7,7 0,1 1,0 14a7,7 0,1 1,0 -14z"
+        android:fillColor="#E10600" />
+    <path
+        android:pathData="M7,4.5a2.5,2.5 0,1 1,0 5a2.5,2.5 0,1 1,0 -5z"
+        android:fillColor="#FFFFFF" />
+</vector>

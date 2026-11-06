@@ -110,6 +110,9 @@ class WidgetUpdateService {
   static const String _favoriteDriverWidgetIdsKey =
       'favorite_driver_widget_ids';
   static const String _favoriteTeamWidgetIdsKey = 'favorite_team_widget_ids';
+  static const String widgetsLastUpdatedKey = 'widgets_last_updated_ms';
+  static const String widgetsLastAttemptKey = 'widgets_last_attempt_ms';
+  static const String widgetsLastAttemptOkKey = 'widgets_last_attempt_ok';
   static const String _favoriteDriverDefaultKey = 'favorite_driver_default';
   static const String _favoriteTeamDefaultKey = 'favorite_team_default';
   static const String _driverWidgetTransparentKey = 'driver_widget_transparent';
@@ -122,6 +125,15 @@ class WidgetUpdateService {
       '${_favoriteDriverDefaultKey}_transparent';
   static const String _favoriteTeamDefaultTransparentKey =
       '${_favoriteTeamDefaultKey}_transparent';
+
+  /// Registers the Dart callback the Android widgets' refresh button runs.
+  /// Only stores callback handles locally, so it is safe before `runApp`.
+  static Future<void> registerWidgetInteractivity() async {
+    if (kIsWeb || !Platform.isAndroid) {
+      return;
+    }
+    await HomeWidget.registerInteractivityCallback(widgetInteractivityCallback);
+  }
 
   static Future<void> ensureHomeWidgetSetup({bool strict = false}) async {
     try {
@@ -491,11 +503,13 @@ class WidgetUpdateService {
         await _saveDps('driver_${idx}_first_name', top[i].givenName);
         await _saveDps('driver_${idx}_pts', top[i].points);
         await _saveDps('driver_${idx}_code', _shortDriverCode(top[i]));
+        await _saveDps('driver_${idx}_id', top[i].driverId);
       } else {
         await _saveDps('driver_${idx}_last_name', 'TBD');
         await _saveDps('driver_${idx}_first_name', '');
         await _saveDps('driver_${idx}_pts', '0');
         await _saveDps('driver_${idx}_code', '---');
+        await _saveDps('driver_${idx}_id', '');
       }
     }
 
@@ -539,9 +553,11 @@ class WidgetUpdateService {
         await _saveDps('team_${idx}_name', top[i].teamName);
         await _saveDps('team_${idx}_pts', top[i].points);
         await _saveTeamLogo('team_${idx}_logo', top[i].teamName);
+        await _saveDps('team_${idx}_id', top[i].constructorId);
       } else {
         await _saveDps('team_${idx}_name', 'TBD');
         await _saveDps('team_${idx}_pts', '0');
+        await _saveDps('team_${idx}_id', '');
       }
     }
 
@@ -568,6 +584,7 @@ class WidgetUpdateService {
       await _saveDps('next_session_widget_countdown', 'Check again later');
       await _saveDps('next_session_widget_line1', 'No additional sessions');
       await _saveDps('next_session_widget_line2', 'Waiting for updates');
+      await _saveDps('next_session_widget_target_ms', '');
     } else {
       final current = sessions.first;
       final nextOne = sessions.length > 1 ? sessions[1] : null;
@@ -580,6 +597,15 @@ class WidgetUpdateService {
       await _saveDps(
         'next_session_widget_countdown',
         _formatCountdownLabel(current.session.startDateTime),
+      );
+      // Lets the native widget tick the countdown and flip to LIVE locally.
+      await _saveDps(
+        'next_session_widget_target_ms',
+        current.session.startDateTime
+                ?.toUtc()
+                .millisecondsSinceEpoch
+                .toString() ??
+            '',
       );
       await _saveDps(
         'next_session_widget_line1',
@@ -625,6 +651,8 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_round', '');
       for (int i = 1; i <= 7; i++) {
         await _saveDps('race_weekend_widget_session_$i', '');
+        await _saveDps('race_weekend_widget_session_${i}_name', '');
+        await _saveDps('race_weekend_widget_session_${i}_ms', '');
       }
       await _saveDps('race_weekend_widget_next_index', '-1');
     } else {
@@ -641,8 +669,9 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_round', 'R${target.round}');
       await _saveTrackImage('race_weekend_widget_track', target.circuitId);
 
-      // Build session lines for this race.
-      final allSessions = target.sessions;
+      // Build session lines for this race in chronological order (the model
+      // lists qualifying before the sprint sessions on sprint weekends).
+      final allSessions = sortSessionsChronologically(target.sessions);
       int nextIndex = -1;
 
       for (int i = 0; i < 7; i++) {
@@ -652,6 +681,17 @@ class WidgetUpdateService {
             _UpcomingSession(race: target, session: session),
           );
           await _saveDps('race_weekend_widget_session_${i + 1}', label ?? '');
+          // Raw name + start timestamp let the native widget derive
+          // done / live / next state and format times locally.
+          await _saveDps(
+            'race_weekend_widget_session_${i + 1}_name',
+            session.name,
+          );
+          await _saveDps(
+            'race_weekend_widget_session_${i + 1}_ms',
+            session.startDateTime?.toUtc().millisecondsSinceEpoch.toString() ??
+                '',
+          );
 
           // Track the first upcoming session.
           if (nextIndex == -1) {
@@ -662,6 +702,8 @@ class WidgetUpdateService {
           }
         } else {
           await _saveDps('race_weekend_widget_session_${i + 1}', '');
+          await _saveDps('race_weekend_widget_session_${i + 1}_name', '');
+          await _saveDps('race_weekend_widget_session_${i + 1}_ms', '');
         }
       }
 
@@ -696,6 +738,25 @@ class WidgetUpdateService {
     if (reload) {
       await _refreshRaceWeekendWidget();
     }
+  }
+
+  /// Returns [sessions] ordered by start time. Sessions without a parseable
+  /// start keep their relative order and sort after timed ones.
+  @visibleForTesting
+  static List<RaceSession> sortSessionsChronologically(
+    List<RaceSession> sessions,
+  ) {
+    final indexed = sessions.asMap().entries.toList();
+    indexed.sort((a, b) {
+      final aStart = a.value.startDateTime;
+      final bStart = b.value.startDateTime;
+      if (aStart == null && bStart == null) return a.key.compareTo(b.key);
+      if (aStart == null) return 1;
+      if (bStart == null) return -1;
+      final cmp = aStart.compareTo(bStart);
+      return cmp != 0 ? cmp : a.key.compareTo(b.key);
+    });
+    return [for (final entry in indexed) entry.value];
   }
 
   static Future<void> updateFavoriteDrivers(
@@ -1043,7 +1104,57 @@ class WidgetUpdateService {
     return _getBool(_favoriteTeamDefaultTransparentKey);
   }
 
+  /// Stamps when widget data was last persisted, shown natively as
+  /// "Updated 2:41 PM" and used to end the refresh button's busy state.
+  static Future<void> _markWidgetsUpdated() async {
+    await _saveDps(
+      widgetsLastUpdatedKey,
+      DateTime.now().millisecondsSinceEpoch.toString(),
+    );
+  }
+
+  /// Entry point for the widget refresh button (runs in a background engine).
+  ///
+  /// Always reloads every widget at the end, even when the network refresh
+  /// failed, so the native "Updating…" state is cleared.
+  static Future<void> refreshFromWidgetButton() async {
+    var succeeded = false;
+    try {
+      await ensureHomeWidgetSetup();
+      final result = await refreshAllWidgets();
+      succeeded = result.succeeded;
+    } catch (error, stackTrace) {
+      _logWidgetError('refreshFromWidgetButton', error, stackTrace);
+    }
+    try {
+      await _saveDps(
+        widgetsLastAttemptKey,
+        DateTime.now().millisecondsSinceEpoch.toString(),
+      );
+      await _saveDps(widgetsLastAttemptOkKey, succeeded ? 'true' : 'false');
+    } catch (error, stackTrace) {
+      _logWidgetError('refreshFromWidgetButton.saveAttempt', error, stackTrace);
+    }
+    // Plain reloads (not the _refresh* helpers) so a failed refresh doesn't
+    // stamp the "last updated" time.
+    for (final provider in const [
+      androidQualifiedDriverWidgetProvider,
+      androidQualifiedTeamWidgetProvider,
+      androidQualifiedFavoriteDriverWidgetProvider,
+      androidQualifiedFavoriteTeamWidgetProvider,
+      androidQualifiedNextSessionWidgetProvider,
+      androidQualifiedRaceWeekendWidgetProvider,
+    ]) {
+      try {
+        await HomeWidget.updateWidget(qualifiedAndroidName: provider);
+      } catch (_) {
+        // Best effort: keep reloading the remaining widget types.
+      }
+    }
+  }
+
   static Future<void> _refreshDriverWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedDriverWidgetProvider,
       iOSName: iOSDriverWidgetKind,
@@ -1052,6 +1163,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshTeamWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedTeamWidgetProvider,
       iOSName: iOSTeamWidgetKind,
@@ -1060,6 +1172,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshFavoriteDriverWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
       iOSName: iOSFavoriteDriverWidgetKind,
@@ -1068,6 +1181,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshFavoriteTeamWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
       iOSName: iOSFavoriteTeamWidgetKind,
@@ -1076,6 +1190,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshNextSessionWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
       iOSName: iOSNextSessionWidgetKind,
@@ -1084,6 +1199,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshRaceWeekendWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedRaceWeekendWidgetProvider,
       iOSName: iOSRaceWeekendWidgetKind,
@@ -1554,4 +1670,15 @@ class _UpcomingSession {
   final RaceSession session;
 
   const _UpcomingSession({required this.race, required this.session});
+}
+
+/// Runs in home_widget's background engine when a widget's refresh button is
+/// tapped (Android). Must stay a top-level entry point.
+@pragma('vm:entry-point')
+Future<void> widgetInteractivityCallback(Uri? uri) async {
+  if (uri?.host != 'refresh') {
+    return;
+  }
+  await CrashReporting.initForBackground();
+  await WidgetUpdateService.refreshFromWidgetButton();
 }
