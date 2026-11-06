@@ -6,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'data/api_service.dart';
 import 'firebase_options.dart';
+import 'models/race.dart';
 import 'screens/main_shell.dart';
+import 'screens/race_detail_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/analytics.dart';
@@ -196,6 +199,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (type == null || widgetId == null) {
       return;
     }
+    if (type == 'race_weekend') {
+      await _openRaceWeekendFromWidget();
+      return;
+    }
     final route = MaterialPageRoute(
       builder: (_) => WidgetConfigScreen(
         type: type == 'favorite_team'
@@ -206,6 +213,32 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
     );
     _navigatorKey.currentState?.push(route);
+  }
+
+  Future<void> _openRaceWeekendFromWidget() async {
+    final season = DateTime.now().year.toString();
+    Race? race;
+    try {
+      race = await ApiService().getNextRace(season: season);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Race weekend widget tap: failed to load race: $error');
+        debugPrint('$stackTrace');
+      }
+    }
+    unawaited(
+      Analytics.track('widget_tapped', properties: {'type': 'race_weekend'}),
+    );
+    if (race == null || !mounted) {
+      // Fall back to just opening the app on its home tab.
+      return;
+    }
+    final nextRace = race;
+    _navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (_) => RaceDetailScreen(race: nextRace, season: season),
+      ),
+    );
   }
 
   void _runBackgroundChecks() {
