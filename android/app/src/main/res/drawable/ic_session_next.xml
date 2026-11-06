@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Red dot with a soft halo: the next session. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="14"
+    android:viewportHeight="14">
+    <path
+        android:pathData="M7,0a7,7 0,1 1,0 14a7,7 0,1 1,0 -14z"
+        android:fillColor="#33E10600" />
+    <path
+        android:pathData="M7,3.5a3.5,3.5 0,1 1,0 7a3.5,3.5 0,1 1,0 -7z"
+        android:fillColor="#FF2A1F" />
+</vector>

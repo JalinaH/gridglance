@@ -14,7 +14,6 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <!-- Left: race details -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -29,7 +28,7 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="36dp"
+                    android:layout_width="24dp"
                     android:layout_height="3dp"
                     android:background="@drawable/widget_accent"
                     android:text="" />
@@ -41,319 +40,721 @@
                     android:layout_marginStart="8dp"
                     android:fontFamily="sans-serif-condensed"
                     android:includeFontPadding="false"
+                    android:letterSpacing="0.08"
                     android:text="Race Weekend"
                     android:textAllCaps="true"
-                    android:textColor="#F7F8FA"
+                    android:textColor="#9EA7B5"
                     android:textSize="10sp"
                     android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="" />
 
                 <TextView
                     android:id="@+id/race_round"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
                     android:background="@drawable/widget_round_badge"
                     android:includeFontPadding="false"
                     android:paddingLeft="6dp"
-                    android:paddingRight="6dp"
                     android:paddingTop="2dp"
+                    android:paddingRight="6dp"
                     android:paddingBottom="2dp"
                     android:text="R1"
-                    android:textColor="#E10600"
+                    android:textColor="#FF3B30"
                     android:textSize="9sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Race name -->
             <TextView
                 android:id="@+id/race_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="8dp"
                 android:ellipsize="end"
                 android:fontFamily="sans-serif-condensed"
                 android:includeFontPadding="false"
                 android:maxLines="2"
                 android:text="Australian Grand Prix"
                 android:textColor="#F7F8FA"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <!-- Location -->
             <TextView
                 android:id="@+id/race_location"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:text="Melbourne, Australia"
                 android:textColor="#9EA7B5"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
-        <!-- Right: track layout image -->
-        <ImageView
-            android:id="@+id/track_image"
-            android:layout_width="80dp"
-            android:layout_height="60dp"
-            android:layout_marginStart="12dp"
-            android:alpha="0.6"
-            android:scaleType="fitCenter" />
+        <!-- Right: track layout + refresh -->
+        <FrameLayout
+            android:layout_width="84dp"
+            android:layout_height="64dp"
+            android:layout_marginStart="10dp">
+
+            <ImageView
+                android:id="@+id/track_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="14dp"
+                android:alpha="0.75"
+                android:scaleType="fitCenter" />
+
+            <ImageView
+                android:id="@+id/refresh_button"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="top|end"
+                android:background="@drawable/widget_icon_button"
+                android:contentDescription="Refresh"
+                android:padding="6dp"
+                android:src="@drawable/ic_widget_refresh" />
+        </FrameLayout>
     </LinearLayout>
 
-    <!-- Countdown row -->
+    <!-- Countdown hero -->
+    <LinearLayout
+        android:id="@+id/hero_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/widget_hero_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="9dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/hero_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.06"
+                android:maxLines="1"
+                android:text="NEXT UP"
+                android:textAllCaps="true"
+                android:textColor="#FF5A4F"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/hero_session"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="Qualifying"
+                android:textColor="#F7F8FA"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <!-- Static countdown (days away / fallback text) -->
+            <TextView
+                android:id="@+id/next_session_countdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="2d 4h 10m"
+                android:textColor="#F7F8FA"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <!-- Live ticking countdown, shown when under 24h away -->
+            <Chronometer
+                android:id="@+id/hero_chronometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:textColor="#F7F8FA"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/hero_caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="SAT · 4:00 PM"
+                android:textAllCaps="true"
+                android:textColor="#9EA7B5"
+                android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Weekend progress -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/widget_row_highlight"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="7dp">
+        android:orientation="horizontal">
 
-        <TextView
-            android:layout_width="8dp"
-            android:layout_height="8dp"
-            android:background="@drawable/widget_timeline_dot_active"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/next_session_countdown"
+        <ProgressBar
+            android:id="@+id/weekend_progress"
+            style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_height="4dp"
             android:layout_weight="1"
-            android:ellipsize="end"
+            android:max="5"
+            android:progress="1"
+            android:progressDrawable="@drawable/widget_progress" />
+
+        <TextView
+            android:id="@+id/weekend_progress_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:fontFamily="sans-serif-condensed"
             android:includeFontPadding="false"
-            android:maxLines="1"
-            android:text="Qualifying in 2d 4h"
-            android:textColor="#F7F8FA"
-            android:textSize="12sp"
+            android:text="1 / 5 DONE"
+            android:textColor="#6B7586"
+            android:textSize="9sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Session timeline -->
+    <!-- Session timeline: rows share the remaining height -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/session_1_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_session_row_idle"
             android:gravity="center_vertical"
+            android:minHeight="22dp"
             android:orientation="horizontal"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp">
+
+            <ImageView
+                android:id="@+id/session_1_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_session_upcoming" />
 
             <TextView
-                android:id="@+id/session_1_dot"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/widget_timeline_dot"
-                android:text="" />
-
-            <TextView
-                android:id="@+id/session_1"
+                android:id="@+id/session_1_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="FP1 · Fri 14 Mar · 11:30 AM"
-                android:textColor="#9EA7B5"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:text="Free Practice 1"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
 
+            <TextView
+                android:id="@+id/session_1_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_live_chip"
+                android:includeFontPadding="false"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="2dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/session_1_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="FRI 14"
+                android:textAllCaps="true"
+                android:textColor="#6B7586"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/session_1_time"
+                android:layout_width="58dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="11:30 AM"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
+        </LinearLayout>
         <LinearLayout
             android:id="@+id/session_2_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_session_row_idle"
             android:gravity="center_vertical"
+            android:minHeight="22dp"
             android:orientation="horizontal"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp">
+
+            <ImageView
+                android:id="@+id/session_2_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_session_upcoming" />
 
             <TextView
-                android:id="@+id/session_2_dot"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/widget_timeline_dot"
-                android:text="" />
-
-            <TextView
-                android:id="@+id/session_2"
+                android:id="@+id/session_2_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="FP2 · Fri 14 Mar · 3:00 PM"
-                android:textColor="#9EA7B5"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:text="Free Practice 2"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
 
+            <TextView
+                android:id="@+id/session_2_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_live_chip"
+                android:includeFontPadding="false"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="2dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/session_2_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="FRI 14"
+                android:textAllCaps="true"
+                android:textColor="#6B7586"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/session_2_time"
+                android:layout_width="58dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="3:00 PM"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
+        </LinearLayout>
         <LinearLayout
             android:id="@+id/session_3_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_session_row_idle"
             android:gravity="center_vertical"
+            android:minHeight="22dp"
             android:orientation="horizontal"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp">
+
+            <ImageView
+                android:id="@+id/session_3_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_session_upcoming" />
 
             <TextView
-                android:id="@+id/session_3_dot"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/widget_timeline_dot"
-                android:text="" />
-
-            <TextView
-                android:id="@+id/session_3"
+                android:id="@+id/session_3_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="FP3 · Sat 15 Mar · 12:30 PM"
-                android:textColor="#9EA7B5"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:text="Free Practice 3"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
 
+            <TextView
+                android:id="@+id/session_3_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_live_chip"
+                android:includeFontPadding="false"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="2dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/session_3_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="SAT 15"
+                android:textAllCaps="true"
+                android:textColor="#6B7586"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/session_3_time"
+                android:layout_width="58dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="12:30 PM"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
+        </LinearLayout>
         <LinearLayout
             android:id="@+id/session_4_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_session_row_idle"
             android:gravity="center_vertical"
+            android:minHeight="22dp"
             android:orientation="horizontal"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp">
+
+            <ImageView
+                android:id="@+id/session_4_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_session_upcoming" />
 
             <TextView
-                android:id="@+id/session_4_dot"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/widget_timeline_dot"
-                android:text="" />
-
-            <TextView
-                android:id="@+id/session_4"
+                android:id="@+id/session_4_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="QUAL · Sat 15 Mar · 4:00 PM"
-                android:textColor="#9EA7B5"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:text="Qualifying"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
 
+            <TextView
+                android:id="@+id/session_4_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_live_chip"
+                android:includeFontPadding="false"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="2dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/session_4_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="SAT 15"
+                android:textAllCaps="true"
+                android:textColor="#6B7586"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/session_4_time"
+                android:layout_width="58dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="4:00 PM"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
+        </LinearLayout>
         <LinearLayout
             android:id="@+id/session_5_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_session_row_idle"
             android:gravity="center_vertical"
+            android:minHeight="22dp"
             android:orientation="horizontal"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp">
+
+            <ImageView
+                android:id="@+id/session_5_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_session_upcoming" />
 
             <TextView
-                android:id="@+id/session_5_dot"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/widget_timeline_dot"
-                android:text="" />
-
-            <TextView
-                android:id="@+id/session_5"
+                android:id="@+id/session_5_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="RACE · Sun 16 Mar · 3:00 PM"
-                android:textColor="#9EA7B5"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:text="Race"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
 
+            <TextView
+                android:id="@+id/session_5_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_live_chip"
+                android:includeFontPadding="false"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="2dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/session_5_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="SUN 16"
+                android:textAllCaps="true"
+                android:textColor="#6B7586"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/session_5_time"
+                android:layout_width="58dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="3:00 PM"
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
+        </LinearLayout>
         <LinearLayout
             android:id="@+id/session_6_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_session_row_idle"
             android:gravity="center_vertical"
+            android:minHeight="22dp"
             android:orientation="horizontal"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp"
             android:visibility="gone">
 
-            <TextView
-                android:id="@+id/session_6_dot"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/widget_timeline_dot"
-                android:text="" />
+            <ImageView
+                android:id="@+id/session_6_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_session_upcoming" />
 
             <TextView
-                android:id="@+id/session_6"
+                android:id="@+id/session_6_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:textColor="#9EA7B5"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:text=""
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
 
+            <TextView
+                android:id="@+id/session_6_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_live_chip"
+                android:includeFontPadding="false"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="2dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/session_6_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text=""
+                android:textAllCaps="true"
+                android:textColor="#6B7586"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/session_6_time"
+                android:layout_width="58dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text=""
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
+        </LinearLayout>
         <LinearLayout
             android:id="@+id/session_7_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_session_row_idle"
             android:gravity="center_vertical"
+            android:minHeight="22dp"
             android:orientation="horizontal"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp"
             android:visibility="gone">
 
-            <TextView
-                android:id="@+id/session_7_dot"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/widget_timeline_dot"
-                android:text="" />
+            <ImageView
+                android:id="@+id/session_7_icon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_session_upcoming" />
 
             <TextView
-                android:id="@+id/session_7"
+                android:id="@+id/session_7_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:textColor="#9EA7B5"
-                android:textSize="11sp" />
+                android:text=""
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/session_7_live"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_live_chip"
+                android:includeFontPadding="false"
+                android:paddingLeft="5dp"
+                android:paddingTop="2dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="2dp"
+                android:text="LIVE"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/session_7_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text=""
+                android:textAllCaps="true"
+                android:textColor="#6B7586"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/session_7_time"
+                android:layout_width="58dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text=""
+                android:textColor="#C9D0DA"
+                android:textSize="12sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

@@ -625,6 +625,8 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_round', '');
       for (int i = 1; i <= 7; i++) {
         await _saveDps('race_weekend_widget_session_$i', '');
+        await _saveDps('race_weekend_widget_session_${i}_name', '');
+        await _saveDps('race_weekend_widget_session_${i}_ms', '');
       }
       await _saveDps('race_weekend_widget_next_index', '-1');
     } else {
@@ -641,8 +643,9 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_round', 'R${target.round}');
       await _saveTrackImage('race_weekend_widget_track', target.circuitId);
 
-      // Build session lines for this race.
-      final allSessions = target.sessions;
+      // Build session lines for this race in chronological order (the model
+      // lists qualifying before the sprint sessions on sprint weekends).
+      final allSessions = sortSessionsChronologically(target.sessions);
       int nextIndex = -1;
 
       for (int i = 0; i < 7; i++) {
@@ -652,6 +655,17 @@ class WidgetUpdateService {
             _UpcomingSession(race: target, session: session),
           );
           await _saveDps('race_weekend_widget_session_${i + 1}', label ?? '');
+          // Raw name + start timestamp let the native widget derive
+          // done / live / next state and format times locally.
+          await _saveDps(
+            'race_weekend_widget_session_${i + 1}_name',
+            session.name,
+          );
+          await _saveDps(
+            'race_weekend_widget_session_${i + 1}_ms',
+            session.startDateTime?.toUtc().millisecondsSinceEpoch.toString() ??
+                '',
+          );
 
           // Track the first upcoming session.
           if (nextIndex == -1) {
@@ -662,6 +676,8 @@ class WidgetUpdateService {
           }
         } else {
           await _saveDps('race_weekend_widget_session_${i + 1}', '');
+          await _saveDps('race_weekend_widget_session_${i + 1}_name', '');
+          await _saveDps('race_weekend_widget_session_${i + 1}_ms', '');
         }
       }
 
@@ -696,6 +712,25 @@ class WidgetUpdateService {
     if (reload) {
       await _refreshRaceWeekendWidget();
     }
+  }
+
+  /// Returns [sessions] ordered by start time. Sessions without a parseable
+  /// start keep their relative order and sort after timed ones.
+  @visibleForTesting
+  static List<RaceSession> sortSessionsChronologically(
+    List<RaceSession> sessions,
+  ) {
+    final indexed = sessions.asMap().entries.toList();
+    indexed.sort((a, b) {
+      final aStart = a.value.startDateTime;
+      final bStart = b.value.startDateTime;
+      if (aStart == null && bStart == null) return a.key.compareTo(b.key);
+      if (aStart == null) return 1;
+      if (bStart == null) return -1;
+      final cmp = aStart.compareTo(bStart);
+      return cmp != 0 ? cmp : a.key.compareTo(b.key);
+    });
+    return [for (final entry in indexed) entry.value];
   }
 
   static Future<void> updateFavoriteDrivers(
