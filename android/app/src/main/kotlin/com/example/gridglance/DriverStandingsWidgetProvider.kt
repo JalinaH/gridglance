@@ -38,26 +38,17 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
                 R.id.driver_one_name,
                 prefs.getString("driver_1_last_name", "P1") ?: "P1",
             )
-            views.setTextViewText(
-                R.id.driver_one_pts,
-                "${prefs.getString("driver_1_pts", "0") ?: "0"} pts",
-            )
+            views.setTextViewText(R.id.driver_one_pts, PodiumBinding.pointsWithGap(prefs, "driver", 1))
             views.setTextViewText(
                 R.id.driver_two_name,
                 prefs.getString("driver_2_last_name", "P2") ?: "P2",
             )
-            views.setTextViewText(
-                R.id.driver_two_pts,
-                "${prefs.getString("driver_2_pts", "0") ?: "0"} pts",
-            )
+            views.setTextViewText(R.id.driver_two_pts, PodiumBinding.pointsWithGap(prefs, "driver", 2))
             views.setTextViewText(
                 R.id.driver_three_name,
                 prefs.getString("driver_3_last_name", "P3") ?: "P3",
             )
-            views.setTextViewText(
-                R.id.driver_three_pts,
-                "${prefs.getString("driver_3_pts", "0") ?: "0"} pts",
-            )
+            views.setTextViewText(R.id.driver_three_pts, PodiumBinding.pointsWithGap(prefs, "driver", 3))
 
             // Load driver headshot images.
             val photoIds = arrayOf(R.id.driver_one_photo, R.id.driver_two_photo, R.id.driver_three_photo)
@@ -73,6 +64,23 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
                     }
                 }
             }
+
+            // Tap the podium step → that driver's detail; anywhere else → full standings.
+            views.setOnClickPendingIntent(
+                R.id.widget_root,
+                WidgetInteractions.openApp(context, "driver_standings", appWidgetId),
+            )
+            val colIds = arrayOf(R.id.driver_one_col, R.id.driver_two_col, R.id.driver_three_col)
+            for (i in 1..3) {
+                val id = prefs.getString("driver_${i}_id", null)
+                if (!id.isNullOrEmpty()) {
+                    views.setOnClickPendingIntent(
+                        colIds[i - 1],
+                        WidgetInteractions.openApp(context, "driver_standings", appWidgetId, "p$i", id),
+                    )
+                }
+            }
+            WidgetInteractions.bindStatus(context, views, prefs, R.id.widget_status, R.id.refresh_button, compact = true)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

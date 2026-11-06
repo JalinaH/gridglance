@@ -1,12 +1,8 @@
 package com.gridglance.app
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -15,7 +11,6 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import java.io.File
-import java.util.Calendar
 import java.util.Locale
 
 class RaceWeekendWidgetProvider : AppWidgetProvider() {
@@ -27,20 +22,6 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         val startMs: Long?,
         val fallbackLabel: String,
     )
-
-    override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == ACTION_REFRESH) {
-            refreshAll(context)
-            return
-        }
-        super.onReceive(context, intent)
-    }
-
-    override fun onDisabled(context: Context) {
-        super.onDisabled(context)
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-        alarmManager?.cancel(refreshPendingIntent(context))
-    }
 
     override fun onUpdate(
         context: Context,
@@ -84,12 +65,15 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
                 views.setViewVisibility(R.id.track_image, View.INVISIBLE)
             }
 
-            bindHero(views, prefs, sessions, liveIndex, nextIndex, now)
+            bindHero(context, views, prefs, sessions, liveIndex, nextIndex, now)
             bindProgress(views, sessions.size, doneCount)
-            bindSessionRows(views, sessions, states)
+            bindSessionRows(context, views, sessions, states)
 
-            views.setOnClickPendingIntent(R.id.widget_root, openAppPendingIntent(context, appWidgetId))
-            views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent(context))
+            views.setOnClickPendingIntent(
+                R.id.widget_root,
+                WidgetInteractions.openApp(context, "race_weekend", appWidgetId),
+            )
+            WidgetInteractions.bindStatus(context, views, prefs, R.id.widget_status, R.id.refresh_button)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
@@ -100,6 +84,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
     // region Binding
 
     private fun bindHero(
+        context: Context,
         views: RemoteViews,
         prefs: SharedPreferences,
         sessions: List<WeekendSession>,
@@ -135,7 +120,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
                 if (nextIndex == sessions.lastIndex) "Lights out in" else "Next up",
             )
             views.setTextViewText(R.id.hero_session, next.name)
-            views.setTextViewText(R.id.hero_caption, formatDayTime(startMs))
+            views.setTextViewText(R.id.hero_caption, WidgetInteractions.formatDayTime(context, startMs))
 
             if (remaining in 1 until DAY_MS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 // Ticking HH:MM:SS countdown, driven by the launcher.
@@ -180,6 +165,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
     }
 
     private fun bindSessionRows(
+        context: Context,
         views: RemoteViews,
         sessions: List<WeekendSession>,
         states: List<SessionState>,
@@ -198,7 +184,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             if (session.startMs != null) {
                 views.setTextViewText(ids.name, session.name)
                 views.setTextViewText(ids.day, formatDay(session.startMs))
-                views.setTextViewText(ids.time, formatTime(session.startMs))
+                views.setTextViewText(ids.time, WidgetInteractions.formatTime(context, session.startMs))
                 views.setViewVisibility(ids.day, View.VISIBLE)
                 views.setViewVisibility(ids.time, View.VISIBLE)
             } else {
@@ -270,125 +256,33 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun sessionDurationMs(name: String): Long {
-        val lower = name.lowercase(Locale.US)
-        val minutes = when {
-            lower == "race" || lower.endsWith("grand prix") -> 120L
-            lower.contains("sprint") && (lower.contains("qual") || lower.contains("shootout")) -> 45L
-            else -> 60L
-        }
-        return minutes * 60_000L
-    }
-
     // endregion
 
-    // region Intents & scheduling
-
-    private fun openAppPendingIntent(context: Context, appWidgetId: Int): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            action = "com.gridglance.app.WIDGET_CLICK"
-            putExtra("widget_type", "race_weekend")
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-        }
-        return PendingIntent.getActivity(
-            context,
-            appWidgetId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-    }
-
-    private fun refreshPendingIntent(context: Context): PendingIntent {
-        val intent = Intent(context, RaceWeekendWidgetProvider::class.java).apply {
-            action = ACTION_REFRESH
-        }
-        return PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-    }
-
-    private fun refreshAll(context: Context) {
-        val manager = AppWidgetManager.getInstance(context)
-        val ids = manager.getAppWidgetIds(ComponentName(context, RaceWeekendWidgetProvider::class.java))
-        if (ids.isNotEmpty()) {
-            onUpdate(context, manager, ids)
-        }
-    }
+    // region Scheduling
 
     /**
-     * Wakes the widget at the next session start/end so the done/live/next
-     * state flips on time instead of waiting for the 30-minute refresh, and
-     * the ticking countdown never runs past zero for long.
+     * Wakes the widget at the next session start/end (and when the next
+     * start enters the 24h ticking window) so done/live/next flips on time.
      */
     private fun scheduleNextTransition(context: Context, sessions: List<WeekendSession>, now: Long) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val pending = refreshPendingIntent(context)
-        val nextBoundary = sessions
-            .mapNotNull { s -> s.startMs?.let { listOf(it, it + sessionDurationMs(s.name)) } }
-            .flatten()
-            .filter { it > now }
-            .minOrNull()
-        // Also re-render when the countdown crosses into the ticking window.
-        val tickWindowStart = sessions.firstOrNull { (it.startMs ?: 0L) > now }?.startMs?.minus(DAY_MS)
-            ?.takeIf { it > now }
-        val target = listOfNotNull(nextBoundary, tickWindowStart).minOrNull()
-        if (target == null) {
-            alarmManager.cancel(pending)
-            return
+        val boundaries = sessions.flatMap { s ->
+            val start = s.startMs ?: return@flatMap emptyList<Long>()
+            listOf(start - DAY_MS, start, start + sessionDurationMs(s.name))
         }
-        try {
-            val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
-            if (canExact) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, target, pending)
-            } else {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC, target, pending)
-            }
-        } catch (e: SecurityException) {
-            Log.w(TAG, "Exact alarm denied, falling back to inexact", e)
-            alarmManager.set(AlarmManager.RTC, target, pending)
-        }
+        WidgetInteractions.scheduleRerender(
+            context,
+            RaceWeekendWidgetProvider::class.java,
+            boundaries.filter { it > now }.minOrNull(),
+        )
     }
 
     // endregion
 
     // region Formatting
 
-    private fun calendarAt(ms: Long): Calendar = Calendar.getInstance().apply { timeInMillis = ms }
-
-    private fun formatDay(ms: Long): String {
-        val cal = calendarAt(ms)
-        val dow = cal.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault()) ?: ""
-        return "${dow.uppercase(Locale.getDefault())} ${cal.get(Calendar.DAY_OF_MONTH)}"
-    }
-
-    private fun formatTime(ms: Long): String {
-        val cal = calendarAt(ms)
-        val hour = cal.get(Calendar.HOUR).let { if (it == 0) 12 else it }
-        val minute = cal.get(Calendar.MINUTE).toString().padStart(2, '0')
-        val meridiem = if (cal.get(Calendar.AM_PM) == Calendar.PM) "PM" else "AM"
-        return "$hour:$minute $meridiem"
-    }
-
-    private fun formatDayTime(ms: Long): String {
-        val cal = calendarAt(ms)
-        val dow = cal.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault()) ?: ""
-        return "$dow · ${formatTime(ms)}"
-    }
-
-    private fun formatDuration(remainingMs: Long): String {
-        val totalMinutes = remainingMs / 60_000L
-        val days = totalMinutes / (60L * 24L)
-        val hours = (totalMinutes / 60L) % 24L
-        val minutes = totalMinutes % 60L
-        return when {
-            days > 0L -> "${days}d ${hours}h"
-            hours > 0L -> "${hours}h ${minutes}m"
-            else -> "${minutes}m"
-        }
-    }
+    private fun sessionDurationMs(name: String) = WidgetInteractions.sessionDurationMs(name)
+    private fun formatDay(ms: Long) = WidgetInteractions.formatDay(ms)
+    private fun formatDuration(ms: Long) = WidgetInteractions.formatDuration(ms)
 
     // endregion
 
@@ -405,9 +299,8 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "RaceWeekendWidget"
-        private const val ACTION_REFRESH = "com.gridglance.app.RACE_WEEKEND_REFRESH"
         private const val MAX_SESSIONS = 7
-        private const val DAY_MS = 24L * 60L * 60L * 1000L
+        private const val DAY_MS = WidgetInteractions.DAY_MS
 
         private const val COLOR_BRIGHT = 0xFFF7F8FA.toInt()
         private const val COLOR_NORMAL = 0xFFC9D0DA.toInt()

@@ -62,6 +62,20 @@
                     android:textColor="#FF3B30"
                     android:textSize="9sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_status"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text=""
+                    android:textColor="#6B7586"
+                    android:textSize="9sp"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView
