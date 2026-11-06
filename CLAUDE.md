@@ -49,7 +49,14 @@ MethodChannel remains for Android widget navigation:
 
 ## App Initialization (main.dart)
 
-Startup order: WidgetUpdateService → NotificationService → BackgroundTaskService → runApp. The app observes lifecycle via `WidgetsBindingObserver` and runs `FavoriteResultAlertService` on resume.
+Startup runs in two phases, inside the Sentry zone:
+
+1. **Before `runApp`** (local-only, must not block on network): Firebase → UserPreferences → Analytics → home_widget setup → F1 headshot prefetch (capped at 3s on first launch).
+2. **After `runApp`** (deferred, may hit the network or prompt): NotificationService → BackgroundTaskService (Workmanager) → AppUpdateMessagingService (FCM, skipped if Firebase failed).
+
+Each step runs through `_initStep`, which reports failures to Sentry instead of throwing, so one failing step can't leave a blank screen. Don't add network calls or permission prompts before `runApp`.
+
+The app observes lifecycle via `WidgetsBindingObserver` and runs `FavoriteResultAlertService` on resume.
 
 ## Platform Notes
 
