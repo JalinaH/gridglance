@@ -43,7 +43,7 @@ MethodChannel remains for Android widget navigation:
 - `lib/services/` — Notifications, background tasks, widgets, weather, predictions, sharing, calendar, preferences
 - `lib/theme/` — AppColors extension and AppTheme
 - `lib/widgets/` — Reusable UI components
-- `android/app/src/main/kotlin/` — 6 Android widget providers + MainActivity with MethodChannel bridges
+- `android/app/src/main/kotlin/` — 5 Android widget providers + shared `WidgetInteractions` helpers + MainActivity with MethodChannel bridges
 - `ios/GridGlanceWidgets/` — WidgetKit extension (iOS 14+)
 - `test/` — Unit tests for models, utils, and services
 

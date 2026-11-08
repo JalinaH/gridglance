@@ -70,7 +70,6 @@ class WidgetClickTarget {
             ? to(WidgetDestination.teamStandings)
             : to(WidgetDestination.teamDetail, id: targetId);
       case 'race_weekend':
-      case 'next_session':
         return to(WidgetDestination.raceDetail);
       default:
         return null;
