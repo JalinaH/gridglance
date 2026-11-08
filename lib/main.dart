@@ -48,10 +48,6 @@ Future<void> main() async {
     await _initStep('analytics', Analytics.init);
     await _initStep('home_widget', WidgetUpdateService.ensureHomeWidgetSetup);
     await _initStep(
-      'widget_interactivity',
-      WidgetUpdateService.registerWidgetInteractivity,
-    );
-    await _initStep(
       'f1_images',
       () => F1ImageService.instance.init().timeout(
         _imagePrefetchBudget,

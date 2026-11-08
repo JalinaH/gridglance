@@ -80,7 +80,6 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
                     )
                 }
             }
-            WidgetInteractions.bindStatus(context, views, prefs, R.id.widget_status, R.id.refresh_button, compact = true)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
