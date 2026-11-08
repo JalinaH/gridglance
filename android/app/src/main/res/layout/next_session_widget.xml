@@ -63,16 +63,6 @@
             android:textColor="#B8C0CC"
             android:textSize="9sp"
             android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/refresh_button"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/widget_icon_button"
-            android:contentDescription="Refresh"
-            android:padding="5dp"
-            android:src="@drawable/ic_widget_refresh" />
     </LinearLayout>
 
     <!-- Race name -->

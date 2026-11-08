@@ -33,22 +33,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Widget refresh button: instant "Updating…" + hand-off to Dart. -->
-        <receiver
-            android:name=".WidgetRefreshReceiver"
-            android:exported="false" />
-        <!-- home_widget interactivity: runs the Dart refresh callback. -->
-        <receiver
-            android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
-            </intent-filter>
-        </receiver>
-        <service
-            android:name="es.antonborri.home_widget.HomeWidgetBackgroundService"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
         <receiver
             android:name=".DriverStandingsWidgetProvider"
             android:exported="true"

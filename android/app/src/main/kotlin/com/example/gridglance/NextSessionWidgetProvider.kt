@@ -51,7 +51,7 @@ class NextSessionWidgetProvider : AppWidgetProvider() {
                 R.id.widget_root,
                 WidgetInteractions.openApp(context, "next_session", appWidgetId),
             )
-            WidgetInteractions.bindStatus(context, views, prefs, R.id.widget_status, R.id.refresh_button)
+            WidgetInteractions.bindUpdatedLabel(context, views, prefs, R.id.widget_status)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 

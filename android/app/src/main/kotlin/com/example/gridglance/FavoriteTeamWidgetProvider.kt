@@ -121,18 +121,10 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            // Tap → team detail (or the picker if not configured yet);
-            // gear → always the picker; ↻ → fetch fresh data.
+            // Tap → team detail (or the picker if not configured yet).
             views.setOnClickPendingIntent(
                 R.id.widget_root,
                 WidgetInteractions.openApp(context, "favorite_team", appWidgetId, targetId = targetId),
-            )
-            views.setOnClickPendingIntent(
-                R.id.settings_button,
-                WidgetInteractions.openApp(context, "favorite_team_config", appWidgetId, "config"),
-            )
-            WidgetInteractions.bindStatus(
-                context, views, prefs, R.id.widget_status, R.id.refresh_button, compact = true,
             )
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

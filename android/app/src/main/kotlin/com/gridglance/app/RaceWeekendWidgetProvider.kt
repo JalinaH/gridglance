@@ -73,7 +73,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
                 R.id.widget_root,
                 WidgetInteractions.openApp(context, "race_weekend", appWidgetId),
             )
-            WidgetInteractions.bindStatus(context, views, prefs, R.id.widget_status, R.id.refresh_button)
+            WidgetInteractions.bindUpdatedLabel(context, views, prefs, R.id.widget_status)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

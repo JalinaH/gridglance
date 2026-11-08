@@ -1967,7 +1967,7 @@ class _RaceWeekendPreviewState extends State<_RaceWeekendPreview> {
     );
   }
 
-  // ── Header: title, round, race name, location, track + refresh ──
+  // ── Header: title, round, race name, location, track ──
   Widget _buildHeader(Race? race) {
     final roundLabel = race != null ? 'R${race.round}' : '';
     return Row(
@@ -2053,37 +2053,17 @@ class _RaceWeekendPreviewState extends State<_RaceWeekendPreview> {
         SizedBox(
           width: 84,
           height: 64,
-          child: Stack(
-            children: [
-              if (race != null && race.circuitId.isNotEmpty)
-                Positioned.fill(
-                  right: 14,
-                  child: Opacity(
-                    opacity: 0.75,
-                    child: CircuitTrack(
-                      circuitId: race.circuitId,
-                      width: 70,
-                      height: 64,
-                      color: _red,
-                    ),
+          child: (race != null && race.circuitId.isNotEmpty)
+              ? Opacity(
+                  opacity: 0.75,
+                  child: CircuitTrack(
+                    circuitId: race.circuitId,
+                    width: 84,
+                    height: 64,
+                    color: _red,
                   ),
-                ),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF1C2430),
-                    border: Border.all(color: const Color(0xFF2C3646)),
-                  ),
-                  child: const Icon(Icons.refresh, size: 14, color: _textMuted),
-                ),
-              ),
-            ],
-          ),
+                )
+              : null,
         ),
       ],
     );
