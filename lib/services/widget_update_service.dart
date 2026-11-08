@@ -742,7 +742,6 @@ class WidgetUpdateService {
 
   /// Returns [sessions] ordered by start time. Sessions without a parseable
   /// start keep their relative order and sort after timed ones.
-  @visibleForTesting
   static List<RaceSession> sortSessionsChronologically(
     List<RaceSession> sessions,
   ) {

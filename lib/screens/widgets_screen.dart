@@ -1835,7 +1835,10 @@ class _TeamStandingsPreview extends StatelessWidget {
   }
 }
 
-class _RaceWeekendPreview extends StatelessWidget {
+/// In-app mirror of the Android Race Weekend widget
+/// (`res/layout/race_weekend_widget.xml` + `RaceWeekendWidgetProvider.kt`).
+/// Keep the two in sync when either changes.
+class _RaceWeekendPreview extends StatefulWidget {
   final String seasonLabel;
   final Race? race;
   final List<Race>? raceSchedule;
@@ -1850,26 +1853,90 @@ class _RaceWeekendPreview extends StatelessWidget {
     required this.hasError,
   });
 
+  @override
+  State<_RaceWeekendPreview> createState() => _RaceWeekendPreviewState();
+}
+
+enum _PreviewSessionState { done, live, next, upcoming }
+
+class _RaceWeekendPreviewState extends State<_RaceWeekendPreview> {
   static const _bg = Color(0xFF121722);
   static const _bgAlt = Color(0xFF151B24);
-  static const _surfaceAlt = Color(0xFF1C2430);
   static const _border = Color(0xFF232C3A);
+  static const _ring = Color(0xFF3A4556);
   static const _textPrimary = Color(0xFFF7F8FA);
+  static const _textNormal = Color(0xFFC9D0DA);
   static const _textMuted = Color(0xFF9EA7B5);
+  static const _textDim = Color(0xFF5C6675);
   static const _red = Color(0xFFE10600);
   static const _redBright = Color(0xFFFF3B30);
+  static const _accent = Color(0xFFFF5A4F);
+
+  Timer? _ticker;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _now = DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  List<RaceSession> get _sessions {
+    final race = widget.race;
+    if (race == null) return const [];
+    return WidgetUpdateService.sortSessionsChronologically(
+      race.sessions,
+    ).take(7).toList();
+  }
+
+  /// Mirrors `WidgetInteractions.sessionDurationMs` on Android.
+  static Duration _sessionDuration(String name) {
+    final lower = name.toLowerCase();
+    if (lower == 'race' || lower.endsWith('grand prix')) {
+      return const Duration(minutes: 120);
+    }
+    if (lower.contains('sprint') &&
+        (lower.contains('qual') || lower.contains('shootout'))) {
+      return const Duration(minutes: 45);
+    }
+    return const Duration(minutes: 60);
+  }
+
+  List<_PreviewSessionState> _states(List<RaceSession> sessions) {
+    var nextAssigned = false;
+    return sessions.map((s) {
+      final start = s.startDateTime;
+      if (start == null) return _PreviewSessionState.upcoming;
+      final end = start.add(_sessionDuration(s.name));
+      if (!_now.isBefore(end)) return _PreviewSessionState.done;
+      if (!_now.isBefore(start)) return _PreviewSessionState.live;
+      if (!nextAssigned) {
+        nextAssigned = true;
+        return _PreviewSessionState.next;
+      }
+      return _PreviewSessionState.upcoming;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final raceName = _raceName;
-    final location = _location;
-    final sessionLines = _sessionLines;
-    final countdownLine = _countdownLine;
-    final nextIndex = _nextSessionIndex;
-    final roundLabel = race != null ? 'R${race!.round}' : '';
+    final race = widget.race;
+    final sessions = _sessions;
+    final states = _states(sessions);
+    final doneCount = states
+        .where((s) => s == _PreviewSessionState.done)
+        .length;
 
     return AspectRatio(
-      aspectRatio: 16 / 14,
+      aspectRatio: 16 / 15,
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -1886,189 +1953,13 @@ class _RaceWeekendPreview extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top: race info (left) + track (right)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header row
-                        Row(
-                          children: [
-                            Container(
-                              height: 3,
-                              width: 36,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [_red, _redBright],
-                                ),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Flexible(
-                              child: Text(
-                                'RACE WEEKEND',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: _textPrimary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            if (roundLabel.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _red.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  roundLabel,
-                                  style: const TextStyle(
-                                    color: _red,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        // Race name
-                        Text(
-                          raceName,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          location,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _textMuted,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Track layout image
-                  if (race != null && race!.circuitId.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Opacity(
-                        opacity: 0.6,
-                        child: CircuitTrack(
-                          circuitId: race!.circuitId,
-                          width: 64,
-                          height: 48,
-                          color: _textMuted.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Countdown row
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _surfaceAlt,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _border),
-                ),
-                child: Row(
-                  children: [
-                    // Active dot
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(colors: [_red, _redBright]),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        countdownLine,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _textPrimary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              // Session timeline
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: List.generate(sessionLines.length, (i) {
-                    final isNext = i == nextIndex;
-                    return Padding(
-                      padding: EdgeInsets.only(top: i == 0 ? 0 : 2),
-                      child: Row(
-                        children: [
-                          // Timeline dot
-                          Container(
-                            width: isNext ? 7 : 6,
-                            height: isNext ? 7 : 6,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isNext
-                                  ? null
-                                  : _textMuted.withValues(alpha: 0.4),
-                              gradient: isNext
-                                  ? const LinearGradient(
-                                      colors: [_red, _redBright],
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              sessionLines[i],
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: isNext ? _textPrimary : _textMuted,
-                                fontSize: 10,
-                                fontWeight: isNext
-                                    ? FontWeight.w700
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
-              ),
+              _buildHeader(race),
+              const SizedBox(height: 10),
+              _buildHero(context, sessions, states),
+              const SizedBox(height: 10),
+              _buildProgress(sessions.length, doneCount),
+              const SizedBox(height: 4),
+              Expanded(child: _buildSessionRows(context, sessions, states)),
             ],
           ),
         ),
@@ -2076,93 +1967,529 @@ class _RaceWeekendPreview extends StatelessWidget {
     );
   }
 
+  // ── Header: title, round, race name, location, track + refresh ──
+  Widget _buildHeader(Race? race) {
+    final roundLabel = race != null ? 'R${race.round}' : '';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    height: 3,
+                    width: 24,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_red, _redBright],
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Flexible(
+                    child: Text(
+                      'RACE WEEKEND',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                  if (roundLabel.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _red.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: _red.withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        roundLabel,
+                        style: const TextStyle(
+                          color: _redBright,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _raceName,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: _textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                _location,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: _textMuted, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 84,
+          height: 64,
+          child: Stack(
+            children: [
+              if (race != null && race.circuitId.isNotEmpty)
+                Positioned.fill(
+                  right: 14,
+                  child: Opacity(
+                    opacity: 0.75,
+                    child: CircuitTrack(
+                      circuitId: race.circuitId,
+                      width: 70,
+                      height: 64,
+                      color: _red,
+                    ),
+                  ),
+                ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF1C2430),
+                    border: Border.all(color: const Color(0xFF2C3646)),
+                  ),
+                  child: const Icon(Icons.refresh, size: 14, color: _textMuted),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Countdown hero card ──
+  Widget _buildHero(
+    BuildContext context,
+    List<RaceSession> sessions,
+    List<_PreviewSessionState> states,
+  ) {
+    String label;
+    String session;
+    String value;
+    String caption;
+
+    final liveIndex = states.indexOf(_PreviewSessionState.live);
+    final nextIndex = states.indexOf(_PreviewSessionState.next);
+
+    if (widget.hasError) {
+      (label, session, value, caption) = (
+        'Race weekend',
+        'Retry from app',
+        '',
+        '',
+      );
+    } else if (widget.isLoading) {
+      (label, session, value, caption) = ('Next up', 'Loading…', '', '');
+    } else if (liveIndex >= 0) {
+      final live = sessions[liveIndex];
+      final end = live.startDateTime!.add(_sessionDuration(live.name));
+      final left = end.difference(_now);
+      (label, session, value, caption) = (
+        'Live now',
+        live.name,
+        'On track',
+        left.inMinutes >= 1 ? '~${_formatDuration(left)} left' : 'Finishing',
+      );
+    } else if (nextIndex >= 0) {
+      final next = sessions[nextIndex];
+      final start = next.startDateTime!;
+      final remaining = start.difference(_now);
+      (label, session, value, caption) = (
+        nextIndex == sessions.length - 1 ? 'Lights out in' : 'Next up',
+        next.name,
+        remaining.inHours < 24
+            ? _formatClock(remaining)
+            : _formatDuration(remaining),
+        _formatDayTime(context, start),
+      );
+    } else if (sessions.isNotEmpty) {
+      (label, session, value, caption) = (
+        'Chequered flag',
+        'Weekend complete',
+        '🏁',
+        'Tap for results',
+      );
+    } else {
+      (label, session, value, caption) = (
+        'Race weekend',
+        'Awaiting next calendar',
+        '',
+        '',
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3A1416), Color(0xFF1A212C)],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _red.withValues(alpha: 0.33)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (liveIndex >= 0) ...[
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _accent,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                    Flexible(
+                      child: Text(
+                        label.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _accent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  session,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  color: _textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+              if (caption.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  caption,
+                  style: const TextStyle(color: _textMuted, fontSize: 9),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Weekend progress ──
+  Widget _buildProgress(int total, int done) {
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: total == 0 ? 0 : done / total,
+              minHeight: 4,
+              backgroundColor: _border,
+              valueColor: const AlwaysStoppedAnimation(_red),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          total == 0 ? '' : '$done / $total DONE',
+          style: const TextStyle(
+            color: Color(0xFF6B7586),
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Session rows ──
+  Widget _buildSessionRows(
+    BuildContext context,
+    List<RaceSession> sessions,
+    List<_PreviewSessionState> states,
+  ) {
+    if (sessions.isEmpty) return const SizedBox.shrink();
+    return Column(
+      children: [
+        for (var i = 0; i < sessions.length; i++)
+          Expanded(
+            child: _buildSessionRow(
+              context,
+              sessions[i],
+              states[i],
+              isRace: i == sessions.length - 1,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSessionRow(
+    BuildContext context,
+    RaceSession session,
+    _PreviewSessionState state, {
+    required bool isRace,
+  }) {
+    final start = session.startDateTime;
+    final highlighted =
+        state == _PreviewSessionState.next ||
+        state == _PreviewSessionState.live;
+    final nameColor = switch (state) {
+      _PreviewSessionState.done => _textDim,
+      _PreviewSessionState.live || _PreviewSessionState.next => _textPrimary,
+      _PreviewSessionState.upcoming => isRace ? _textPrimary : _textNormal,
+    };
+    final timeColor = switch (state) {
+      _PreviewSessionState.done => _textDim,
+      _PreviewSessionState.live || _PreviewSessionState.next => _textPrimary,
+      _PreviewSessionState.upcoming => _textNormal,
+    };
+
+    return Container(
+      padding: const EdgeInsets.only(left: 8, right: 10),
+      decoration: highlighted
+          ? BoxDecoration(
+              color: state == _PreviewSessionState.live
+                  ? const Color(0xFF2A1517)
+                  : const Color(0xFF1F2733),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _red.withValues(
+                  alpha: state == _PreviewSessionState.live ? 0.6 : 0.25,
+                ),
+              ),
+            )
+          : null,
+      child: Row(
+        children: [
+          _statusIcon(state),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              session.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: nameColor, fontSize: 12),
+            ),
+          ),
+          if (state == _PreviewSessionState.live)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                color: _red,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'LIVE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          if (start != null) ...[
+            Text(
+              _formatDay(start),
+              style: TextStyle(
+                color: highlighted ? _accent : _textDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(
+              width: 62,
+              child: Text(
+                _formatTime(context, start),
+                textAlign: TextAlign.end,
+                maxLines: 1,
+                style: TextStyle(color: timeColor, fontSize: 12),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _statusIcon(_PreviewSessionState state) {
+    const size = 14.0;
+    switch (state) {
+      case _PreviewSessionState.done:
+        return Container(
+          width: size,
+          height: size,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: _border,
+          ),
+          child: const Icon(Icons.check, size: 10, color: Color(0xFF7D8796)),
+        );
+      case _PreviewSessionState.live:
+        return Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(shape: BoxShape.circle, color: _red),
+          child: Container(
+            width: 5,
+            height: 5,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+          ),
+        );
+      case _PreviewSessionState.next:
+        return Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _red.withValues(alpha: 0.2),
+          ),
+          child: Container(
+            width: 7,
+            height: 7,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFFF2A1F),
+            ),
+          ),
+        );
+      case _PreviewSessionState.upcoming:
+        return Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          child: Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: _ring, width: 1.5),
+            ),
+          ),
+        );
+    }
+  }
+
+  // ── Text helpers ──
+
   String get _raceName {
-    if (hasError) return 'Failed to load';
-    if (isLoading) return 'Loading...';
+    if (widget.hasError) return 'Failed to load';
+    if (widget.isLoading) return 'Loading...';
+    final race = widget.race;
     if (race == null) return 'No upcoming race';
-    return race!.raceName.isEmpty ? 'Race weekend' : race!.raceName;
+    return race.raceName.isEmpty ? 'Race weekend' : race.raceName;
   }
 
   String get _location {
-    if (hasError) return 'Check connection';
-    if (isLoading) return 'Please wait';
+    if (widget.hasError) return 'Check connection';
+    if (widget.isLoading) return 'Please wait';
+    final race = widget.race;
     if (race == null) return 'Season complete';
-    return race!.location.isEmpty
-        ? (race!.circuitName.isEmpty ? 'Location TBA' : race!.circuitName)
-        : race!.location;
+    return race.location.isEmpty
+        ? (race.circuitName.isEmpty ? 'Location TBA' : race.circuitName)
+        : race.location;
   }
 
-  String get _countdownLine {
-    if (hasError) return 'Retry from app';
-    if (isLoading) return 'Calculating...';
-    if (race == null) return 'Awaiting next calendar';
-    final sessions = race!.sessions;
-    final now = DateTime.now();
-    for (final session in sessions) {
-      final start = session.startDateTime;
-      if (start != null && start.isAfter(now)) {
-        final remaining = start.difference(now);
-        final label = _shortCountdown(remaining);
-        return '${session.name} \u2022 $label';
-      }
-    }
-    return 'Weekend in progress';
+  static String _formatDuration(Duration d) {
+    if (d.inDays > 0) return '${d.inDays}d ${d.inHours % 24}h';
+    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m';
+    return '${d.inMinutes}m';
   }
 
-  List<String> get _sessionLines {
-    if (race == null) return [];
-    return race!.sessions.map((s) {
-      final dt = s.startDateTime;
-      if (dt == null) return s.name;
-      final local = dt.toLocal();
-      final month = _monthAbbr(local.month);
-      final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
-      final minute = local.minute.toString().padLeft(2, '0');
-      final meridiem = local.hour >= 12 ? 'PM' : 'AM';
-      final dayName = _dayAbbr(local.weekday);
-      return '${s.name} \u2022 $dayName $month ${local.day} \u2022 $hour:$minute $meridiem';
-    }).toList();
+  /// HH:MM:SS, like the Android chronometer under 24h.
+  static String _formatClock(Duration d) {
+    if (d.isNegative) return '00:00';
+    String two(int v) => v.toString().padLeft(2, '0');
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    return h > 0 ? '$h:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
   }
 
-  int get _nextSessionIndex {
-    if (race == null) return -1;
-    final now = DateTime.now();
-    final sessions = race!.sessions;
-    for (int i = 0; i < sessions.length; i++) {
-      final start = sessions[i].startDateTime;
-      if (start != null && start.isAfter(now)) return i;
-    }
-    return -1;
+  static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  static String _formatDay(DateTime dt) {
+    final local = dt.toLocal();
+    return '${_days[local.weekday - 1].toUpperCase()} ${local.day}';
   }
 
-  static String _shortCountdown(Duration d) {
-    if (d.inDays > 0) return 'Starts in ${d.inDays}d ${d.inHours % 24}h';
-    if (d.inHours > 0) return 'Starts in ${d.inHours}h ${d.inMinutes % 60}m';
-    return 'Starts in ${d.inMinutes}m';
+  static String _formatTime(BuildContext context, DateTime dt) {
+    final local = dt.toLocal();
+    return MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay.fromDateTime(local),
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
   }
 
-  static String _monthAbbr(int m) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return (m >= 1 && m <= 12) ? months[m - 1] : '---';
-  }
-
-  static String _dayAbbr(int wd) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return (wd >= 1 && wd <= 7) ? days[wd - 1] : '---';
-  }
+  static String _formatDayTime(BuildContext context, DateTime dt) =>
+      '${_days[dt.toLocal().weekday - 1]} · ${_formatTime(context, dt)}';
 }
 
 class _StandingsListPreview extends StatelessWidget {
