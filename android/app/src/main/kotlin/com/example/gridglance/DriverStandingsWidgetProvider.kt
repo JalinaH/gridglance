@@ -25,7 +25,7 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.driver_standings_widget)
             val background = if (isTransparent) {
-                android.R.color.transparent
+                R.drawable.widget_background_glass
             } else {
                 R.drawable.widget_background
             }

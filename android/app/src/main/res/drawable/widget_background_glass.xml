@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Frosted-glass background used when a widget's "transparent" option is on.
+    RemoteViews can't blur the wallpaper, so the glass look is approximated with
+    a translucent dark tint, a soft top-left sheen and a light hairline edge.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Translucent tint so text stays readable over any wallpaper -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="135"
+                android:startColor="#66161C26"
+                android:endColor="#8C0E121A" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+    <!-- Diagonal light sheen across the top-left -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="315"
+                android:startColor="#26FFFFFF"
+                android:centerColor="#0AFFFFFF"
+                android:endColor="#00FFFFFF" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+    <!-- Frosted hairline edge -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#00000000" />
+            <corners android:radius="16dp" />
+            <stroke
+                android:width="1dp"
+                android:color="#40FFFFFF" />
+        </shape>
+    </item>
+</layer-list>

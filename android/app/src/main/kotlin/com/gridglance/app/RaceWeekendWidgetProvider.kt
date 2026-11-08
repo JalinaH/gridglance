@@ -50,7 +50,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             views.setInt(
                 R.id.widget_root,
                 "setBackgroundResource",
-                if (isTransparent) android.R.color.transparent else R.drawable.widget_background,
+                if (isTransparent) R.drawable.widget_background_glass else R.drawable.widget_background,
             )
             views.setTextViewText(R.id.widget_title, title)
             views.setTextViewText(R.id.race_round, round)
