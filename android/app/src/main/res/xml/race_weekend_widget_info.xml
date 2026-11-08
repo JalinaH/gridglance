@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default 4x3. targetCell* is honoured on Android 12+ launchers only when it
+  fits the grid (a 5-wide target fell back to min sizes → 4x2 on 4-column
+  grids). minWidth/minHeight are sized so older launchers also land on 4x3;
+  minResize* still lets users shrink it manually.
+-->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/race_weekend_widget"
-    android:minWidth="320dp"
-    android:minHeight="180dp"
-    android:targetCellWidth="5"
+    android:minWidth="250dp"
+    android:minHeight="250dp"
+    android:minResizeWidth="250dp"
+    android:minResizeHeight="180dp"
+    android:targetCellWidth="4"
     android:targetCellHeight="3"
     android:previewImage="@drawable/widget_preview"
     android:resizeMode="horizontal|vertical"
