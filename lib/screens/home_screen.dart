@@ -410,10 +410,6 @@ class _HomeScreenState extends State<HomeScreen> {
               overview.constructorStandings,
               season: _season,
             );
-            WidgetUpdateService.updateNextSessionWidget(
-              overview.raceSchedule,
-              season: _season,
-            );
             WidgetUpdateService.updateRaceWeekend(
               overview.raceSchedule,
               nextRace: overview.nextRace,

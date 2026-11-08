@@ -45,12 +45,6 @@ private struct GridGlanceProvider: TimelineProvider {
       "team_3": "Mercedes - 0 pts",
       "team_3_name": "Mercedes",
       "team_3_pts": "0",
-      "next_session_widget_title": "Next Session",
-      "next_session_widget_name": "Practice 1",
-      "next_session_widget_race": "Race weekend",
-      "next_session_widget_countdown": "Starts soon",
-      "next_session_widget_line1": "Practice 2 • Fri 5:00 PM",
-      "next_session_widget_line2": "Qualifying • Sat 4:00 PM",
       "favorite_driver_default_name": "Set favorite driver",
       "favorite_driver_default_team": "",
       "favorite_driver_default_position": "--",
@@ -390,83 +384,6 @@ private struct CountdownBox: View {
       RoundedRectangle(cornerRadius: 8)
         .stroke(f1Red.opacity(0.2), lineWidth: 1)
     )
-  }
-}
-
-// MARK: - Next Session (Badge Style)
-
-private struct NextSessionWidgetView: View {
-  let entry: GridGlanceEntry
-
-  var body: some View {
-    WidgetSurface {
-      VStack(alignment: .leading, spacing: 0) {
-        WidgetHeader(
-          title: entry.text("next_session_widget_title", fallback: "Next Session"),
-          trailing: entry.text("next_session_widget_season", fallback: "--")
-        )
-        .foregroundColor(.white)
-
-        Spacer(minLength: 6)
-
-        // Session badge
-        Text(entry.text("next_session_widget_name", fallback: "No upcoming session"))
-          .font(.system(size: 11, weight: .bold))
-          .foregroundColor(.white)
-          .padding(.horizontal, 8)
-          .padding(.vertical, 3)
-          .background(
-            LinearGradient(colors: [f1Red, f1RedLight], startPoint: .leading, endPoint: .trailing)
-          )
-          .cornerRadius(4)
-
-        Text(entry.text("next_session_widget_race", fallback: "Schedule unavailable"))
-          .font(.system(size: 11, weight: .semibold))
-          .foregroundColor(.white.opacity(0.85))
-          .lineLimit(1)
-          .padding(.top, 6)
-
-        // Countdown
-        Text(entry.text("next_session_widget_countdown", fallback: "Check again later"))
-          .font(.system(size: 12, weight: .bold))
-          .foregroundColor(.white)
-          .lineLimit(1)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(8)
-          .background(surfaceAlt)
-          .cornerRadius(8)
-          .overlay(
-            RoundedRectangle(cornerRadius: 8)
-              .stroke(borderColor, lineWidth: 1)
-          )
-          .padding(.top, 6)
-
-        Spacer(minLength: 4)
-
-        // Upcoming
-        VStack(alignment: .leading, spacing: 4) {
-          HStack(spacing: 6) {
-            Circle()
-              .fill(Color(red: 0.17, green: 0.21, blue: 0.27))
-              .frame(width: 5, height: 5)
-            Text(entry.text("next_session_widget_line1", fallback: "No additional sessions"))
-              .font(.system(size: 9))
-              .foregroundColor(.white.opacity(0.7))
-              .lineLimit(1)
-          }
-          HStack(spacing: 6) {
-            Circle()
-              .fill(Color(red: 0.17, green: 0.21, blue: 0.27))
-              .frame(width: 5, height: 5)
-            Text(entry.text("next_session_widget_line2", fallback: "Check again soon"))
-              .font(.system(size: 9))
-              .foregroundColor(textMuted)
-              .lineLimit(1)
-          }
-        }
-      }
-      .foregroundColor(.white)
-    }
   }
 }
 
@@ -913,19 +830,6 @@ struct GridGlanceTeamStandingsWidget: Widget {
   }
 }
 
-struct GridGlanceNextSessionWidget: Widget {
-  let kind: String = "GridGlanceNextSessionWidget"
-
-  var body: some WidgetConfiguration {
-    StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
-      NextSessionWidgetView(entry: entry)
-    }
-    .configurationDisplayName("Next Session")
-    .description("Upcoming Formula 1 session details.")
-    .supportedFamilies([.systemSmall, .systemMedium])
-  }
-}
-
 struct GridGlanceFavoriteDriverWidget: Widget {
   let kind: String = "GridGlanceFavoriteDriverWidget"
 
@@ -972,7 +876,6 @@ struct GridGlanceWidgetsBundle: WidgetBundle {
     GridGlanceTeamStandingsWidget()
     GridGlanceFavoriteDriverWidget()
     GridGlanceFavoriteTeamWidget()
-    GridGlanceNextSessionWidget()
     GridGlanceRaceWeekendWidget()
   }
 }

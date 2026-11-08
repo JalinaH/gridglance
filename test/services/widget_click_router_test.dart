@@ -68,9 +68,8 @@ void main() {
       );
     });
 
-    test('session widgets open the race detail', () {
+    test('race weekend widget opens the race detail', () {
       expect(parse('race_weekend')!.destination, WidgetDestination.raceDetail);
-      expect(parse('next_session')!.destination, WidgetDestination.raceDetail);
     });
   });
 }

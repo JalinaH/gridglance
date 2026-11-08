@@ -57,23 +57,6 @@ void main() {
     });
   });
 
-  group('updateNextSessionWidget', () {
-    test(
-      'writes "no upcoming session" placeholders when schedule is empty',
-      () async {
-        await WidgetUpdateService.updateNextSessionWidget(
-          const [],
-          season: '2026',
-        );
-
-        final w = collectWrites();
-        expect(w['next_session_widget_title'], 'Next Session');
-        expect(w['next_session_widget_name'], 'No upcoming session');
-        expect(w['next_session_widget_race'], 'Schedule unavailable');
-      },
-    );
-  });
-
   group('updateRaceWeekend', () {
     test(
       'ignores a stale completed nextRace and writes next schedule race',
@@ -163,7 +146,6 @@ void main() {
           'favoriteDrivers',
           'teamStandings',
           'favoriteTeams',
-          'nextSession',
           'raceWeekend',
         ]),
       );
