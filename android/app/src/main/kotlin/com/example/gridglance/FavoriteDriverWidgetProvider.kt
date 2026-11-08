@@ -111,6 +111,16 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
                 R.id.widget_root,
                 WidgetInteractions.openApp(context, "favorite_driver", appWidgetId, targetId = targetId),
             )
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_season, R.id.driver_team,
+                        R.id.favorite_driver_label_1, R.id.favorite_driver_label_2,
+                    ),
+                    pillIds = intArrayOf(R.id.widget_season),
+                )
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

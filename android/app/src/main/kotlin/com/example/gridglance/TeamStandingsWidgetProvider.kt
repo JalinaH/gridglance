@@ -81,6 +81,16 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
                 }
             }
 
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_season, R.id.team_two_pts,
+                        R.id.team_standings_label_1, R.id.team_three_pts,
+                    ),
+                    pillIds = intArrayOf(R.id.widget_season),
+                )
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

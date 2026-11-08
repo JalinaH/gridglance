@@ -81,6 +81,16 @@ class DriverStandingsWidgetProvider : AppWidgetProvider() {
                 }
             }
 
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_season, R.id.driver_two_pts,
+                        R.id.driver_standings_label_1, R.id.driver_three_pts,
+                    ),
+                    pillIds = intArrayOf(R.id.widget_season),
+                )
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
