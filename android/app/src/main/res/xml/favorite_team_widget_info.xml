@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Default full width (4x2); can still be shrunk to 3 columns. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/favorite_team_widget"
-    android:minWidth="200dp"
+    android:minWidth="250dp"
     android:minHeight="110dp"
+    android:minResizeWidth="200dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
     android:previewImage="@drawable/widget_preview"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
