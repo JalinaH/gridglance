@@ -50,7 +50,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             views.setInt(
                 R.id.widget_root,
                 "setBackgroundResource",
-                if (isTransparent) android.R.color.transparent else R.drawable.widget_background,
+                if (isTransparent) R.drawable.widget_background_glass else R.drawable.widget_background,
             )
             views.setTextViewText(R.id.widget_title, title)
             views.setTextViewText(R.id.race_round, round)
@@ -67,7 +67,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
 
             bindHero(context, views, prefs, sessions, liveIndex, nextIndex, now)
             bindProgress(views, sessions.size, doneCount)
-            bindSessionRows(context, views, sessions, states)
+            bindSessionRows(context, views, sessions, states, isTransparent)
 
             views.setOnClickPendingIntent(
                 R.id.widget_root,
@@ -75,6 +75,16 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             )
             WidgetInteractions.bindUpdatedLabel(context, views, prefs, R.id.widget_status)
 
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_title, R.id.widget_status, R.id.race_location,
+                        R.id.hero_caption, R.id.weekend_progress_label,
+                    ),
+                )
+                views.setInt(R.id.hero_card, "setBackgroundResource", R.drawable.widget_hero_card_glass)
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
@@ -169,7 +179,10 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
         views: RemoteViews,
         sessions: List<WeekendSession>,
         states: List<SessionState>,
+        isGlass: Boolean,
     ) {
+        // Over the glass background the regular dim gray disappears into the wallpaper.
+        val dim = if (isGlass) WidgetInteractions.COLOR_GLASS_DIM else COLOR_DIM
         for (i in 0 until MAX_SESSIONS) {
             val ids = ROW_IDS[i]
             val session = sessions.getOrNull(i)
@@ -196,7 +209,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
 
             val (icon, rowBg, nameColor, metaColor) = when (state) {
                 SessionState.DONE -> RowStyle(
-                    R.drawable.ic_session_done, R.drawable.widget_session_row_idle, COLOR_DIM, COLOR_DIM,
+                    R.drawable.ic_session_done, R.drawable.widget_session_row_idle, dim, dim,
                 )
                 SessionState.LIVE -> RowStyle(
                     R.drawable.ic_session_live, R.drawable.widget_session_row_live, COLOR_BRIGHT, COLOR_BRIGHT,
@@ -215,7 +228,7 @@ class RaceWeekendWidgetProvider : AppWidgetProvider() {
             views.setTextColor(ids.time, metaColor)
             views.setTextColor(
                 ids.day,
-                if (state == SessionState.NEXT || state == SessionState.LIVE) COLOR_ACCENT else COLOR_DIM,
+                if (state == SessionState.NEXT || state == SessionState.LIVE) COLOR_ACCENT else dim,
             )
             views.setViewVisibility(ids.live, if (state == SessionState.LIVE) View.VISIBLE else View.GONE)
         }

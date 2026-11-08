@@ -185,8 +185,33 @@ object WidgetInteractions {
 
     // endregion
 
+    // region Glass mode
+
+    /**
+     * Raises content contrast when a widget uses the see-through glass
+     * background: secondary text is brightened (labels already carry a soft
+     * shadow from the layout) and pill chips become smoked glass so their text
+     * stands off the wallpaper. Call after all other binding.
+     */
+    fun applyGlassContrast(
+        views: RemoteViews,
+        mutedTextIds: IntArray,
+        pillIds: IntArray = intArrayOf(),
+    ) {
+        for (id in mutedTextIds) views.setTextColor(id, COLOR_GLASS_MUTED)
+        for (id in pillIds) views.setInt(id, "setBackgroundResource", R.drawable.widget_pill_glass)
+    }
+
+    // endregion
+
     const val COLOR_BRIGHT = 0xFFF7F8FA.toInt()
     const val COLOR_NORMAL = 0xFFC9D0DA.toInt()
     const val COLOR_DIM = 0xFF6B7586.toInt()
     const val COLOR_ACCENT = 0xFFFF5A4F.toInt()
+
+    /** Secondary text over glass: brighter than [COLOR_NORMAL]'s dark-mode peers so it reads on any wallpaper. */
+    const val COLOR_GLASS_MUTED = 0xFFDCE1EA.toInt()
+
+    /** Dimmed text (done sessions) over glass. */
+    const val COLOR_GLASS_DIM = 0xFFAEB6C2.toInt()
 }

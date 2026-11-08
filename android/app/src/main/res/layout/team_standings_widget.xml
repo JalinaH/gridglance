@@ -15,12 +15,18 @@
         android:orientation="horizontal">
 
         <TextView
+            android:shadowColor="#8C000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
             android:layout_width="36dp"
             android:layout_height="3dp"
             android:background="@drawable/widget_accent"
             android:text="" />
 
         <TextView
+            android:shadowColor="#8C000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
             android:id="@+id/widget_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -34,12 +40,18 @@
             android:textStyle="bold" />
 
         <TextView
+            android:shadowColor="#8C000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="" />
 
         <TextView
+            android:shadowColor="#8C000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
             android:id="@+id/widget_season"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -80,6 +92,9 @@
                 android:scaleType="fitCenter" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/team_two_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -94,6 +109,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/team_two_pts"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -105,6 +123,10 @@
 
             <!-- P2 podium block -->
             <TextView
+                android:id="@+id/team_standings_label_1"
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:layout_width="match_parent"
                 android:layout_height="36dp"
                 android:layout_marginStart="3dp"
@@ -136,6 +158,9 @@
                 android:scaleType="fitCenter" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/team_one_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -150,6 +175,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/team_one_pts"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -162,6 +190,9 @@
 
             <!-- P1 podium block -->
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_marginStart="3dp"
@@ -193,6 +224,9 @@
                 android:scaleType="fitCenter" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/team_three_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -207,6 +241,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/team_three_pts"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -218,6 +255,9 @@
 
             <!-- P3 podium block -->
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:layout_width="match_parent"
                 android:layout_height="26dp"
                 android:layout_marginStart="3dp"

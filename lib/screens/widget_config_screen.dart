@@ -98,7 +98,7 @@ class _WidgetConfigScreenState extends State<WidgetConfigScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Transparent background',
+                      'Glass background',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,

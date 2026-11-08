@@ -77,7 +77,7 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
 
             val views = RemoteViews(context.packageName, R.layout.favorite_team_widget)
             val background = if (isTransparent) {
-                android.R.color.transparent
+                R.drawable.widget_background_glass
             } else {
                 R.drawable.widget_background
             }
@@ -126,6 +126,17 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
                 R.id.widget_root,
                 WidgetInteractions.openApp(context, "favorite_team", appWidgetId, targetId = targetId),
             )
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_season, R.id.driver1_code, R.id.driver2_code,
+                        R.id.favorite_team_label_1, R.id.favorite_team_label_2,
+                    ),
+                    pillIds = intArrayOf(R.id.widget_season),
+                )
+                views.setInt(R.id.team_car, "setBackgroundResource", R.drawable.widget_team_car_glass)
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

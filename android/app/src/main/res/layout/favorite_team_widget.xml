@@ -52,6 +52,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/widget_season"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -77,6 +80,9 @@
 
         <!-- Team color accent bar -->
         <TextView
+            android:shadowColor="#8C000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
             android:id="@+id/team_color_bar"
             android:layout_width="4dp"
             android:layout_height="match_parent"
@@ -102,6 +108,9 @@
 
                 <!-- Driver 1 number badge -->
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/driver1_number"
                     android:layout_width="26dp"
                     android:layout_height="22dp"
@@ -114,6 +123,9 @@
                     android:textStyle="bold|italic" />
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/driver1_name"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -129,6 +141,9 @@
                     android:textStyle="bold|italic" />
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/driver1_code"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -149,6 +164,9 @@
 
                 <!-- Driver 2 number badge -->
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/driver2_number"
                     android:layout_width="26dp"
                     android:layout_height="22dp"
@@ -161,6 +179,9 @@
                     android:textStyle="bold|italic" />
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/driver2_name"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -176,6 +197,9 @@
                     android:textStyle="bold|italic" />
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/driver2_code"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -209,6 +233,10 @@
                     android:paddingBottom="5dp">
 
                     <TextView
+                        android:id="@+id/favorite_team_label_1"
+                        android:shadowColor="#8C000000"
+                        android:shadowDy="1"
+                        android:shadowRadius="3"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-condensed"
@@ -219,6 +247,9 @@
                         android:textStyle="bold|italic" />
 
                     <TextView
+                        android:shadowColor="#8C000000"
+                        android:shadowDy="1"
+                        android:shadowRadius="3"
                         android:id="@+id/team_position"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -231,6 +262,9 @@
                 </LinearLayout>
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:layout_width="6dp"
                     android:layout_height="0dp"
                     android:text="" />
@@ -250,6 +284,9 @@
                     android:paddingBottom="5dp">
 
                     <TextView
+                        android:shadowColor="#8C000000"
+                        android:shadowDy="1"
+                        android:shadowRadius="3"
                         android:id="@+id/team_points"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -261,6 +298,10 @@
                         android:textStyle="bold|italic" />
 
                     <TextView
+                        android:id="@+id/favorite_team_label_2"
+                        android:shadowColor="#8C000000"
+                        android:shadowDy="1"
+                        android:shadowRadius="3"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="3dp"

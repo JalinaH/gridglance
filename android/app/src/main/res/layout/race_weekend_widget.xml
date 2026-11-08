@@ -28,12 +28,18 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:layout_width="24dp"
                     android:layout_height="3dp"
                     android:background="@drawable/widget_accent"
                     android:text="" />
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/widget_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -48,6 +54,9 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/race_round"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -64,6 +73,9 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:shadowColor="#8C000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
                     android:id="@+id/widget_status"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -79,6 +91,9 @@
             </LinearLayout>
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/race_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -93,6 +108,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/race_location"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -141,6 +159,9 @@
             android:orientation="vertical">
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/hero_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -156,6 +177,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/hero_session"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -177,6 +201,9 @@
 
             <!-- Static countdown (days away / fallback text) -->
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/next_session_countdown"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -201,6 +228,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/hero_caption"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -234,6 +264,9 @@
             android:progressDrawable="@drawable/widget_progress" />
 
         <TextView
+            android:shadowColor="#8C000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
             android:id="@+id/weekend_progress_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -272,6 +305,9 @@
                 android:src="@drawable/ic_session_upcoming" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_1_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -285,6 +321,9 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_1_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -302,6 +341,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_1_day"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -315,6 +357,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_1_time"
                 android:layout_width="58dp"
                 android:layout_height="wrap_content"
@@ -344,6 +389,9 @@
                 android:src="@drawable/ic_session_upcoming" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_2_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -357,6 +405,9 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_2_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -374,6 +425,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_2_day"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -387,6 +441,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_2_time"
                 android:layout_width="58dp"
                 android:layout_height="wrap_content"
@@ -416,6 +473,9 @@
                 android:src="@drawable/ic_session_upcoming" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_3_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -429,6 +489,9 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_3_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -446,6 +509,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_3_day"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -459,6 +525,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_3_time"
                 android:layout_width="58dp"
                 android:layout_height="wrap_content"
@@ -488,6 +557,9 @@
                 android:src="@drawable/ic_session_upcoming" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_4_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -501,6 +573,9 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_4_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -518,6 +593,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_4_day"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -531,6 +609,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_4_time"
                 android:layout_width="58dp"
                 android:layout_height="wrap_content"
@@ -560,6 +641,9 @@
                 android:src="@drawable/ic_session_upcoming" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_5_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -573,6 +657,9 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_5_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -590,6 +677,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_5_day"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -603,6 +693,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_5_time"
                 android:layout_width="58dp"
                 android:layout_height="wrap_content"
@@ -633,6 +726,9 @@
                 android:src="@drawable/ic_session_upcoming" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_6_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -646,6 +742,9 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_6_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -663,6 +762,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_6_day"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -676,6 +778,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_6_time"
                 android:layout_width="58dp"
                 android:layout_height="wrap_content"
@@ -706,6 +811,9 @@
                 android:src="@drawable/ic_session_upcoming" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_7_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -719,6 +827,9 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_7_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -736,6 +847,9 @@
                 android:visibility="gone" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_7_day"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -749,6 +863,9 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:shadowColor="#8C000000"
+                android:shadowDy="1"
+                android:shadowRadius="3"
                 android:id="@+id/session_7_time"
                 android:layout_width="58dp"
                 android:layout_height="wrap_content"

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Glass-mode countdown hero: smoked card with a red wash, so the countdown is the focal point. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:endColor="#66000000"
+        android:startColor="#8C3A1416" />
+    <corners android:radius="14dp" />
+    <stroke
+        android:width="1dp"
+        android:color="#80E10600" />
+</shape>
