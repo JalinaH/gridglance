@@ -22,8 +22,7 @@ GridGlance is a Flutter app for following Formula 1 standings and race weekends 
   - Team Standings
   - Favorite Driver
   - Favorite Team
-  - Next Race Countdown
-  - Next Session
+  - Race Weekend (full session timeline with live countdown; rolls over to the next race automatically)
 - Persists user preferences (theme mode, selected season, favorite driver/team, notification toggles).
 - Animated splash screen with F1 starting lights sequence, logo reveal, racing stripes, and glow effects.
 - Polished interactions: haptic feedback, bounce-tap animations, celebratory confetti/pulse overlays, swipe-to-favorite gestures, skeleton loading states, and adaptive responsive layouts.

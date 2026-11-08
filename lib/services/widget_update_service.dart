@@ -81,10 +81,6 @@ class WidgetUpdateService {
       'FavoriteTeamWidgetProvider';
   static const String androidQualifiedFavoriteTeamWidgetProvider =
       'com.gridglance.app.FavoriteTeamWidgetProvider';
-  static const String androidNextSessionWidgetProvider =
-      'NextSessionWidgetProvider';
-  static const String androidQualifiedNextSessionWidgetProvider =
-      'com.gridglance.app.NextSessionWidgetProvider';
   static const String androidRaceWeekendWidgetProvider =
       'RaceWeekendWidgetProvider';
   static const String androidQualifiedRaceWeekendWidgetProvider =
@@ -97,7 +93,6 @@ class WidgetUpdateService {
       'GridGlanceFavoriteDriverWidget';
   static const String iOSFavoriteTeamWidgetKind =
       'GridGlanceFavoriteTeamWidget';
-  static const String iOSNextSessionWidgetKind = 'GridGlanceNextSessionWidget';
   static const Duration defaultRefreshInterval = Duration(minutes: 30);
 
   /// Widget images download inside background tasks (iOS allows ~30s in
@@ -110,12 +105,11 @@ class WidgetUpdateService {
   static const String _favoriteDriverWidgetIdsKey =
       'favorite_driver_widget_ids';
   static const String _favoriteTeamWidgetIdsKey = 'favorite_team_widget_ids';
+  static const String widgetsLastUpdatedKey = 'widgets_last_updated_ms';
   static const String _favoriteDriverDefaultKey = 'favorite_driver_default';
   static const String _favoriteTeamDefaultKey = 'favorite_team_default';
   static const String _driverWidgetTransparentKey = 'driver_widget_transparent';
   static const String _teamWidgetTransparentKey = 'team_widget_transparent';
-  static const String _nextSessionWidgetTransparentKey =
-      'next_session_widget_transparent';
   static const String _raceWeekendWidgetTransparentKey =
       'race_weekend_widget_transparent';
   static const String _favoriteDriverDefaultTransparentKey =
@@ -363,11 +357,6 @@ class WidgetUpdateService {
 
     if (races != null) {
       await persistAndReload(
-        'nextSession',
-        () => updateNextSessionWidget(races, season: season, reload: false),
-        _refreshNextSessionWidget,
-      );
-      await persistAndReload(
         'raceWeekend',
         () => updateRaceWeekend(
           races,
@@ -378,7 +367,7 @@ class WidgetUpdateService {
         _refreshRaceWeekendWidget,
       );
     } else {
-      for (final dataset in ['nextSession', 'raceWeekend']) {
+      for (final dataset in ['raceWeekend']) {
         recordSkipped(
           dataset,
           WidgetRefreshPhase.persist,
@@ -423,7 +412,6 @@ class WidgetUpdateService {
       }
       try {
         final races = await api.getRaceSchedule(season: season);
-        await updateNextSessionWidget(races, season: season);
         await updateRaceWeekend(races, season: season);
       } catch (error, stackTrace) {
         _logWidgetError(
@@ -491,11 +479,13 @@ class WidgetUpdateService {
         await _saveDps('driver_${idx}_first_name', top[i].givenName);
         await _saveDps('driver_${idx}_pts', top[i].points);
         await _saveDps('driver_${idx}_code', _shortDriverCode(top[i]));
+        await _saveDps('driver_${idx}_id', top[i].driverId);
       } else {
         await _saveDps('driver_${idx}_last_name', 'TBD');
         await _saveDps('driver_${idx}_first_name', '');
         await _saveDps('driver_${idx}_pts', '0');
         await _saveDps('driver_${idx}_code', '---');
+        await _saveDps('driver_${idx}_id', '');
       }
     }
 
@@ -539,60 +529,16 @@ class WidgetUpdateService {
         await _saveDps('team_${idx}_name', top[i].teamName);
         await _saveDps('team_${idx}_pts', top[i].points);
         await _saveTeamLogo('team_${idx}_logo', top[i].teamName);
+        await _saveDps('team_${idx}_id', top[i].constructorId);
       } else {
         await _saveDps('team_${idx}_name', 'TBD');
         await _saveDps('team_${idx}_pts', '0');
+        await _saveDps('team_${idx}_id', '');
       }
     }
 
     if (reload) {
       await _refreshTeamWidget();
-    }
-  }
-
-  static Future<void> updateNextSessionWidget(
-    List<Race> races, {
-    String? season,
-    bool reload = true,
-  }) async {
-    final seasonLabel =
-        season ?? _seasonOverride ?? DateTime.now().year.toString();
-    _seasonOverride = seasonLabel;
-    await _saveDps('next_session_widget_title', 'Next Session');
-    await _saveDps('next_session_widget_season', seasonLabel);
-
-    final sessions = _collectUpcomingSessions(races);
-    if (sessions.isEmpty) {
-      await _saveDps('next_session_widget_name', 'No upcoming session');
-      await _saveDps('next_session_widget_race', 'Schedule unavailable');
-      await _saveDps('next_session_widget_countdown', 'Check again later');
-      await _saveDps('next_session_widget_line1', 'No additional sessions');
-      await _saveDps('next_session_widget_line2', 'Waiting for updates');
-    } else {
-      final current = sessions.first;
-      final nextOne = sessions.length > 1 ? sessions[1] : null;
-      final nextTwo = sessions.length > 2 ? sessions[2] : null;
-      await _saveDps('next_session_widget_name', current.session.name);
-      await _saveDps(
-        'next_session_widget_race',
-        current.race.raceName.isEmpty ? 'Race weekend' : current.race.raceName,
-      );
-      await _saveDps(
-        'next_session_widget_countdown',
-        _formatCountdownLabel(current.session.startDateTime),
-      );
-      await _saveDps(
-        'next_session_widget_line1',
-        _formatSessionLine(nextOne) ?? 'No additional sessions',
-      );
-      await _saveDps(
-        'next_session_widget_line2',
-        _formatSessionLine(nextTwo) ?? 'Check again soon',
-      );
-    }
-
-    if (reload) {
-      await _refreshNextSessionWidget();
     }
   }
 
@@ -625,6 +571,8 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_round', '');
       for (int i = 1; i <= 7; i++) {
         await _saveDps('race_weekend_widget_session_$i', '');
+        await _saveDps('race_weekend_widget_session_${i}_name', '');
+        await _saveDps('race_weekend_widget_session_${i}_ms', '');
       }
       await _saveDps('race_weekend_widget_next_index', '-1');
     } else {
@@ -641,8 +589,9 @@ class WidgetUpdateService {
       await _saveDps('race_weekend_widget_round', 'R${target.round}');
       await _saveTrackImage('race_weekend_widget_track', target.circuitId);
 
-      // Build session lines for this race.
-      final allSessions = target.sessions;
+      // Build session lines for this race in chronological order (the model
+      // lists qualifying before the sprint sessions on sprint weekends).
+      final allSessions = sortSessionsChronologically(target.sessions);
       int nextIndex = -1;
 
       for (int i = 0; i < 7; i++) {
@@ -652,6 +601,17 @@ class WidgetUpdateService {
             _UpcomingSession(race: target, session: session),
           );
           await _saveDps('race_weekend_widget_session_${i + 1}', label ?? '');
+          // Raw name + start timestamp let the native widget derive
+          // done / live / next state and format times locally.
+          await _saveDps(
+            'race_weekend_widget_session_${i + 1}_name',
+            session.name,
+          );
+          await _saveDps(
+            'race_weekend_widget_session_${i + 1}_ms',
+            session.startDateTime?.toUtc().millisecondsSinceEpoch.toString() ??
+                '',
+          );
 
           // Track the first upcoming session.
           if (nextIndex == -1) {
@@ -662,6 +622,8 @@ class WidgetUpdateService {
           }
         } else {
           await _saveDps('race_weekend_widget_session_${i + 1}', '');
+          await _saveDps('race_weekend_widget_session_${i + 1}_name', '');
+          await _saveDps('race_weekend_widget_session_${i + 1}_ms', '');
         }
       }
 
@@ -696,6 +658,24 @@ class WidgetUpdateService {
     if (reload) {
       await _refreshRaceWeekendWidget();
     }
+  }
+
+  /// Returns [sessions] ordered by start time. Sessions without a parseable
+  /// start keep their relative order and sort after timed ones.
+  static List<RaceSession> sortSessionsChronologically(
+    List<RaceSession> sessions,
+  ) {
+    final indexed = sessions.asMap().entries.toList();
+    indexed.sort((a, b) {
+      final aStart = a.value.startDateTime;
+      final bStart = b.value.startDateTime;
+      if (aStart == null && bStart == null) return a.key.compareTo(b.key);
+      if (aStart == null) return 1;
+      if (bStart == null) return -1;
+      final cmp = aStart.compareTo(bStart);
+      return cmp != 0 ? cmp : a.key.compareTo(b.key);
+    });
+    return [for (final entry in indexed) entry.value];
   }
 
   static Future<void> updateFavoriteDrivers(
@@ -991,11 +971,6 @@ class WidgetUpdateService {
     await _refreshTeamWidget();
   }
 
-  static Future<void> setNextSessionWidgetTransparent(bool value) async {
-    await _saveDps(_nextSessionWidgetTransparentKey, value.toString());
-    await _refreshNextSessionWidget();
-  }
-
   static Future<void> setFavoriteDriverWidgetTransparent({
     required int widgetId,
     required bool value,
@@ -1023,10 +998,6 @@ class WidgetUpdateService {
     return _getBool(_teamWidgetTransparentKey);
   }
 
-  static Future<bool> getNextSessionWidgetTransparent() async {
-    return _getBool(_nextSessionWidgetTransparentKey);
-  }
-
   static Future<bool> getFavoriteDriverWidgetTransparent(int widgetId) async {
     return _getBool(_favoriteDriverKey(widgetId, 'transparent'));
   }
@@ -1043,7 +1014,17 @@ class WidgetUpdateService {
     return _getBool(_favoriteTeamDefaultTransparentKey);
   }
 
+  /// Stamps when widget data was last persisted, shown natively as
+  /// "Updated 2:41 PM".
+  static Future<void> _markWidgetsUpdated() async {
+    await _saveDps(
+      widgetsLastUpdatedKey,
+      DateTime.now().millisecondsSinceEpoch.toString(),
+    );
+  }
+
   static Future<void> _refreshDriverWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedDriverWidgetProvider,
       iOSName: iOSDriverWidgetKind,
@@ -1052,6 +1033,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshTeamWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedTeamWidgetProvider,
       iOSName: iOSTeamWidgetKind,
@@ -1060,6 +1042,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshFavoriteDriverWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteDriverWidgetProvider,
       iOSName: iOSFavoriteDriverWidgetKind,
@@ -1068,6 +1051,7 @@ class WidgetUpdateService {
   }
 
   static Future<void> _refreshFavoriteTeamWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedFavoriteTeamWidgetProvider,
       iOSName: iOSFavoriteTeamWidgetKind,
@@ -1075,15 +1059,8 @@ class WidgetUpdateService {
     _requirePluginSuccess('reload favorite team widget', updated);
   }
 
-  static Future<void> _refreshNextSessionWidget() async {
-    final updated = await HomeWidget.updateWidget(
-      qualifiedAndroidName: androidQualifiedNextSessionWidgetProvider,
-      iOSName: iOSNextSessionWidgetKind,
-    );
-    _requirePluginSuccess('reload next session widget', updated);
-  }
-
   static Future<void> _refreshRaceWeekendWidget() async {
+    await _markWidgetsUpdated();
     final updated = await HomeWidget.updateWidget(
       qualifiedAndroidName: androidQualifiedRaceWeekendWidgetProvider,
       iOSName: iOSRaceWeekendWidgetKind,
@@ -1431,24 +1408,6 @@ class WidgetUpdateService {
       return 'Starts in ${remaining.inHours}h ${minutes}m';
     }
     return 'Starts in ${minutes}m';
-  }
-
-  static List<_UpcomingSession> _collectUpcomingSessions(List<Race> races) {
-    final now = DateTime.now();
-    final sessions = <_UpcomingSession>[];
-    for (final race in races) {
-      for (final session in race.sessions) {
-        final start = session.startDateTime;
-        if (start == null || !start.isAfter(now)) {
-          continue;
-        }
-        sessions.add(_UpcomingSession(race: race, session: session));
-      }
-    }
-    sessions.sort(
-      (a, b) => a.session.startDateTime!.compareTo(b.session.startDateTime!),
-    );
-    return sessions;
   }
 
   static Race? _selectRaceWeekendTarget(

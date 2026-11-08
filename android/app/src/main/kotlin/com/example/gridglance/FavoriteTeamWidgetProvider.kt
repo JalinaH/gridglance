@@ -1,10 +1,8 @@
 package com.gridglance.app
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.Log
@@ -73,21 +71,13 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
                 prefs.getString("${fallbackPrefix}d2_code", "---")
             ) ?: "---"
 
-            val intent = Intent(context, MainActivity::class.java).apply {
-                action = "com.gridglance.app.WIDGET_CLICK"
-                putExtra("widget_type", "favorite_team")
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            }
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                appWidgetId,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
+            val targetId = prefs.getString("${prefix}constructorId",
+                prefs.getString("${fallbackPrefix}constructorId", "")
+            ) ?: ""
 
             val views = RemoteViews(context.packageName, R.layout.favorite_team_widget)
             val background = if (isTransparent) {
-                android.R.color.transparent
+                R.drawable.widget_background_glass
             } else {
                 R.drawable.widget_background
             }
@@ -131,7 +121,22 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+            // Tap → team detail (or the picker if not configured yet).
+            views.setOnClickPendingIntent(
+                R.id.widget_root,
+                WidgetInteractions.openApp(context, "favorite_team", appWidgetId, targetId = targetId),
+            )
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_season, R.id.driver1_code, R.id.driver2_code,
+                        R.id.favorite_team_label_1, R.id.favorite_team_label_2,
+                    ),
+                    pillIds = intArrayOf(R.id.widget_season),
+                )
+                views.setInt(R.id.team_car, "setBackgroundResource", R.drawable.widget_team_car_glass)
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

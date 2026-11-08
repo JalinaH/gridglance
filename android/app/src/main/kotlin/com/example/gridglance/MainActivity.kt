@@ -20,7 +20,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun handleWidgetIntent(intent: android.content.Intent?) {
-        if (intent?.action != "com.gridglance.app.WIDGET_CLICK") {
+        if (intent?.action != WidgetInteractions.ACTION_WIDGET_CLICK) {
             return
         }
         val type = intent.getStringExtra("widget_type")
@@ -34,6 +34,7 @@ class MainActivity : FlutterActivity() {
         pendingWidgetClick = hashMapOf(
             "type" to type,
             "widgetId" to widgetId.toString(),
+            "targetId" to (intent.getStringExtra(WidgetInteractions.EXTRA_TARGET_ID) ?: ""),
         )
     }
 

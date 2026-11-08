@@ -1,10 +1,8 @@
 package com.gridglance.app
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.Log
@@ -64,21 +62,13 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
                 prefs.getString("${fallbackPrefix}number", "--")
             ) ?: "--"
 
-            val intent = Intent(context, MainActivity::class.java).apply {
-                action = "com.gridglance.app.WIDGET_CLICK"
-                putExtra("widget_type", "favorite_driver")
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            }
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                appWidgetId,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
+            val targetId = prefs.getString("${prefix}driverId",
+                prefs.getString("${fallbackPrefix}driverId", "")
+            ) ?: ""
 
             val views = RemoteViews(context.packageName, R.layout.favorite_driver_widget)
             val background = if (isTransparent) {
-                android.R.color.transparent
+                R.drawable.widget_background_glass
             } else {
                 R.drawable.widget_background
             }
@@ -116,7 +106,21 @@ class FavoriteDriverWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+            // Tap → driver detail (or the picker if not configured yet).
+            views.setOnClickPendingIntent(
+                R.id.widget_root,
+                WidgetInteractions.openApp(context, "favorite_driver", appWidgetId, targetId = targetId),
+            )
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_season, R.id.driver_team,
+                        R.id.favorite_driver_label_1, R.id.favorite_driver_label_2,
+                    ),
+                    pillIds = intArrayOf(R.id.widget_season),
+                )
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

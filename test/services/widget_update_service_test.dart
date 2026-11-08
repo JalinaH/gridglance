@@ -57,23 +57,6 @@ void main() {
     });
   });
 
-  group('updateNextSessionWidget', () {
-    test(
-      'writes "no upcoming session" placeholders when schedule is empty',
-      () async {
-        await WidgetUpdateService.updateNextSessionWidget(
-          const [],
-          season: '2026',
-        );
-
-        final w = collectWrites();
-        expect(w['next_session_widget_title'], 'Next Session');
-        expect(w['next_session_widget_name'], 'No upcoming session');
-        expect(w['next_session_widget_race'], 'Schedule unavailable');
-      },
-    );
-  });
-
   group('updateRaceWeekend', () {
     test(
       'ignores a stale completed nextRace and writes next schedule race',
@@ -163,7 +146,6 @@ void main() {
           'favoriteDrivers',
           'teamStandings',
           'favoriteTeams',
-          'nextSession',
           'raceWeekend',
         ]),
       );
@@ -225,6 +207,49 @@ void main() {
         ),
         isTrue,
       );
+    });
+  });
+
+  group('sortSessionsChronologically', () {
+    test('orders sprint weekend sessions by start time', () {
+      final sessions = [
+        RaceSession(
+          name: 'Free Practice 1',
+          date: '2026-11-06',
+          time: '14:30:00Z',
+        ),
+        RaceSession(name: 'Qualifying', date: '2026-11-07', time: '18:00:00Z'),
+        RaceSession(
+          name: 'Sprint Qualifying',
+          date: '2026-11-06',
+          time: '18:30:00Z',
+        ),
+        RaceSession(name: 'Sprint', date: '2026-11-07', time: '14:00:00Z'),
+        RaceSession(name: 'Race', date: '2026-11-08', time: '17:00:00Z'),
+      ];
+
+      final sorted = WidgetUpdateService.sortSessionsChronologically(sessions);
+
+      expect(sorted.map((s) => s.name), [
+        'Free Practice 1',
+        'Sprint Qualifying',
+        'Sprint',
+        'Qualifying',
+        'Race',
+      ]);
+    });
+
+    test('keeps untimed sessions after timed ones in original order', () {
+      final sessions = [
+        RaceSession(name: 'A', date: '', time: null),
+        RaceSession(name: 'B', date: '2026-11-07', time: '10:00:00Z'),
+        RaceSession(name: 'C', date: '', time: null),
+        RaceSession(name: 'D', date: '2026-11-06', time: '10:00:00Z'),
+      ];
+
+      final sorted = WidgetUpdateService.sortSessionsChronologically(sessions);
+
+      expect(sorted.map((s) => s.name), ['D', 'B', 'A', 'C']);
     });
   });
 }

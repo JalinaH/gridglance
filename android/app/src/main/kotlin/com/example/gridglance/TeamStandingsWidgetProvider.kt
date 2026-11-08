@@ -25,7 +25,7 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.team_standings_widget)
             val background = if (isTransparent) {
-                android.R.color.transparent
+                R.drawable.widget_background_glass
             } else {
                 R.drawable.widget_background
             }
@@ -38,26 +38,17 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
                 R.id.team_one_name,
                 prefs.getString("team_1_name", "P1") ?: "P1",
             )
-            views.setTextViewText(
-                R.id.team_one_pts,
-                "${prefs.getString("team_1_pts", "0") ?: "0"} pts",
-            )
+            views.setTextViewText(R.id.team_one_pts, PodiumBinding.pointsWithGap(prefs, "team", 1))
             views.setTextViewText(
                 R.id.team_two_name,
                 prefs.getString("team_2_name", "P2") ?: "P2",
             )
-            views.setTextViewText(
-                R.id.team_two_pts,
-                "${prefs.getString("team_2_pts", "0") ?: "0"} pts",
-            )
+            views.setTextViewText(R.id.team_two_pts, PodiumBinding.pointsWithGap(prefs, "team", 2))
             views.setTextViewText(
                 R.id.team_three_name,
                 prefs.getString("team_3_name", "P3") ?: "P3",
             )
-            views.setTextViewText(
-                R.id.team_three_pts,
-                "${prefs.getString("team_3_pts", "0") ?: "0"} pts",
-            )
+            views.setTextViewText(R.id.team_three_pts, PodiumBinding.pointsWithGap(prefs, "team", 3))
 
             // Load team logos.
             val logoIds = arrayOf(R.id.team_one_logo, R.id.team_two_logo, R.id.team_three_logo)
@@ -74,6 +65,32 @@ class TeamStandingsWidgetProvider : AppWidgetProvider() {
                 }
             }
 
+            // Tap the podium step → that team's detail; anywhere else → full standings.
+            views.setOnClickPendingIntent(
+                R.id.widget_root,
+                WidgetInteractions.openApp(context, "team_standings", appWidgetId),
+            )
+            val colIds = arrayOf(R.id.team_one_col, R.id.team_two_col, R.id.team_three_col)
+            for (i in 1..3) {
+                val id = prefs.getString("team_${i}_id", null)
+                if (!id.isNullOrEmpty()) {
+                    views.setOnClickPendingIntent(
+                        colIds[i - 1],
+                        WidgetInteractions.openApp(context, "team_standings", appWidgetId, "p$i", id),
+                    )
+                }
+            }
+
+            if (isTransparent) {
+                WidgetInteractions.applyGlassContrast(
+                    views,
+                    mutedTextIds = intArrayOf(
+                        R.id.widget_season, R.id.team_two_pts,
+                        R.id.team_standings_label_1, R.id.team_three_pts,
+                    ),
+                    pillIds = intArrayOf(R.id.widget_season),
+                )
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
