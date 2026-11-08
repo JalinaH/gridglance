@@ -1,39 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Frosted-glass background used when a widget's "transparent" option is on.
-    RemoteViews can't blur the wallpaper, so the glass look is approximated with
-    a translucent dark tint, a soft top-left sheen and a light hairline edge.
+    Glass background used when a widget's "transparent" option is on.
+    Android widgets (RemoteViews) can't blur the wallpaper behind them, so the
+    glass look is built from cues instead: a very light milky frost that keeps
+    the wallpaper visible, a bright specular sheen from the top-left, a bright
+    rim edge, and a faint dark outer line so the panel reads on light wallpapers.
 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Translucent tint so text stays readable over any wallpaper -->
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="135"
-                android:startColor="#66161C26"
-                android:endColor="#8C0E121A" />
-            <corners android:radius="16dp" />
-        </shape>
-    </item>
-    <!-- Diagonal light sheen across the top-left -->
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="315"
-                android:startColor="#26FFFFFF"
-                android:centerColor="#0AFFFFFF"
-                android:endColor="#00FFFFFF" />
-            <corners android:radius="16dp" />
-        </shape>
-    </item>
-    <!-- Frosted hairline edge -->
+    <!-- Faint dark outline: defines the edge on bright wallpapers -->
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#00000000" />
             <corners android:radius="16dp" />
             <stroke
                 android:width="1dp"
-                android:color="#40FFFFFF" />
+                android:color="#1F000000" />
+        </shape>
+    </item>
+    <!-- Milky frost: mostly see-through, slightly brighter at the top-left -->
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="315"
+                android:endColor="#0DFFFFFF"
+                android:startColor="#29FFFFFF" />
+            <corners android:radius="15dp" />
+        </shape>
+    </item>
+    <!-- Specular sheen: light falling off quickly from the top edge -->
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:centerColor="#05FFFFFF"
+                android:centerY="0.35"
+                android:endColor="#00FFFFFF"
+                android:startColor="#24FFFFFF" />
+            <corners android:radius="15dp" />
+        </shape>
+    </item>
+    <!-- Bright glass rim -->
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#00000000" />
+            <corners android:radius="15dp" />
+            <stroke
+                android:width="1dp"
+                android:color="#59FFFFFF" />
         </shape>
     </item>
 </layer-list>
