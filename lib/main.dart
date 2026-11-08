@@ -6,9 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'data/api_service.dart';
 import 'firebase_options.dart';
+import 'screens/constructor_standings_screen.dart';
+import 'screens/driver_detail_screen.dart';
+import 'screens/driver_standings_screen.dart';
 import 'screens/main_shell.dart';
+import 'screens/race_detail_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/team_detail_screen.dart';
 import 'screens/widget_config_screen.dart';
 import 'services/analytics.dart';
 import 'services/app_update_messaging_service.dart';
@@ -19,6 +25,7 @@ import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/f1_image_service.dart';
 import 'services/user_preferences.dart';
+import 'services/widget_click_router.dart';
 import 'services/widget_update_service.dart';
 import 'theme/app_theme.dart';
 
@@ -40,6 +47,10 @@ Future<void> main() async {
     await _initStep('user_preferences', UserPreferences.init);
     await _initStep('analytics', Analytics.init);
     await _initStep('home_widget', WidgetUpdateService.ensureHomeWidgetSetup);
+    await _initStep(
+      'widget_interactivity',
+      WidgetUpdateService.registerWidgetInteractivity,
+    );
     await _initStep(
       'f1_images',
       () => F1ImageService.instance.init().timeout(
@@ -188,24 +199,88 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
       return;
     }
-    if (result == null) {
+    final target = WidgetClickTarget.fromPayload(result);
+    if (target == null) {
       return;
     }
-    final type = result['type'] as String?;
-    final widgetId = int.tryParse('${result['widgetId'] ?? ''}');
-    if (type == null || widgetId == null) {
-      return;
-    }
-    final route = MaterialPageRoute(
-      builder: (_) => WidgetConfigScreen(
-        type: type == 'favorite_team'
-            ? WidgetConfigType.team
-            : WidgetConfigType.driver,
-        widgetId: widgetId,
-        season: DateTime.now().year.toString(),
+    unawaited(
+      Analytics.track(
+        'widget_tapped',
+        properties: {'destination': target.destination.name},
       ),
     );
-    _navigatorKey.currentState?.push(route);
+    await _openWidgetDestination(target);
+  }
+
+  Future<void> _openWidgetDestination(WidgetClickTarget target) async {
+    final season = DateTime.now().year.toString();
+    final api = ApiService();
+    Widget? screen;
+    try {
+      switch (target.destination) {
+        case WidgetDestination.favoriteDriverConfig:
+        case WidgetDestination.favoriteTeamConfig:
+          screen = WidgetConfigScreen(
+            type: target.destination == WidgetDestination.favoriteTeamConfig
+                ? WidgetConfigType.team
+                : WidgetConfigType.driver,
+            widgetId: target.widgetId,
+            season: season,
+          );
+        case WidgetDestination.driverStandings:
+          final snapshot = await api.getDriverStandingsSnapshot(season: season);
+          screen = DriverStandingsScreen(
+            standings: snapshot.data,
+            season: season,
+            lastUpdated: snapshot.lastUpdated,
+            isFromCache: snapshot.isFromCache,
+          );
+        case WidgetDestination.teamStandings:
+          final snapshot = await api.getConstructorStandingsSnapshot(
+            season: season,
+          );
+          screen = ConstructorStandingsScreen(
+            standings: snapshot.data,
+            season: season,
+            lastUpdated: snapshot.lastUpdated,
+            isFromCache: snapshot.isFromCache,
+          );
+        case WidgetDestination.driverDetail:
+          final standings = await api.getDriverStandings(season: season);
+          final driver = standings
+              .where((d) => d.driverId == target.targetId)
+              .firstOrNull;
+          if (driver != null) {
+            screen = DriverDetailScreen(driver: driver, season: season);
+          }
+        case WidgetDestination.teamDetail:
+          final standings = await api.getConstructorStandings(season: season);
+          final team = standings
+              .where((t) => t.constructorId == target.targetId)
+              .firstOrNull;
+          if (team != null) {
+            screen = TeamDetailScreen(team: team, season: season);
+          }
+        case WidgetDestination.raceDetail:
+          final race = await api.getNextRace(season: season);
+          if (race != null) {
+            screen = RaceDetailScreen(race: race, season: season);
+          }
+      }
+    } catch (error, stackTrace) {
+      // Offline with no cache: just leave the app on its home tab.
+      if (kDebugMode) {
+        debugPrint('Widget tap: failed to load ${target.destination}: $error');
+        debugPrint('$stackTrace');
+      }
+    }
+    final destination = screen;
+    if (destination == null || !mounted) {
+      return;
+    }
+    _navigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (_) => destination),
+    );
   }
 
   void _runBackgroundChecks() {

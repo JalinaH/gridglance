@@ -1,10 +1,8 @@
 package com.gridglance.app
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.Log
@@ -73,17 +71,9 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
                 prefs.getString("${fallbackPrefix}d2_code", "---")
             ) ?: "---"
 
-            val intent = Intent(context, MainActivity::class.java).apply {
-                action = "com.gridglance.app.WIDGET_CLICK"
-                putExtra("widget_type", "favorite_team")
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            }
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                appWidgetId,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
+            val targetId = prefs.getString("${prefix}constructorId",
+                prefs.getString("${fallbackPrefix}constructorId", "")
+            ) ?: ""
 
             val views = RemoteViews(context.packageName, R.layout.favorite_team_widget)
             val background = if (isTransparent) {
@@ -131,7 +121,19 @@ class FavoriteTeamWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+            // Tap → team detail (or the picker if not configured yet);
+            // gear → always the picker; ↻ → fetch fresh data.
+            views.setOnClickPendingIntent(
+                R.id.widget_root,
+                WidgetInteractions.openApp(context, "favorite_team", appWidgetId, targetId = targetId),
+            )
+            views.setOnClickPendingIntent(
+                R.id.settings_button,
+                WidgetInteractions.openApp(context, "favorite_team_config", appWidgetId, "config"),
+            )
+            WidgetInteractions.bindStatus(
+                context, views, prefs, R.id.widget_status, R.id.refresh_button, compact = true,
+            )
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
