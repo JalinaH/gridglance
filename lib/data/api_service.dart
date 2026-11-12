@@ -64,6 +64,19 @@ class ApiService {
   static const int _maxRetries = 2;
   static const Duration _retryBaseDelay = Duration(milliseconds: 250);
 
+  /// Jolpica's maximum page size. Its default is 30 rows, which truncates
+  /// anything longer unless we ask for more and follow `offset`.
+  static const int _pageSize = 100;
+
+  /// Upper bound on pages followed for one endpoint, so a malformed `total`
+  /// can never loop forever. 10 pages is 1,000 rows; a season needs one.
+  static const int _maxResultPages = 10;
+  static const List<String> _resultRowKeys = [
+    'Results',
+    'QualifyingResults',
+    'SprintResults',
+  ];
+
   Future<List<DriverStanding>> getDriverStandings({String? season}) async {
     season ??= DateTime.now().year.toString();
     final snapshot = await getDriverStandingsSnapshot(season: season);
@@ -75,7 +88,7 @@ class ApiService {
   }) async {
     season ??= DateTime.now().year.toString();
     return _getJsonWithCache<List<DriverStanding>>(
-      uri: Uri.parse('$_baseUrl$season/driverstandings/'),
+      uri: Uri.parse('$_baseUrl$season/driverstandings/?limit=$_pageSize'),
       cacheKey: _cacheKey(bucket: 'driver_standings', season: season),
       failureMessage: 'Failed to load standings',
       parse: _parseDriverStandings,
@@ -94,7 +107,7 @@ class ApiService {
   getConstructorStandingsSnapshot({String? season}) async {
     season ??= DateTime.now().year.toString();
     return _getJsonWithCache<List<ConstructorStanding>>(
-      uri: Uri.parse('$_baseUrl$season/constructorstandings/'),
+      uri: Uri.parse('$_baseUrl$season/constructorstandings/?limit=$_pageSize'),
       cacheKey: _cacheKey(bucket: 'constructor_standings', season: season),
       failureMessage: 'Failed to load team standings',
       parse: _parseConstructorStandings,
@@ -248,17 +261,71 @@ class ApiService {
     required String failureMessage,
     required T Function(Map<String, dynamic>) fromRaceJson,
   }) async {
-    final response = await _getWithRetry(Uri.parse('$_baseUrl$endpoint'));
-    if (response.statusCode != 200) {
-      throw Exception(failureMessage);
+    final races = await _fetchAllRaces(
+      endpoint: endpoint,
+      failureMessage: failureMessage,
+    );
+    return races.map(fromRaceJson).toList();
+  }
+
+  /// Fetches every page of a race-table endpoint and returns one entry per
+  /// race.
+  ///
+  /// Jolpica pages by result row, not by race (30 rows by default), so a team
+  /// with two cars runs past the first page mid-season. A race whose rows
+  /// straddle a page boundary comes back once per page; those are merged so
+  /// callers see each race once with all of its rows.
+  Future<List<Map<String, dynamic>>> _fetchAllRaces({
+    required String endpoint,
+    required String failureMessage,
+  }) async {
+    final racesByKey = <String, Map<String, dynamic>>{};
+    var offset = 0;
+    for (var page = 0; page < _maxResultPages; page++) {
+      final uri = Uri.parse(
+        '$_baseUrl$endpoint',
+      ).replace(queryParameters: {'limit': '$_pageSize', 'offset': '$offset'});
+      final response = await _getWithRetry(uri);
+      if (response.statusCode != 200) {
+        throw Exception(failureMessage);
+      }
+      final data = await _decodeJsonMap(response.body);
+      for (final raw in _extractRaces(data)) {
+        final race = JsonSafe.asMapOrNull(raw);
+        if (race == null) continue;
+        final round = '${race['round'] ?? ''}';
+        // Without a round there is nothing to match on, so never merge.
+        final key = round.isEmpty
+            ? 'unkeyed|${racesByKey.length}'
+            : '${race['season'] ?? ''}|$round';
+        final existing = racesByKey[key];
+        if (existing == null) {
+          racesByKey[key] = Map<String, dynamic>.of(race);
+        } else {
+          _mergeResultRows(into: existing, from: race);
+        }
+      }
+
+      final mrData = JsonSafe.asMap(data['MRData']);
+      final total = int.tryParse('${mrData['total'] ?? ''}');
+      // Trust the page size the server actually applied; it may cap ours.
+      final served = int.tryParse('${mrData['limit'] ?? ''}') ?? _pageSize;
+      if (total == null || served <= 0) break;
+      offset += served;
+      if (offset >= total) break;
     }
-    final data = await _decodeJsonMap(response.body);
-    final racesJson = _extractRaces(data);
-    return racesJson
-        .map((json) => JsonSafe.asMapOrNull(json))
-        .whereType<Map<String, dynamic>>()
-        .map(fromRaceJson)
-        .toList();
+    return racesByKey.values.toList();
+  }
+
+  static void _mergeResultRows({
+    required Map<String, dynamic> into,
+    required Map<String, dynamic> from,
+  }) {
+    for (final key in _resultRowKeys) {
+      final extra = JsonSafe.asList(from[key]);
+      if (extra.isEmpty) continue;
+      into[key] = [...JsonSafe.asList(into[key]), ...extra];
+    }
   }
 
   Future<List<String>> getRaceTop3DriverIds({
