@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'crash_reporting.dart';
 
 class AppUpdateNotice {
   final int latestBuild;
@@ -28,6 +32,43 @@ class AppUpdateService {
   );
   static const String _dismissedBuildKey = 'dismissed_app_update_build';
 
+  /// Called when the hosted config is missing or unreadable. That is a
+  /// publishing mistake, not a network blip, and it silently disables update
+  /// prompts for every user, so it must be visible somewhere.
+  @visibleForTesting
+  static void Function(String reason, Uri uri) configProblemReporter =
+      _reportConfigProblemToSentry;
+
+  static bool _configProblemReported = false;
+
+  @visibleForTesting
+  static void resetForTesting() {
+    configProblemReporter = _reportConfigProblemToSentry;
+    _configProblemReported = false;
+  }
+
+  /// Reports at most once per app run: the check repeats on every resume and
+  /// one event is enough to raise the alarm.
+  static void _reportConfigProblem(String reason, Uri uri) {
+    if (_configProblemReported) return;
+    _configProblemReported = true;
+    configProblemReporter(reason, uri);
+  }
+
+  static void _reportConfigProblemToSentry(String reason, Uri uri) {
+    if (kDebugMode) {
+      debugPrint('AppUpdateService: update config problem ($reason) at $uri');
+    }
+    unawaited(
+      CrashReporting.captureException(
+        StateError('App update config unavailable: $reason'),
+        stackTrace: StackTrace.current,
+        hint: 'app_update.config',
+        tags: {'reason': reason},
+      ),
+    );
+  }
+
   Future<AppUpdateNotice?> checkForUpdate({
     http.Client? client,
     SharedPreferences? preferences,
@@ -38,14 +79,28 @@ class AppUpdateService {
     final ownsClient = client == null;
     final httpClient = client ?? http.Client();
     try {
+      final uri = configUri ?? defaultConfigUri;
       final response = await httpClient
-          .get(configUri ?? defaultConfigUri)
+          .get(uri)
           .timeout(const Duration(seconds: 4));
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+      final status = response.statusCode;
+      if (status < 200 || status >= 300) {
+        // 4xx means the file is missing or moved. 5xx is the host having a
+        // bad moment and will pass on its own.
+        if (status >= 400 && status < 500) {
+          _reportConfigProblem('http-$status', uri);
+        }
         return null;
       }
-      final decoded = jsonDecode(response.body);
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } on FormatException {
+        _reportConfigProblem('invalid-json', uri);
+        return null;
+      }
       if (decoded is! Map<String, dynamic>) {
+        _reportConfigProblem('invalid-json', uri);
         return null;
       }
       final notice = _noticeFromJson(
