@@ -11,6 +11,71 @@ void main() {
     setUp(() {
       service = AppUpdateService();
       SharedPreferences.setMockInitialValues({});
+      AppUpdateService.resetForTesting();
+    });
+
+    tearDown(AppUpdateService.resetForTesting);
+
+    group('config problems', () {
+      late List<String> reported;
+
+      setUp(() {
+        reported = [];
+        AppUpdateService.configProblemReporter = (reason, _) {
+          reported.add(reason);
+        };
+      });
+
+      Future<void> check(http.Client client) => service.checkForUpdate(
+        client: client,
+        installedBuildNumber: '6',
+        platform: 'android',
+      );
+
+      test('reports a missing config file', () async {
+        await check(MockClient((_) async => http.Response('Not found', 404)));
+
+        expect(reported, ['http-404']);
+      });
+
+      test('reports a config that is not JSON', () async {
+        await check(MockClient((_) async => http.Response('<html>', 200)));
+
+        expect(reported, ['invalid-json']);
+      });
+
+      test('reports a config that is not a JSON object', () async {
+        await check(MockClient((_) async => http.Response('[]', 200)));
+
+        expect(reported, ['invalid-json']);
+      });
+
+      test('reports only once per app run', () async {
+        final client = MockClient((_) async => http.Response('gone', 404));
+        await check(client);
+        await check(client);
+
+        expect(reported, hasLength(1));
+      });
+
+      test('stays quiet on server errors and network failures', () async {
+        await check(MockClient((_) async => http.Response('busy', 503)));
+        await check(
+          MockClient((_) async => throw http.ClientException('offline')),
+        );
+
+        expect(reported, isEmpty);
+      });
+
+      test('stays quiet when the config is valid', () async {
+        await check(
+          MockClient(
+            (_) async => http.Response('{"android":{"latestBuild":7}}', 200),
+          ),
+        );
+
+        expect(reported, isEmpty);
+      });
     });
 
     test('returns notice when hosted build is newer', () async {
