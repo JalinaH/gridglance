@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,17 +28,27 @@ class F1ImageService {
 
   bool _initialized = false;
 
-  /// Pre-fetches driver image data. Safe to call multiple times.
+  /// Loads driver image data. Safe to call multiple times.
+  ///
+  /// Cached data is always used, however old: a day-old headshot beats no
+  /// headshot when the network is down. Only a first launch with nothing
+  /// cached waits for the network; a stale cache refreshes in the background.
   Future<void> init() async {
     if (_initialized) return;
-    await _loadFromCache();
-    if (_byNumber.isEmpty) {
+    final cache = await _loadFromCache();
+    if (cache == _CacheState.missing) {
       await _fetchFromApi();
-    } else {
-      // Refresh in background if cache exists but may be stale.
-      _fetchFromApi();
+    } else if (cache == _CacheState.stale) {
+      unawaited(_fetchFromApi());
     }
     _initialized = true;
+  }
+
+  @visibleForTesting
+  void resetForTesting() {
+    _byNumber.clear();
+    _byCode.clear();
+    _initialized = false;
   }
 
   /// Returns a headshot URL for a driver, matched by permanent number or code.
@@ -79,8 +92,8 @@ class F1ImageService {
       if (response.statusCode != 200) return;
 
       final drivers = jsonDecode(response.body) as List;
-      _byNumber.clear();
-      _byCode.clear();
+      final byNumber = <String, String>{};
+      final byCode = <String, String>{};
 
       for (final d in drivers) {
         final driver = d as Map<String, dynamic>;
@@ -89,14 +102,23 @@ class F1ImageService {
 
         final number = driver['driver_number'];
         if (number != null) {
-          _byNumber[number.toString()] = url;
+          byNumber[number.toString()] = url;
         }
 
         final acronym = driver['name_acronym'] as String?;
         if (acronym != null) {
-          _byCode[acronym.toUpperCase()] = url;
+          byCode[acronym.toUpperCase()] = url;
         }
       }
+
+      // An empty or headshot-less response must not wipe what we have.
+      if (byNumber.isEmpty && byCode.isEmpty) return;
+      _byNumber
+        ..clear()
+        ..addAll(byNumber);
+      _byCode
+        ..clear()
+        ..addAll(byCode);
 
       await _writeCache();
     } catch (_) {
@@ -104,18 +126,13 @@ class F1ImageService {
     }
   }
 
-  Future<void> _loadFromCache() async {
+  Future<_CacheState> _loadFromCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_cacheKey);
-      if (raw == null) return;
+      if (raw == null) return _CacheState.missing;
 
       final cached = jsonDecode(raw) as Map<String, dynamic>;
-      final savedAt = DateTime.tryParse(cached['saved_at'] as String? ?? '');
-      if (savedAt != null && DateTime.now().difference(savedAt) > _cacheTtl) {
-        return; // Cache expired — will fetch fresh data.
-      }
-
       final byNumber = (cached['by_number'] as Map<String, dynamic>?) ?? {};
       final byCode = (cached['by_code'] as Map<String, dynamic>?) ?? {};
 
@@ -125,8 +142,17 @@ class F1ImageService {
       _byCode
         ..clear()
         ..addAll(byCode.cast<String, String>());
+      if (_byNumber.isEmpty && _byCode.isEmpty) return _CacheState.missing;
+
+      final savedAt = DateTime.tryParse(cached['saved_at'] as String? ?? '');
+      final expired =
+          savedAt == null || DateTime.now().difference(savedAt) > _cacheTtl;
+      return expired ? _CacheState.stale : _CacheState.fresh;
     } catch (_) {
-      // Corrupted cache — ignore.
+      // Corrupted cache — treat as absent.
+      _byNumber.clear();
+      _byCode.clear();
+      return _CacheState.missing;
     }
   }
 
@@ -160,3 +186,5 @@ class F1ImageService {
     'cadillac': 'cadillac',
   };
 }
+
+enum _CacheState { missing, stale, fresh }
