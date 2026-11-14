@@ -12,9 +12,9 @@ import '../services/background_task_health.dart';
 import '../services/widget_update_service.dart';
 import '../services/user_preferences.dart';
 import '../theme/app_theme.dart';
-import '../utils/team_assets.dart';
 import '../services/f1_image_service.dart';
 import '../utils/team_colors.dart';
+import '../widgets/team_logo.dart';
 import '../widgets/car_image.dart';
 import '../widgets/circuit_track.dart';
 import '../widgets/driver_photo.dart';
@@ -2676,7 +2676,9 @@ class _StandingsListPreview extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child: teamLogoOrIcon(entry.teamName!, size: size * 0.7),
+        child: Center(
+          child: TeamLogo(teamName: entry.teamName!, size: size * 0.7),
+        ),
       );
     }
     return Container(
