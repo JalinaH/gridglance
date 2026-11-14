@@ -49,6 +49,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late String _season;
   late Future<SeasonOverview> _overview;
+
+  /// Season the standings on screen belong to; last season in the off-season.
+  String? _standingsSeason;
   bool _didUpdateWidget = false;
   String? _favoriteDriverId;
   String? _favoriteTeamId;
@@ -232,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await UserPreferences.setFavoriteDriverId(selection.driverId);
     await WidgetUpdateService.setFavoriteDriverDefault(
       driver: selection,
-      season: _season,
+      season: _standingsSeason ?? _season,
     );
     unawaited(
       Analytics.track(
@@ -304,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await WidgetUpdateService.setFavoriteTeamDefault(
       team: selection.team,
       drivers: selection.drivers,
-      season: _season,
+      season: _standingsSeason ?? _season,
     );
     unawaited(
       Analytics.track(
@@ -398,6 +401,11 @@ class _HomeScreenState extends State<HomeScreen> {
         final upcomingRaces = _getUpcomingRaces(overview, count: 3);
         final favoriteDriver = _findFavoriteDriver(overview.driverStandings);
         final favoriteTeam = _findFavoriteTeam(overview.constructorStandings);
+        // Off-season: standings (and everything derived from them) belong to
+        // last season, while the calendar is already the new one.
+        final offSeason = overview.isOffSeason;
+        final standingsSeason = overview.standingsSeason ?? _season;
+        _standingsSeason = standingsSeason;
 
         if (!_didUpdateWidget) {
           _didUpdateWidget = true;
@@ -405,10 +413,12 @@ class _HomeScreenState extends State<HomeScreen> {
             WidgetUpdateService.updateDriverStandings(
               overview.driverStandings,
               season: _season,
+              standingsSeason: offSeason ? standingsSeason : null,
             );
             WidgetUpdateService.updateTeamStandings(
               overview.constructorStandings,
               season: _season,
+              standingsSeason: offSeason ? standingsSeason : null,
             );
             WidgetUpdateService.updateRaceWeekend(
               overview.raceSchedule,
@@ -445,11 +455,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           _buildSummaryCard(
             title: "Last Race Results",
-            subtitle: "Race, qualifying, sprint",
+            subtitle: offSeason
+                ? "$standingsSeason season finale"
+                : "Race, qualifying, sprint",
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => LastRaceResultsScreen(season: _season),
+                  builder: (_) =>
+                      LastRaceResultsScreen(season: standingsSeason),
                 ),
               );
             },
@@ -460,13 +473,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           _buildSummaryCard(
             title: "Driver Standings",
-            subtitle: "Top 3 drivers",
+            subtitle: offSeason
+                ? "$standingsSeason final standings"
+                : "Top 3 drivers",
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => DriverStandingsScreen(
                     standings: overview.driverStandings,
-                    season: _season,
+                    season: standingsSeason,
                     lastUpdated: overview.driverStandingsUpdatedAt,
                     isFromCache: overview.driverStandingsFromCache,
                   ),
@@ -477,13 +492,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           _buildSummaryCard(
             title: "Team Standings",
-            subtitle: "Top 3 teams",
+            subtitle: offSeason
+                ? "$standingsSeason final standings"
+                : "Top 3 teams",
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ConstructorStandingsScreen(
                     standings: overview.constructorStandings,
-                    season: _season,
+                    season: standingsSeason,
                     lastUpdated: overview.constructorStandingsUpdatedAt,
                     isFromCache: overview.constructorStandingsFromCache,
                   ),
@@ -515,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => CompareModeScreen(season: _season),
+                  builder: (_) => CompareModeScreen(season: standingsSeason),
                 ),
               );
             },
@@ -594,6 +611,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       : formatLastUpdatedAgo(overview.lastUpdated!),
                   style: TextStyle(color: colors.textMuted, fontSize: 11),
                 ),
+              ),
+            ),
+          if (offSeason)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: _buildOffSeasonBanner(
+                colors,
+                standingsSeason: standingsSeason,
+                firstRace: overview.nextRace,
               ),
             ),
           Reveal(
@@ -1379,6 +1405,60 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOffSeasonBanner(
+    AppColors colors, {
+    required String standingsSeason,
+    required Race? firstRace,
+  }) {
+    final start = firstRace?.startDateTime;
+    final days = start?.difference(DateTime.now()).inDays;
+    final String headline;
+    if (firstRace == null || days == null || days < 0) {
+      headline = 'The $_season season has not started yet';
+    } else if (days == 0) {
+      headline = 'The $_season season starts today';
+    } else {
+      headline =
+          'The $_season season starts in $days ${days == 1 ? 'day' : 'days'}';
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.flag_outlined, size: 18, color: colors.textMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  headline,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Standings and results below are the final '
+                  '$standingsSeason ones.',
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

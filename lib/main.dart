@@ -224,38 +224,47 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             season: season,
           );
         case WidgetDestination.driverStandings:
-          final snapshot = await api.getDriverStandingsSnapshot(season: season);
-          screen = DriverStandingsScreen(
-            standings: snapshot.data,
+          final standings = await api.getStandingsOrPreviousSeason(
             season: season,
-            lastUpdated: snapshot.lastUpdated,
-            isFromCache: snapshot.isFromCache,
+          );
+          screen = DriverStandingsScreen(
+            standings: standings.drivers.data,
+            season: standings.season,
+            lastUpdated: standings.drivers.lastUpdated,
+            isFromCache: standings.drivers.isFromCache,
           );
         case WidgetDestination.teamStandings:
-          final snapshot = await api.getConstructorStandingsSnapshot(
+          final standings = await api.getStandingsOrPreviousSeason(
             season: season,
           );
           screen = ConstructorStandingsScreen(
-            standings: snapshot.data,
-            season: season,
-            lastUpdated: snapshot.lastUpdated,
-            isFromCache: snapshot.isFromCache,
+            standings: standings.constructors.data,
+            season: standings.season,
+            lastUpdated: standings.constructors.lastUpdated,
+            isFromCache: standings.constructors.isFromCache,
           );
         case WidgetDestination.driverDetail:
-          final standings = await api.getDriverStandings(season: season);
-          final driver = standings
+          final standings = await api.getStandingsOrPreviousSeason(
+            season: season,
+          );
+          final driver = standings.drivers.data
               .where((d) => d.driverId == target.targetId)
               .firstOrNull;
           if (driver != null) {
-            screen = DriverDetailScreen(driver: driver, season: season);
+            screen = DriverDetailScreen(
+              driver: driver,
+              season: standings.season,
+            );
           }
         case WidgetDestination.teamDetail:
-          final standings = await api.getConstructorStandings(season: season);
-          final team = standings
+          final standings = await api.getStandingsOrPreviousSeason(
+            season: season,
+          );
+          final team = standings.constructors.data
               .where((t) => t.constructorId == target.targetId)
               .firstOrNull;
           if (team != null) {
-            screen = TeamDetailScreen(team: team, season: season);
+            screen = TeamDetailScreen(team: team, season: standings.season);
           }
         case WidgetDestination.raceDetail:
           final race = await api.getNextRace(season: season);

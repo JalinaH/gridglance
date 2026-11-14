@@ -39,6 +39,29 @@ class CachedApiResponse<T> {
   });
 }
 
+/// Driver and constructor standings for display, with the season they
+/// actually belong to.
+class StandingsSnapshot {
+  /// Season the caller asked for.
+  final String requestedSeason;
+
+  /// Season the standings are from.
+  final String season;
+  final CachedApiResponse<List<DriverStanding>> drivers;
+  final CachedApiResponse<List<ConstructorStanding>> constructors;
+
+  const StandingsSnapshot({
+    required this.requestedSeason,
+    required this.season,
+    required this.drivers,
+    required this.constructors,
+  });
+
+  /// True when these are last season's final standings standing in for a
+  /// season that has not been scored yet.
+  bool get isPreviousSeason => season != requestedSeason;
+}
+
 class _CachedBody {
   final String body;
   final DateTime? updatedAt;
@@ -148,21 +171,63 @@ class ApiService {
     );
   }
 
+  /// Standings for [season], or the previous season's final standings when
+  /// [season] has none yet.
+  ///
+  /// Between the new year and the first race the current season has a
+  /// calendar but no standings. Rather than showing empty tables for weeks,
+  /// callers get last season's final standings, flagged through
+  /// [StandingsSnapshot.isPreviousSeason] so they can label them.
+  Future<StandingsSnapshot> getStandingsOrPreviousSeason({
+    String? season,
+  }) async {
+    final requested = season ?? DateTime.now().year.toString();
+
+    Future<StandingsSnapshot> load(String forSeason) async {
+      // Future.wait so that when both requests fail, neither error is left
+      // unhandled.
+      final results = await Future.wait<Object>([
+        getDriverStandingsSnapshot(season: forSeason),
+        getConstructorStandingsSnapshot(season: forSeason),
+      ]);
+      return StandingsSnapshot(
+        requestedSeason: requested,
+        season: forSeason,
+        drivers: results[0] as CachedApiResponse<List<DriverStanding>>,
+        constructors:
+            results[1] as CachedApiResponse<List<ConstructorStanding>>,
+      );
+    }
+
+    bool isEmpty(StandingsSnapshot snapshot) =>
+        snapshot.drivers.data.isEmpty && snapshot.constructors.data.isEmpty;
+
+    final current = await load(requested);
+    if (!isEmpty(current)) return current;
+    final year = int.tryParse(requested);
+    if (year == null) return current;
+    try {
+      final previous = await load('${year - 1}');
+      return isEmpty(previous) ? current : previous;
+    } catch (_) {
+      // The fallback is a nicety; an empty current season is still valid.
+      return current;
+    }
+  }
+
   Future<SeasonOverview> getSeasonOverview({String? season}) async {
     season ??= DateTime.now().year.toString();
     final responses = await Future.wait<Object>([
-      getDriverStandingsSnapshot(season: season),
-      getConstructorStandingsSnapshot(season: season),
+      getStandingsOrPreviousSeason(season: season),
       getNextRaceSnapshot(season: season),
       getRaceScheduleSnapshot(season: season),
     ]);
 
-    final driverResponse =
-        responses[0] as CachedApiResponse<List<DriverStanding>>;
-    final constructorResponse =
-        responses[1] as CachedApiResponse<List<ConstructorStanding>>;
-    final nextRaceResponse = responses[2] as CachedApiResponse<Race?>;
-    final scheduleResponse = responses[3] as CachedApiResponse<List<Race>>;
+    final standings = responses[0] as StandingsSnapshot;
+    final driverResponse = standings.drivers;
+    final constructorResponse = standings.constructors;
+    final nextRaceResponse = responses[1] as CachedApiResponse<Race?>;
+    final scheduleResponse = responses[2] as CachedApiResponse<List<Race>>;
 
     final overviewLastUpdated = _oldestTimestamp([
       driverResponse.lastUpdated,
@@ -187,6 +252,8 @@ class ApiService {
           constructorResponse.isFromCache ||
           scheduleResponse.isFromCache ||
           nextRaceResponse.isFromCache,
+      standingsSeason: standings.season,
+      isOffSeason: standings.isPreviousSeason,
     );
   }
 
