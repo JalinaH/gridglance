@@ -16,6 +16,15 @@ class SeasonOverview {
   final DateTime? lastUpdated;
   final bool isFromCache;
 
+  /// Season the standings belong to. Differs from the requested season only
+  /// in the off-season, when the new season has no standings yet and last
+  /// season's final standings are shown in their place.
+  final String? standingsSeason;
+
+  /// True when [driverStandings] and [constructorStandings] are the previous
+  /// season's final standings.
+  final bool isOffSeason;
+
   SeasonOverview({
     required this.driverStandings,
     required this.constructorStandings,
@@ -29,5 +38,7 @@ class SeasonOverview {
     this.raceScheduleFromCache = false,
     this.lastUpdated,
     this.isFromCache = false,
+    this.standingsSeason,
+    this.isOffSeason = false,
   });
 }

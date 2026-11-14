@@ -278,4 +278,122 @@ void main() {
       expect(error, isA<TimeoutException>());
     });
   });
+
+  group('ApiService off-season standings', () {
+    String driverStandings(List<String> ids) => jsonEncode({
+      'MRData': {
+        'StandingsTable': {
+          'StandingsLists': ids.isEmpty
+              ? <Object>[]
+              : [
+                  {
+                    'DriverStandings': [
+                      for (final id in ids)
+                        {
+                          'position': '1',
+                          'points': '10',
+                          'wins': '0',
+                          'Driver': {
+                            'driverId': id,
+                            'givenName': 'Test',
+                            'familyName': id,
+                          },
+                          'Constructors': <Object>[],
+                        },
+                    ],
+                  },
+                ],
+        },
+      },
+    });
+
+    const empty = '{"MRData":{"StandingsTable":{"StandingsLists":[]}}}';
+
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('uses the requested season when it has standings', () async {
+      final seasons = <String>{};
+      final standings = await withClient(
+        () => ApiService().getStandingsOrPreviousSeason(season: '2026'),
+        (request) async {
+          seasons.add(request.url.pathSegments[2]);
+          return http.Response(
+            request.url.path.contains('driverstandings')
+                ? driverStandings(['norris'])
+                : empty,
+            200,
+          );
+        },
+      );
+
+      expect(seasons, {'2026'});
+      expect(standings.season, '2026');
+      expect(standings.isPreviousSeason, isFalse);
+      expect(standings.drivers.data.single.driverId, 'norris');
+    });
+
+    test('falls back to last season before the first race', () async {
+      final standings = await withClient(
+        () => ApiService().getStandingsOrPreviousSeason(season: '2027'),
+        (request) async => http.Response(
+          request.url.path.contains('/2026/driverstandings')
+              ? driverStandings(['norris'])
+              : empty,
+          200,
+        ),
+      );
+
+      expect(standings.requestedSeason, '2027');
+      expect(standings.season, '2026');
+      expect(standings.isPreviousSeason, isTrue);
+      expect(standings.drivers.data.single.driverId, 'norris');
+    });
+
+    test(
+      'stays on the requested season when last season is empty too',
+      () async {
+        final standings = await withClient(
+          () => ApiService().getStandingsOrPreviousSeason(season: '2027'),
+          (_) async => http.Response(empty, 200),
+        );
+
+        expect(standings.season, '2027');
+        expect(standings.isPreviousSeason, isFalse);
+        expect(standings.drivers.data, isEmpty);
+      },
+    );
+
+    test('stays on the requested season when the fallback fails', () async {
+      final standings = await withClient(
+        () => ApiService().getStandingsOrPreviousSeason(season: '2027'),
+        (request) async => request.url.path.contains('/2027/')
+            ? http.Response(empty, 200)
+            : http.Response('nope', 404),
+      );
+
+      expect(standings.season, '2027');
+      expect(standings.isPreviousSeason, isFalse);
+    });
+
+    test('season overview flags the off-season', () async {
+      final overview = await withClient(
+        () => ApiService().getSeasonOverview(season: '2027'),
+        (request) async {
+          final path = request.url.path;
+          if (path.contains('/2026/driverstandings')) {
+            return http.Response(driverStandings(['norris']), 200);
+          }
+          if (path.contains('standings')) return http.Response(empty, 200);
+          return http.Response('{"MRData":{"RaceTable":{"Races":[]}}}', 200);
+        },
+      );
+
+      expect(overview.isOffSeason, isTrue);
+      expect(overview.standingsSeason, '2026');
+      expect(overview.driverStandings, hasLength(1));
+    });
+  });
 }

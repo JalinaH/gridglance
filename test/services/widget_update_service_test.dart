@@ -57,6 +57,56 @@ void main() {
     });
   });
 
+  group('off-season standings', () {
+    final champions = ConstructorStanding(
+      position: '1',
+      points: '800',
+      wins: '14',
+      teamName: 'McLaren',
+      constructorId: 'mclaren',
+    );
+
+    test('labels last season\'s standings as final', () async {
+      await WidgetUpdateService.updateTeamStandings(
+        [champions],
+        season: '2027',
+        standingsSeason: '2026',
+      );
+
+      final w = collectWrites();
+      expect(w['team_widget_subtitle'], '2026 final standings');
+      expect(w['team_widget_season'], '2026');
+      expect(w['team_1_name'], isNot('TBD'));
+    });
+
+    test('keeps the normal subtitle during the season', () async {
+      await WidgetUpdateService.updateTeamStandings([
+        champions,
+      ], season: '2026');
+
+      final w = collectWrites();
+      expect(w['team_widget_subtitle'], 'Top 3 teams');
+      expect(w['team_widget_season'], '2026');
+    });
+
+    test('background refresh falls back to last season', () async {
+      final api = _OffSeasonApiService([champions]);
+      final result = await WidgetUpdateService.refreshAllWidgets(
+        apiService: api,
+      );
+
+      final w = collectWrites();
+      expect(result.succeeded, isTrue);
+      expect(api.teamSeasons, hasLength(2));
+      expect(int.parse(api.teamSeasons[1]), int.parse(api.teamSeasons[0]) - 1);
+      expect(
+        w['team_widget_subtitle'],
+        '${api.teamSeasons[1]} final standings',
+      );
+      expect(w['team_widget_season'], api.teamSeasons[1]);
+    });
+  });
+
   group('updateRaceWeekend', () {
     test(
       'ignores a stale completed nextRace and writes next schedule race',
@@ -322,4 +372,21 @@ String _time(DateTime value) {
   final minute = value.minute.toString().padLeft(2, '0');
   final second = value.second.toString().padLeft(2, '0');
   return '$hour:$minute:${second}Z';
+}
+
+/// A season with a calendar but no standings yet: the first season asked for
+/// is empty and the one before it has final standings.
+class _OffSeasonApiService extends _FakeApiService {
+  final List<ConstructorStanding> lastSeasonTeams;
+  final List<String> teamSeasons = [];
+
+  _OffSeasonApiService(this.lastSeasonTeams);
+
+  @override
+  Future<List<ConstructorStanding>> getConstructorStandings({
+    String? season,
+  }) async {
+    teamSeasons.add(season!);
+    return teamSeasons.length == 1 ? const [] : lastSeasonTeams;
+  }
 }

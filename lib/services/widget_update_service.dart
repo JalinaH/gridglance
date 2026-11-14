@@ -255,11 +255,11 @@ class WidgetUpdateService {
       }
     }
 
-    final driverStandings = await fetch<List<DriverStanding>>(
+    var driverStandings = await fetch<List<DriverStanding>>(
       'driverStandings',
       () => api.getDriverStandings(season: season),
     );
-    final constructorStandings = await fetch<List<ConstructorStanding>>(
+    var constructorStandings = await fetch<List<ConstructorStanding>>(
       'teamStandings',
       () => api.getConstructorStandings(season: season),
     );
@@ -273,12 +273,41 @@ class WidgetUpdateService {
       required: false,
     );
 
-    if (driverStandings != null) {
+    // Off-season: the new season has a calendar but no standings yet, so
+    // show last season's final standings instead of empty widgets.
+    String? standingsSeason;
+    final year = int.tryParse(season);
+    if (year != null &&
+        driverStandings != null &&
+        constructorStandings != null &&
+        driverStandings.isEmpty &&
+        constructorStandings.isEmpty) {
+      try {
+        final previous = '${year - 1}';
+        final previousDrivers = await api.getDriverStandings(season: previous);
+        final previousTeams = await api.getConstructorStandings(
+          season: previous,
+        );
+        if (previousDrivers.isNotEmpty || previousTeams.isNotEmpty) {
+          driverStandings = previousDrivers;
+          constructorStandings = previousTeams;
+          standingsSeason = previous;
+        }
+      } catch (_) {
+        // Best effort: empty current-season widgets are still correct.
+      }
+    }
+    // Promoted to non-null locals so the closures below see stable values.
+    final drivers = driverStandings;
+    final teams = constructorStandings;
+
+    if (drivers != null) {
       await persistAndReload(
         'driverStandings',
         () => updateDriverStandings(
-          driverStandings,
+          drivers,
           season: season,
+          standingsSeason: standingsSeason,
           reload: false,
         ),
         _refreshDriverWidget,
@@ -286,8 +315,9 @@ class WidgetUpdateService {
       await persistAndReload(
         'favoriteDrivers',
         () => updateFavoriteDrivers(
-          driverStandings,
+          drivers,
           season: season,
+          standingsSeason: standingsSeason,
           reload: false,
         ),
         _refreshFavoriteDriverWidget,
@@ -307,23 +337,25 @@ class WidgetUpdateService {
       }
     }
 
-    if (constructorStandings != null) {
+    if (teams != null) {
       await persistAndReload(
         'teamStandings',
         () => updateTeamStandings(
-          constructorStandings,
+          teams,
           season: season,
+          standingsSeason: standingsSeason,
           reload: false,
         ),
         _refreshTeamWidget,
       );
-      if (driverStandings != null) {
+      if (drivers != null) {
         await persistAndReload(
           'favoriteTeams',
           () => updateFavoriteTeams(
-            constructorStandings,
+            teams,
             season: season,
-            drivers: driverStandings,
+            standingsSeason: standingsSeason,
+            drivers: drivers,
             reload: false,
           ),
           _refreshFavoriteTeamWidget,
@@ -393,22 +425,39 @@ class WidgetUpdateService {
       final season = _seasonOverride ?? DateTime.now().year.toString();
       final api = ApiService();
       try {
-        final standings = await api.getDriverStandings(season: season);
-        await updateDriverStandings(standings, season: season);
-        await updateFavoriteDrivers(standings, season: season);
+        final standings = await api.getStandingsOrPreviousSeason(
+          season: season,
+        );
+        final standingsSeason = standings.isPreviousSeason
+            ? standings.season
+            : null;
+        final drivers = standings.drivers.data;
+        final teams = standings.constructors.data;
+        await updateDriverStandings(
+          drivers,
+          season: season,
+          standingsSeason: standingsSeason,
+        );
+        await updateFavoriteDrivers(
+          drivers,
+          season: season,
+          standingsSeason: standingsSeason,
+        );
+        await updateTeamStandings(
+          teams,
+          season: season,
+          standingsSeason: standingsSeason,
+        );
+        await updateFavoriteTeams(
+          teams,
+          season: season,
+          standingsSeason: standingsSeason,
+          drivers: drivers,
+        );
       } catch (error, stackTrace) {
-        // Intentional: a single widget's update failure must not block the
-        // others; each `try` below targets one widget so they fail
-        // independently. Log so a blank widget can be traced to its
-        // specific endpoint.
-        _logWidgetError('refreshDriverStandings.driver', error, stackTrace);
-      }
-      try {
-        final standings = await api.getConstructorStandings(season: season);
-        await updateTeamStandings(standings, season: season);
-        await updateFavoriteTeams(standings, season: season);
-      } catch (error, stackTrace) {
-        _logWidgetError('refreshDriverStandings.team', error, stackTrace);
+        // Intentional: a standings failure must not block the race weekend
+        // widget below. Log so a blank widget can be traced to its endpoint.
+        _logWidgetError('refreshDriverStandings.standings', error, stackTrace);
       }
       try {
         final races = await api.getRaceSchedule(season: season);
@@ -452,18 +501,25 @@ class WidgetUpdateService {
   static Future<void> updateDriverStandings(
     List<DriverStanding> standings, {
     String? season,
+    String? standingsSeason,
     bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
+    // Off-season: standings come from last season, the calendar does not.
+    final displaySeason = standingsSeason ?? seasonLabel;
     final top = standings.take(3).toList();
     await _saveDps('driver_widget_title', 'Driver Standings');
     await _saveDps(
       'driver_widget_subtitle',
-      standings.isEmpty ? 'Standings coming soon' : 'Top 3 drivers',
+      standings.isEmpty
+          ? 'Standings coming soon'
+          : displaySeason != seasonLabel
+          ? '$displaySeason final standings'
+          : 'Top 3 drivers',
     );
-    await _saveDps('driver_widget_season', seasonLabel);
+    await _saveDps('driver_widget_season', displaySeason);
     await _saveDps('driver_1', _formatDriver(top, 0));
     await _saveDps('driver_2', _formatDriver(top, 1));
     await _saveDps('driver_3', _formatDriver(top, 2));
@@ -506,18 +562,25 @@ class WidgetUpdateService {
   static Future<void> updateTeamStandings(
     List<ConstructorStanding> standings, {
     String? season,
+    String? standingsSeason,
     bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
+    // Off-season: standings come from last season, the calendar does not.
+    final displaySeason = standingsSeason ?? seasonLabel;
     final top = standings.take(3).toList();
     await _saveDps('team_widget_title', 'Team Standings');
     await _saveDps(
       'team_widget_subtitle',
-      standings.isEmpty ? 'Standings coming soon' : 'Top 3 teams',
+      standings.isEmpty
+          ? 'Standings coming soon'
+          : displaySeason != seasonLabel
+          ? '$displaySeason final standings'
+          : 'Top 3 teams',
     );
-    await _saveDps('team_widget_season', seasonLabel);
+    await _saveDps('team_widget_season', displaySeason);
     await _saveDps('team_1', _formatTeam(top, 0));
     await _saveDps('team_2', _formatTeam(top, 1));
     await _saveDps('team_3', _formatTeam(top, 2));
@@ -681,11 +744,14 @@ class WidgetUpdateService {
   static Future<void> updateFavoriteDrivers(
     List<DriverStanding> standings, {
     String? season,
+    String? standingsSeason,
     bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
+    // Off-season: standings come from last season, the calendar does not.
+    final displaySeason = standingsSeason ?? seasonLabel;
     final widgetIds = await _getWidgetIds(_favoriteDriverWidgetIdsKey);
     for (final widgetId in widgetIds) {
       final driverId = await _getDps(_favoriteDriverKey(widgetId, 'driverId'));
@@ -711,7 +777,7 @@ class WidgetUpdateService {
         _favoriteDriverKey(widgetId, 'points'),
         '${driver.points} pts',
       );
-      await _saveDps(_favoriteDriverKey(widgetId, 'season'), seasonLabel);
+      await _saveDps(_favoriteDriverKey(widgetId, 'season'), displaySeason);
       await _saveFavoriteDriverDetails(
         _favoriteDriverKey(widgetId, ''),
         driver,
@@ -733,7 +799,7 @@ class WidgetUpdateService {
       if (defaultDriver != null) {
         await setFavoriteDriverDefault(
           driver: defaultDriver,
-          season: seasonLabel,
+          season: displaySeason,
           reload: false,
         );
       }
@@ -747,15 +813,18 @@ class WidgetUpdateService {
   static Future<void> updateFavoriteTeams(
     List<ConstructorStanding> standings, {
     String? season,
+    String? standingsSeason,
     List<DriverStanding>? drivers,
     bool reload = true,
   }) async {
     final seasonLabel =
         season ?? _seasonOverride ?? DateTime.now().year.toString();
     _seasonOverride = seasonLabel;
+    // Off-season: standings come from last season, the calendar does not.
+    final displaySeason = standingsSeason ?? seasonLabel;
     final widgetIds = await _getWidgetIds(_favoriteTeamWidgetIdsKey);
     final currentDrivers =
-        drivers ?? await ApiService().getDriverStandings(season: seasonLabel);
+        drivers ?? await ApiService().getDriverStandings(season: displaySeason);
     for (final widgetId in widgetIds) {
       final constructorId = await _getDps(
         _favoriteTeamKey(widgetId, 'constructorId'),
@@ -788,7 +857,7 @@ class WidgetUpdateService {
         _favoriteTeamKey(widgetId, 'driver2'),
         _formatDriverLine(teamDrivers, 1),
       );
-      await _saveDps(_favoriteTeamKey(widgetId, 'season'), seasonLabel);
+      await _saveDps(_favoriteTeamKey(widgetId, 'season'), displaySeason);
       await _saveTeamDetails(
         _favoriteTeamKey(widgetId, ''),
         team.teamName,
@@ -816,7 +885,7 @@ class WidgetUpdateService {
               )
               .take(2)
               .toList(),
-          season: seasonLabel,
+          season: displaySeason,
           reload: false,
         );
       }
