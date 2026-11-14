@@ -934,7 +934,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Prediction options load from current driver standings.',
+                'Driver list unavailable right now. Check your connection.',
                 style: TextStyle(color: colors.textMuted, fontSize: 11),
               ),
             ),
@@ -1243,12 +1243,10 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
 
   Future<void> _loadPredictions() async {
     try {
-      List<DriverStanding> drivers = const [];
-      try {
-        drivers = await _apiService.getDriverStandings(season: widget.season);
-      } catch (_) {
-        drivers = const [];
-      }
+      final drivers = await _predictionService.getPredictionDrivers(
+        season: widget.season,
+        apiService: _apiService,
+      );
 
       final values = await Future.wait<Object>([
         _predictionService.getRacePodiumPrediction(
