@@ -49,6 +49,14 @@ class TeamLogo extends StatelessWidget {
     );
   }
 
+  /// Every bundled logo path, so a test can assert each file exists.
+  @visibleForTesting
+  static Set<String> get bundledAssets => _teamLogos.values.toSet();
+
+  /// The bundled logo for [teamName], or null when there is none.
+  @visibleForTesting
+  static String? assetFor(String teamName) => _logoAssetFor(teamName);
+
   static String? _logoAssetFor(String teamName) {
     final normalized = _normalize(teamName);
     if (normalized.isEmpty) {
