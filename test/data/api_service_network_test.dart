@@ -335,27 +335,6 @@ void main() {
       expect(standings.drivers.data.single.driverId, 'norris');
     });
 
-    test('debug switch forces the fallback for a season in progress', () async {
-      ApiService.debugForceOffSeason = true;
-      addTearDown(() => ApiService.debugForceOffSeason = false);
-
-      final standings = await withClient(
-        () => ApiService().getStandingsOrPreviousSeason(season: '2026'),
-        (request) async => http.Response(
-          request.url.path.contains('driverstandings')
-              ? driverStandings([
-                  request.url.path.contains('/2025/') ? 'verstappen' : 'norris',
-                ])
-              : empty,
-          200,
-        ),
-      );
-
-      expect(standings.season, '2025');
-      expect(standings.isPreviousSeason, isTrue);
-      expect(standings.drivers.data.single.driverId, 'verstappen');
-    });
-
     test('falls back to last season before the first race', () async {
       final standings = await withClient(
         () => ApiService().getStandingsOrPreviousSeason(season: '2027'),

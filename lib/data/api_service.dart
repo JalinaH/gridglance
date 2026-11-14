@@ -171,13 +171,6 @@ class ApiService {
     );
   }
 
-  /// Debug-only switch that makes every season behave as if it had no
-  /// standings yet, so off-season mode can be seen without waiting for
-  /// January. Ignored in release and profile builds.
-  static bool debugForceOffSeason = false;
-
-  static bool get _forceOffSeason => kDebugMode && debugForceOffSeason;
-
   /// Standings for [season], or the previous season's final standings when
   /// [season] has none yet.
   ///
@@ -210,7 +203,7 @@ class ApiService {
         snapshot.drivers.data.isEmpty && snapshot.constructors.data.isEmpty;
 
     final current = await load(requested);
-    if (!isEmpty(current) && !_forceOffSeason) return current;
+    if (!isEmpty(current)) return current;
     final year = int.tryParse(requested);
     if (year == null) return current;
     try {

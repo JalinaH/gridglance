@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../data/api_service.dart';
 import '../services/analytics.dart';
@@ -67,25 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _favoriteDriverId = UserPreferences.favoriteDriverIdSync;
     _favoriteTeamId = UserPreferences.favoriteTeamIdSync;
     _overview = ApiService().getSeasonOverview(season: _season);
-  }
-
-  void _toggleForcedOffSeason() {
-    ApiService.debugForceOffSeason = !ApiService.debugForceOffSeason;
-    final forced = ApiService.debugForceOffSeason;
-    setState(() {
-      // Let the home screen push the new standings to the widgets again.
-      _didUpdateWidget = false;
-      _overview = ApiService().getSeasonOverview(season: _season);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          forced
-              ? 'Debug: off-season mode forced on'
-              : 'Debug: off-season mode back to normal',
-        ),
-      ),
-    );
   }
 
   Future<void> _refresh() async {
@@ -585,8 +565,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Haptics.light();
                     _selectSeason();
                   },
-                  // Debug builds only: preview off-season mode on demand.
-                  onLongPress: kDebugMode ? _toggleForcedOffSeason : null,
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
