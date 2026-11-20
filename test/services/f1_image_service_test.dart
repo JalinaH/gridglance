@@ -27,7 +27,7 @@ void main() {
     };
 
     test('maps every 2026 constructor to its F1 media path', () {
-      const season = F1ImageService.carImageSeason;
+      final season = service.carImageSeason;
       for (final entry in constructors2026.entries) {
         final url = service.carImageUrl(entry.key);
         expect(url, isNotNull, reason: entry.key);
@@ -39,6 +39,13 @@ void main() {
           reason: entry.key,
         );
       }
+    });
+
+    test('falls back to the baseline generic car, which always exists', () {
+      expect(
+        service.carImageUrl('mclaren'),
+        contains('/d_common:f1:2026:fallback:car:2026fallbackcarright.webp/'),
+      );
     });
 
     test('requests PNG so native widgets can decode the bytes', () {
@@ -159,6 +166,95 @@ void main() {
       await pumpEventQueue();
 
       expect(service.driverHeadshotUrl(permanentNumber: '4'), isNotNull);
+    });
+  });
+
+  group('F1ImageService car image season', () {
+    const seasonKey = 'f1_image_service_car_season_v1';
+    const checkedKey = 'f1_image_service_car_season_checked_at_v1';
+
+    Future<List<int>> resolve(
+      int Function(int year) statusFor, {
+      required DateTime now,
+    }) async {
+      final probed = <int>[];
+      F1ImageService.clock = () => now;
+      await http.runWithClient(
+        service.resolveCarImageSeasonForTesting,
+        () => MockClient((request) async {
+          final year = int.parse(request.url.pathSegments[5]);
+          probed.add(year);
+          return http.Response('', statusFor(year));
+        }),
+      );
+      return probed;
+    }
+
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      service.resetForTesting();
+    });
+    tearDown(service.resetForTesting);
+
+    test('moves to a new season once its artwork is published', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final probed = await resolve(
+        (year) => year <= 2027 ? 200 : 404,
+        now: DateTime(2027, 3, 1),
+      );
+
+      expect(probed, [2027]);
+      expect(service.carImageSeason, 2027);
+      expect(service.carImageUrl('mclaren'), contains('/2027/mclaren/'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt(seasonKey), 2027);
+    });
+
+    test('stays on the newest published season before launch', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final probed = await resolve(
+        (year) => year <= 2026 ? 200 : 404,
+        now: DateTime(2028, 1, 10),
+      );
+
+      expect(probed, [2028, 2027]);
+      expect(service.carImageSeason, 2026);
+    });
+
+    test('checks at most once a day', () async {
+      final now = DateTime(2027, 3, 1, 12);
+      SharedPreferences.setMockInitialValues({
+        seasonKey: 2027,
+        checkedKey: now
+            .subtract(const Duration(hours: 2))
+            .millisecondsSinceEpoch,
+      });
+
+      final probed = await resolve((_) => 200, now: now);
+
+      expect(probed, isEmpty);
+      expect(service.carImageSeason, 2027);
+    });
+
+    test('keeps the known season when the check fails', () async {
+      SharedPreferences.setMockInitialValues({seasonKey: 2027});
+
+      await resolve((_) => 503, now: DateTime(2028, 3, 1));
+
+      expect(service.carImageSeason, 2027);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt(checkedKey), isNull);
+    });
+
+    test('never probes seasons at or below the known one', () async {
+      SharedPreferences.setMockInitialValues({seasonKey: 2027});
+
+      final probed = await resolve((_) => 200, now: DateTime(2027, 6, 1));
+
+      expect(probed, isEmpty);
+      expect(service.carImageSeason, 2027);
     });
   });
 }
