@@ -811,6 +811,80 @@ class ApiService {
       _cacheUpdatedAtKey(key),
       updatedAt.millisecondsSinceEpoch,
     );
+    if (!_cachePruned) {
+      _cachePruned = true;
+      await pruneCache(prefs, now: updatedAt);
+    }
+  }
+
+  /// Cached seasons other than the current and previous one are dropped once
+  /// they are this old. They are only an offline fallback for browsing.
+  static const Duration _otherSeasonCacheMaxAge = Duration(days: 14);
+
+  /// At most this many cached responses are kept for other seasons, newest
+  /// first, however recently they were browsed.
+  static const int _otherSeasonCacheMaxEntries = 24;
+
+  static bool _cachePruned = false;
+
+  @visibleForTesting
+  static void resetCachePruneForTesting() => _cachePruned = false;
+
+  /// Removes cached responses nobody needs any more.
+  ///
+  /// SharedPreferences loads every key into memory at startup, so a cache
+  /// that keeps each season ever browsed slows launch for good. The current
+  /// and previous season are always kept: the previous one backs the
+  /// off-season standings. Other seasons are kept for
+  /// [_otherSeasonCacheMaxAge], up to [_otherSeasonCacheMaxEntries].
+  /// Runs once per app run, on the first cache write.
+  @visibleForTesting
+  static Future<void> pruneCache(
+    SharedPreferences prefs, {
+    required DateTime now,
+  }) async {
+    const prefix = '$_cacheNamespace|';
+    const bodySuffix = '|body';
+    final current = now.year;
+    final others = <({String key, DateTime? updatedAt})>[];
+    for (final storageKey in prefs.getKeys()) {
+      if (!storageKey.startsWith(prefix) || !storageKey.endsWith(bodySuffix)) {
+        continue;
+      }
+      final key = storageKey.substring(
+        0,
+        storageKey.length - bodySuffix.length,
+      );
+      // Key shape: api_cache_v1|<bucket>|<season>
+      final season = int.tryParse(key.split('|').last);
+      if (season == current || season == current - 1) continue;
+      final updatedAtMs = prefs.getInt(_cacheUpdatedAtKey(key));
+      others.add((
+        key: key,
+        updatedAt: updatedAtMs == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(updatedAtMs),
+      ));
+    }
+
+    // Newest first; entries with no timestamp sort last.
+    others.sort((a, b) {
+      final aTime = a.updatedAt, bTime = b.updatedAt;
+      if (aTime == null) return bTime == null ? 0 : 1;
+      if (bTime == null) return -1;
+      return bTime.compareTo(aTime);
+    });
+    for (var i = 0; i < others.length; i++) {
+      final entry = others[i];
+      final updatedAt = entry.updatedAt;
+      final tooOld =
+          updatedAt == null ||
+          now.difference(updatedAt) > _otherSeasonCacheMaxAge;
+      if (tooOld || i >= _otherSeasonCacheMaxEntries) {
+        await prefs.remove(_cacheBodyKey(entry.key));
+        await prefs.remove(_cacheUpdatedAtKey(entry.key));
+      }
+    }
   }
 
   Future<_CachedBody?> _readCachedBody(String key) async {
