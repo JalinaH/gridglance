@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UserNotifications
 import workmanager
 
 @main
@@ -11,6 +12,11 @@ import workmanager
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Route notification taps (and foreground presentation) through Flutter
+    // so flutter_local_notifications can report them. Set before plugins
+    // register, so plugins that wrap the delegate (firebase_messaging) chain
+    // onto this one instead of being replaced by it.
+    UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     GeneratedPluginRegistrant.register(with: self)
     WorkmanagerPlugin.setPluginRegistrantCallback { registry in
       GeneratedPluginRegistrant.register(with: registry)

@@ -1,8 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gridglance/models/race.dart';
 import 'package:gridglance/services/notification_service.dart';
+import 'package:gridglance/services/notification_target.dart';
 
 void main() {
   group('NotificationService.sessionKey', () {
@@ -179,6 +182,87 @@ void main() {
 
       expect(first, second);
       expect(first, greaterThanOrEqualTo(0));
+    });
+  });
+
+  group('NotificationService taps', () {
+    test('reports a tap with a valid payload', () async {
+      const target = NotificationTarget.race(season: '2026', round: '21');
+      final next = NotificationService.taps.first;
+
+      NotificationService.handleResponseForTesting(
+        NotificationResponse(
+          notificationResponseType:
+              NotificationResponseType.selectedNotification,
+          payload: target.encode(),
+        ),
+      );
+
+      expect(await next, target);
+    });
+
+    test('ignores a tap without a usable payload', () async {
+      final seen = <NotificationTarget>[];
+      final sub = NotificationService.taps.listen(seen.add);
+      addTearDown(sub.cancel);
+
+      for (final payload in [null, '', 'legacy']) {
+        NotificationService.handleResponseForTesting(
+          NotificationResponse(
+            notificationResponseType:
+                NotificationResponseType.selectedNotification,
+            payload: payload,
+          ),
+        );
+      }
+      await Future<void>.delayed(Duration.zero);
+
+      expect(seen, isEmpty);
+    });
+  });
+
+  group('NotificationService payloads', () {
+    const channel = MethodChannel('dexterous.com/flutter/local_notifications');
+    final scheduled = <MethodCall>[];
+
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      scheduled.clear();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'zonedSchedule') scheduled.add(call);
+            return true;
+          });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    test('a session reminder opens its race', () async {
+      final start = DateTime.now().toUtc().add(const Duration(days: 2));
+      final date = start.toIso8601String().substring(0, 10);
+      final race = _buildRace(round: '21');
+      final session = RaceSession(
+        name: 'Qualifying',
+        date: date,
+        time: '${start.toIso8601String().substring(11, 19)}Z',
+      );
+
+      final result = await NotificationService.scheduleSessionNotification(
+        race: race,
+        session: session,
+        season: '2026',
+      );
+
+      expect(result, ScheduleResult.scheduled);
+      expect(
+        NotificationTarget.decode(
+          (scheduled.single.arguments as Map)['payload'] as String?,
+        ),
+        const NotificationTarget.race(season: '2026', round: '21'),
+      );
     });
   });
 }

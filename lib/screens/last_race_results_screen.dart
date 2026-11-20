@@ -12,7 +12,14 @@ import '../widgets/skeleton_loaders.dart';
 class LastRaceResultsScreen extends StatefulWidget {
   final String season;
 
-  const LastRaceResultsScreen({super.key, required this.season});
+  /// Session tab to open on, e.g. from a "qualifying finished" alert.
+  final SessionType initialSession;
+
+  const LastRaceResultsScreen({
+    super.key,
+    required this.season,
+    this.initialSession = SessionType.race,
+  });
 
   @override
   State<LastRaceResultsScreen> createState() => _LastRaceResultsScreenState();
@@ -22,11 +29,12 @@ class _LastRaceResultsScreenState extends State<LastRaceResultsScreen> {
   late Future<SessionResults?> _raceFuture;
   late Future<SessionResults?> _qualifyingFuture;
   late Future<SessionResults?> _sprintFuture;
-  SessionType _selected = SessionType.race;
+  late SessionType _selected;
 
   @override
   void initState() {
     super.initState();
+    _selected = widget.initialSession;
     _fetchResults();
   }
 
