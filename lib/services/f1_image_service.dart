@@ -41,6 +41,8 @@ class F1ImageService {
     } else if (cache == _CacheState.stale) {
       unawaited(_fetchFromApi());
     }
+    // Car images never block launch: the stored season is enough to start.
+    unawaited(_resolveCarImageSeason());
     _initialized = true;
   }
 
@@ -49,7 +51,13 @@ class F1ImageService {
     _byNumber.clear();
     _byCode.clear();
     _initialized = false;
+    _carImageSeason = baselineCarImageSeason;
+    clock = DateTime.now;
   }
+
+  /// Runs the season probe directly so tests can await it.
+  @visibleForTesting
+  Future<void> resolveCarImageSeasonForTesting() => _resolveCarImageSeason();
 
   /// Returns a headshot URL for a driver, matched by permanent number or code.
   /// Returns `null` if no match is found.
@@ -63,23 +71,102 @@ class F1ImageService {
     return null;
   }
 
-  /// Season whose car artwork [carImageUrl] points at. F1 publishes new
-  /// artwork (and new path slugs) each season, so bump this together with
-  /// [_carSlugs] when the next season's images go live.
-  static const int carImageSeason = 2026;
+  /// Newest season whose car artwork is known to exist. Used until a probe
+  /// finds a newer one, and as the floor for every probe.
+  static const int baselineCarImageSeason = 2026;
+
+  /// F1's generic fallback car from [baselineCarImageSeason]. It always
+  /// exists, unlike a season's own fallback, which is a blank image until
+  /// that season's artwork is published.
+  static const String _fallbackCar =
+      'd_common:f1:$baselineCarImageSeason:fallback:car:'
+      '${baselineCarImageSeason}fallbackcarright.webp';
+
+  static const _carSeasonKey = 'f1_image_service_car_season_v1';
+  static const _carSeasonCheckedAtKey =
+      'f1_image_service_car_season_checked_at_v1';
+  static const _carSeasonCheckInterval = Duration(hours: 24);
+
+  /// Team used to probe whether a season's artwork is published.
+  static const _probeSlug = 'ferrari';
+
+  /// Clock indirection so tests can simulate a new year.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
+
+  int _carImageSeason = baselineCarImageSeason;
+
+  /// Season whose car artwork [carImageUrl] currently points at.
+  int get carImageSeason => _carImageSeason;
 
   /// Returns a car image URL for a constructor using official F1 media.
   ///
   /// Requests PNG explicitly (`f_png`): the source is WebP, but the native
-  /// home screen widgets decode these bytes directly. Unknown or missing
-  /// cars resolve to F1's generic fallback car rather than a 404.
+  /// home screen widgets decode these bytes directly. A car missing for the
+  /// season resolves to F1's generic fallback car rather than a 404.
   String? carImageUrl(String constructorId) {
     final slug = _carSlugs[constructorId];
     if (slug == null) return null;
-    const season = carImageSeason;
+    final season = _carImageSeason;
     return 'https://media.formula1.com/image/upload/c_lfill,h_224/f_png'
-        '/d_common:f1:$season:fallback:car:${season}fallbackcarright.webp'
+        '/$_fallbackCar'
         '/common/f1/$season/$slug/$season${slug}carright.webp';
+  }
+
+  /// Points [carImageUrl] at the newest season with published artwork.
+  ///
+  /// F1 publishes each season's cars at launch, usually in February. Until
+  /// then the new season's paths are missing, so the newest season that
+  /// answers is used. Checked at most once a day; a failed check keeps the
+  /// last known season.
+  Future<void> _resolveCarImageSeason() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getInt(_carSeasonKey);
+      if (stored != null && stored >= baselineCarImageSeason) {
+        _carImageSeason = stored;
+      }
+      final now = clock();
+      final checkedAtMs = prefs.getInt(_carSeasonCheckedAtKey);
+      if (checkedAtMs != null &&
+          now.difference(DateTime.fromMillisecondsSinceEpoch(checkedAtMs)) <
+              _carSeasonCheckInterval) {
+        return;
+      }
+
+      for (var year = now.year; year > _carImageSeason; year--) {
+        final published = await _isCarSeasonPublished(year);
+        if (published == null) return; // Network trouble: try again later.
+        if (published) {
+          _carImageSeason = year;
+          break;
+        }
+      }
+      await prefs.setInt(_carSeasonKey, _carImageSeason);
+      await prefs.setInt(_carSeasonCheckedAtKey, now.millisecondsSinceEpoch);
+    } catch (_) {
+      // Keep whatever season we had; car images still resolve.
+    }
+  }
+
+  /// Whether [year]'s car artwork exists, or null if we could not tell.
+  Future<bool?> _isCarSeasonPublished(int year) async {
+    try {
+      // A tiny rendition: we only need the status code.
+      final response = await http
+          .head(
+            Uri.parse(
+              'https://media.formula1.com/image/upload/h_8/common/f1/$year/'
+              '$_probeSlug/$year${_probeSlug}carright.webp',
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) return true;
+      if (response.statusCode == 404) return false;
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ─── Private ───────────────────────────────────────────────
@@ -169,7 +256,8 @@ class F1ImageService {
   }
 
   /// Maps Ergast constructor IDs to the F1 media URL slug.
-  /// Jolpica constructorId -> F1 media slug for [carImageSeason].
+  /// Jolpica constructorId -> F1 media slug. If a team's slug changes in a
+  /// new season, its car shows F1's generic fallback until this is updated.
   static const Map<String, String> _carSlugs = {
     'red_bull': 'redbullracing',
     'ferrari': 'ferrari',
