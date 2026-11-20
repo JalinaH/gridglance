@@ -396,4 +396,111 @@ void main() {
       expect(overview.driverStandings, hasLength(1));
     });
   });
+
+  group('ApiService cache pruning', () {
+    final now = DateTime(2027, 3, 1);
+
+    Map<String, Object> entry(String bucket, String season, Duration age) {
+      final key = 'api_cache_v1|$bucket|$season';
+      return {
+        '$key|body': '{}',
+        '$key|updated_at': now.subtract(age).millisecondsSinceEpoch,
+      };
+    }
+
+    Future<Set<String>> prunedSeasons(Map<String, Object> initial) async {
+      SharedPreferences.setMockInitialValues(initial);
+      final prefs = await SharedPreferences.getInstance();
+      await ApiService.pruneCache(prefs, now: now);
+      return prefs
+          .getKeys()
+          .where((k) => k.endsWith('|body'))
+          .map((k) => k.split('|')[2])
+          .toSet();
+    }
+
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      ApiService.resetCachePruneForTesting();
+    });
+
+    test('always keeps the current and previous season', () async {
+      final kept = await prunedSeasons({
+        ...entry('driver_standings', '2027', const Duration(days: 90)),
+        ...entry('driver_standings', '2026', const Duration(days: 90)),
+      });
+
+      expect(kept, {'2027', '2026'});
+    });
+
+    test('drops other seasons once they are two weeks old', () async {
+      final kept = await prunedSeasons({
+        ...entry('driver_standings', '1998', const Duration(days: 3)),
+        ...entry('driver_standings', '1988', const Duration(days: 20)),
+      });
+
+      expect(kept, {'1998'});
+    });
+
+    test('removes the timestamp along with the body', () async {
+      SharedPreferences.setMockInitialValues(
+        entry('race_schedule', '1988', const Duration(days: 20)),
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await ApiService.pruneCache(prefs, now: now);
+
+      expect(prefs.getKeys(), isEmpty);
+    });
+
+    test('caps other seasons at the 24 most recent', () async {
+      final initial = <String, Object>{
+        for (var i = 0; i < 30; i++)
+          ...entry('driver_standings', '${1990 + i}', Duration(hours: i)),
+      };
+
+      final kept = await prunedSeasons(initial);
+
+      expect(kept, hasLength(24));
+      expect(kept, contains('1990'));
+      expect(kept, isNot(contains('2019')));
+    });
+
+    test('drops an entry with no timestamp', () async {
+      final kept = await prunedSeasons({
+        'api_cache_v1|driver_standings|1988|body': '{}',
+      });
+
+      expect(kept, isEmpty);
+    });
+
+    test('leaves unrelated preferences alone', () async {
+      SharedPreferences.setMockInitialValues({
+        'favorite_driver_id': 'norris',
+        ...entry('driver_standings', '1988', const Duration(days: 20)),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      await ApiService.pruneCache(prefs, now: now);
+
+      expect(prefs.getString('favorite_driver_id'), 'norris');
+    });
+
+    test('a cache write prunes once per app run', () async {
+      SharedPreferences.setMockInitialValues(
+        entry('driver_standings', '1988', const Duration(days: 400)),
+      );
+
+      await withClient(
+        () => ApiService().getRaceSchedule(season: '2026'),
+        (_) async =>
+            http.Response('{"MRData":{"RaceTable":{"Races":[]}}}', 200),
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getKeys().where((k) => k.contains('|1988|')), isEmpty);
+      expect(
+        prefs.getKeys().where((k) => k.contains('race_schedule|2026|body')),
+        hasLength(1),
+      );
+    });
+  });
 }
