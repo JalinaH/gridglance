@@ -11,6 +11,7 @@ import 'firebase_options.dart';
 import 'screens/constructor_standings_screen.dart';
 import 'screens/driver_detail_screen.dart';
 import 'screens/driver_standings_screen.dart';
+import 'screens/last_race_results_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/race_detail_screen.dart';
 import 'screens/splash_screen.dart';
@@ -23,6 +24,7 @@ import 'services/background_task_service.dart';
 import 'services/crash_reporting.dart';
 import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
+import 'services/notification_target.dart';
 import 'services/f1_image_service.dart';
 import 'services/user_preferences.dart';
 import 'services/widget_click_router.dart';
@@ -114,6 +116,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final AppUpdateService _appUpdateService = AppUpdateService();
   final Set<int> _promptedUpdateBuilds = <int>{};
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  StreamSubscription<NotificationTarget>? _notificationTaps;
 
   @override
   void initState() {
@@ -122,10 +125,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _loadThemeMode();
     _checkForWidgetClick();
     _runBackgroundChecks();
+    _notificationTaps = NotificationService.taps.listen(
+      _openNotificationTarget,
+    );
+    unawaited(_openLaunchNotification());
   }
 
   @override
   void dispose() {
+    unawaited(_notificationTaps?.cancel());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -276,6 +284,70 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       // Offline with no cache: just leave the app on its home tab.
       if (kDebugMode) {
         debugPrint('Widget tap: failed to load ${target.destination}: $error');
+        debugPrint('$stackTrace');
+      }
+    }
+    final destination = screen;
+    if (destination == null || !mounted) {
+      return;
+    }
+    _navigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (_) => destination),
+    );
+  }
+
+  /// Opens the screen for the notification that launched the app, if any.
+  Future<void> _openLaunchNotification() async {
+    final target = await NotificationService.consumeLaunchTarget();
+    if (target != null) {
+      await _openNotificationTarget(target);
+    }
+  }
+
+  Future<void> _openNotificationTarget(NotificationTarget target) async {
+    unawaited(
+      Analytics.track(
+        'notification_tapped',
+        properties: {'destination': target.destination.name},
+      ),
+    );
+    final api = ApiService();
+    final season = target.season;
+    Widget? screen;
+    try {
+      switch (target.destination) {
+        case NotificationDestination.race:
+          final races = await api.getRaceSchedule(season: season);
+          final race = races.where((r) => r.round == target.round).firstOrNull;
+          if (race != null) {
+            screen = RaceDetailScreen(race: race, season: season);
+          }
+        case NotificationDestination.sessionResults:
+          screen = LastRaceResultsScreen(
+            season: season,
+            initialSession: target.session!,
+          );
+        case NotificationDestination.driver:
+          final standings = await api.getDriverStandings(season: season);
+          final driver = standings
+              .where((d) => d.driverId == target.id)
+              .firstOrNull;
+          if (driver != null) {
+            screen = DriverDetailScreen(driver: driver, season: season);
+          }
+        case NotificationDestination.team:
+          final standings = await api.getConstructorStandings(season: season);
+          final team = standings
+              .where((t) => t.constructorId == target.id)
+              .firstOrNull;
+          if (team != null) {
+            screen = TeamDetailScreen(team: team, season: season);
+          }
+      }
+    } catch (error, stackTrace) {
+      // Offline with no cache: just leave the app where it is.
+      if (kDebugMode) {
+        debugPrint('Notification tap: failed to load $target: $error');
         debugPrint('$stackTrace');
       }
     }

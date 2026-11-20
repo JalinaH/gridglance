@@ -7,6 +7,7 @@ import '../models/driver_standing.dart';
 import '../models/session_results.dart';
 import 'notification_preferences.dart';
 import 'notification_service.dart';
+import 'notification_target.dart';
 import 'user_preferences.dart';
 
 class FavoriteResultAlertService {
@@ -253,6 +254,10 @@ class FavoriteResultAlertService {
         category: 'session_finished',
         eventKey: eventKey,
         title: title,
+        target: NotificationTarget.sessionResults(
+          season: season,
+          session: session.type,
+        ),
         body: driverBody,
       );
     }
@@ -269,6 +274,10 @@ class FavoriteResultAlertService {
         category: 'session_finished',
         eventKey: eventKey,
         title: title,
+        target: NotificationTarget.sessionResults(
+          season: season,
+          session: session.type,
+        ),
         body: teamBody,
       );
     }
@@ -477,6 +486,10 @@ class FavoriteResultAlertService {
             entityId: favoriteDriverId,
             category: 'position_points',
             eventKey: '$season|driver|${current.position}|${current.points}',
+            target: NotificationTarget.driver(
+              season: season,
+              driverId: favoriteDriverId,
+            ),
             title: 'Favorite driver update',
             body:
                 '$driverName now P${current.position} with ${current.points} pts (was P$previousPosition, $previousPoints pts).',
@@ -520,6 +533,10 @@ class FavoriteResultAlertService {
             entityId: favoriteTeamId,
             category: 'position_points',
             eventKey: '$season|team|${current.position}|${current.points}',
+            target: NotificationTarget.team(
+              season: season,
+              constructorId: favoriteTeamId,
+            ),
             title: 'Favorite team update',
             body:
                 '${current.teamName} now P${current.position} with ${current.points} pts (was P$previousPosition, $previousPoints pts).',

@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/race.dart';
+import 'notification_target.dart';
 
 enum ScheduleResult {
   scheduled,
@@ -31,6 +34,7 @@ class NotificationService {
     required DateTime scheduledTime,
     required NotificationDetails details,
     required bool preferExact,
+    String? payload,
   }) async {
     try {
       await _plugin.zonedSchedule(
@@ -44,6 +48,7 @@ class NotificationService {
         androidScheduleMode: preferExact
             ? AndroidScheduleMode.exactAllowWhileIdle
             : AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload,
       );
       return ScheduleResult.scheduled;
     } on PlatformException catch (error) {
@@ -58,6 +63,7 @@ class NotificationService {
           scheduledTime: scheduledTime,
           details: details,
           preferExact: false,
+          payload: payload,
         );
       }
       _lastError = 'Platform error: ${error.code} ${error.message ?? ''}'
@@ -80,6 +86,7 @@ class NotificationService {
     required String eventKey,
     required String title,
     required String body,
+    NotificationTarget? target,
     bool requestPermissionIfNeeded = false,
   }) async {
     await init();
@@ -103,6 +110,7 @@ class NotificationService {
         title,
         body,
         _favoriteResultsNotificationDetails(),
+        payload: target?.encode(),
       );
       return true;
     } on PlatformException catch (error) {
@@ -196,6 +204,10 @@ class NotificationService {
         body: 'Session starts in ${leadTime.inMinutes} minutes',
         scheduledTime: scheduledTime,
         details: details,
+        payload: NotificationTarget.race(
+          season: season,
+          round: race.round,
+        ).encode(),
         preferExact: true,
       );
     }
@@ -232,6 +244,10 @@ class NotificationService {
       body: _buildWeekendDigestBody(timedSessions),
       scheduledTime: scheduledTime,
       details: _weekendDigestNotificationDetails(),
+      payload: NotificationTarget.race(
+        season: season,
+        round: race.round,
+      ).encode(),
       preferExact: false,
     );
   }
@@ -260,9 +276,47 @@ class NotificationService {
       android: androidSettings,
       iOS: iOSSettings,
     );
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _handleResponse,
+    );
     _initialized = true;
   }
+
+  static final StreamController<NotificationTarget> _taps =
+      StreamController<NotificationTarget>.broadcast();
+  static bool _launchTargetConsumed = false;
+
+  /// Taps on the app's notifications while it is running or in the
+  /// background. Notifications without a usable payload are not reported.
+  static Stream<NotificationTarget> get taps => _taps.stream;
+
+  static void _handleResponse(NotificationResponse response) {
+    final target = NotificationTarget.decode(response.payload);
+    if (target != null) _taps.add(target);
+  }
+
+  /// The notification whose tap launched the app from scratch, if any.
+  /// Returns it once per app run; later calls return null.
+  static Future<NotificationTarget?> consumeLaunchTarget() async {
+    if (_launchTargetConsumed) return null;
+    _launchTargetConsumed = true;
+    try {
+      await init();
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      if (details == null || !details.didNotificationLaunchApp) return null;
+      return NotificationTarget.decode(details.notificationResponse?.payload);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @visibleForTesting
+  static void handleResponseForTesting(NotificationResponse response) =>
+      _handleResponse(response);
+
+  @visibleForTesting
+  static void resetLaunchTargetForTesting() => _launchTargetConsumed = false;
 
   static Future<bool> requestPermissions() async {
     var granted = true;
@@ -337,6 +391,10 @@ class NotificationService {
       body: 'Session starts in ${_leadTimeLabel(leadTime)}',
       scheduledTime: scheduledTime,
       details: details,
+      payload: NotificationTarget.race(
+        season: season,
+        round: race.round,
+      ).encode(),
       preferExact: true,
     );
   }

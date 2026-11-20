@@ -6,6 +6,7 @@ import 'package:gridglance/models/driver_standing.dart';
 import 'package:gridglance/models/race.dart';
 import 'package:gridglance/models/session_results.dart';
 import 'package:gridglance/services/favorite_result_alert_service.dart';
+import 'package:gridglance/services/notification_target.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -250,6 +251,16 @@ void main() {
       await FavoriteResultAlertService.checkForUpdates(season: '2026');
 
       expect(shownNotifications, hasLength(1));
+      // A tap opens that session's results.
+      expect(
+        NotificationTarget.decode(
+          (shownNotifications.single.arguments as Map)['payload'] as String?,
+        ),
+        const NotificationTarget.sessionResults(
+          season: '2026',
+          session: SessionType.race,
+        ),
+      );
     });
 
     test('honours the legacy all-sessions seeded flag', () async {
@@ -344,6 +355,14 @@ void main() {
       expect(
         prefs.getString('favorite_alert_driver_points|2026|verstappen'),
         '375',
+      );
+      // A tap opens the driver.
+      expect(shownNotifications, hasLength(1));
+      expect(
+        NotificationTarget.decode(
+          (shownNotifications.single.arguments as Map)['payload'] as String?,
+        ),
+        const NotificationTarget.driver(season: '2026', driverId: 'verstappen'),
       );
     });
   });
