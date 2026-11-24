@@ -216,4 +216,80 @@ void main() {
       );
     });
   });
+
+  group('NotificationPreferences default lead time', () {
+    test('is 15 minutes until changed', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      expect(await NotificationPreferences.getDefaultLeadTimeMinutes(), 15);
+    });
+
+    test('ignores a value that is not a preset', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      await NotificationPreferences.setDefaultLeadTimeMinutes(42);
+
+      expect(await NotificationPreferences.getDefaultLeadTimeMinutes(), 15);
+    });
+
+    test('applies to sessions without their own lead time', () async {
+      SharedPreferences.setMockInitialValues({});
+      await NotificationPreferences.setDefaultLeadTimeMinutes(60);
+
+      final lead = await NotificationPreferences.getSessionLeadTimeMinutes(
+        race: _defaultLeadRace(),
+        session: RaceSession(
+          name: 'Race',
+          date: '2026-03-08',
+          time: '05:00:00Z',
+        ),
+        season: '2026',
+      );
+
+      expect(lead, 60);
+    });
+
+    test('a session\'s own lead time still wins', () async {
+      SharedPreferences.setMockInitialValues({});
+      final race = _defaultLeadRace();
+      final session = RaceSession(
+        name: 'Race',
+        date: '2026-03-08',
+        time: '05:00:00Z',
+      );
+      await NotificationPreferences.setDefaultLeadTimeMinutes(60);
+      await NotificationPreferences.setSessionLeadTimeMinutes(
+        race: race,
+        session: session,
+        season: '2026',
+        minutes: 5,
+      );
+
+      expect(
+        await NotificationPreferences.getSessionLeadTimeMinutes(
+          race: race,
+          session: session,
+          season: '2026',
+        ),
+        5,
+      );
+    });
+  });
 }
+
+Race _defaultLeadRace() => Race(
+  round: '1',
+  raceName: 'Sample Grand Prix',
+  date: '2026-03-08',
+  time: '05:00:00Z',
+  circuitId: '',
+  circuitName: 'Sample Circuit',
+  locality: 'Sample City',
+  country: 'Sample Country',
+  practice1: null,
+  practice2: null,
+  practice3: null,
+  qualifying: null,
+  sprintQualifying: null,
+  sprint: null,
+);
