@@ -8,6 +8,9 @@ import workmanager
   private let widgetIntentChannelName = "gridglance/widget_intent"
   private let backgroundTaskIdentifier = "com.gridglance.app.favorite-result-sync"
 
+  /// Widget tap waiting for Flutter to ask for it via `consumeWidgetClick`.
+  private var pendingWidgetClick: [String: Any]?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -23,12 +26,48 @@ import workmanager
     }
     WorkmanagerPlugin.registerTask(withIdentifier: backgroundTaskIdentifier)
     UIApplication.shared.setMinimumBackgroundFetchInterval(TimeInterval(60 * 15))
+    if let url = launchOptions?[.url] as? URL,
+       let click = Self.widgetClick(from: url) {
+      pendingWidgetClick = click
+    }
     if let widgetIntentMessenger = resolveMessenger(
       pluginKey: "GridGlanceWidgetIntentChannel"
     ) {
       configureWidgetIntentChannel(binaryMessenger: widgetIntentMessenger)
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    if let click = Self.widgetClick(from: url) {
+      // Flutter asks for it when the app resumes, as it does on Android.
+      pendingWidgetClick = click
+      return true
+    }
+    return super.application(app, open: url, options: options)
+  }
+
+  /// Turns `gridglance://widget?type=...&targetId=...` from a widget tap into
+  /// the payload `WidgetClickTarget.fromPayload` expects. iOS widgets have no
+  /// per-instance id, so `widgetId` is always 0.
+  static func widgetClick(from url: URL) -> [String: Any]? {
+    guard url.scheme == "gridglance", url.host == "widget",
+          let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+          let type = items.first(where: { $0.name == "type" })?.value,
+          !type.isEmpty
+    else {
+      return nil
+    }
+    var click: [String: Any] = ["type": type, "widgetId": 0]
+    if let targetId = items.first(where: { $0.name == "targetId" })?.value,
+       !targetId.isEmpty {
+      click["targetId"] = targetId
+    }
+    return click
   }
 
   private func resolveMessenger(pluginKey: String) -> FlutterBinaryMessenger? {
@@ -46,10 +85,11 @@ import workmanager
       name: widgetIntentChannelName,
       binaryMessenger: binaryMessenger
     )
-    channel.setMethodCallHandler { call, result in
+    channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
       case "consumeWidgetClick":
-        result(nil)
+        result(self?.pendingWidgetClick)
+        self?.pendingWidgetClick = nil
       default:
         result(FlutterMethodNotImplemented)
       }
