@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/race.dart';
 import 'notification_service.dart';
 
@@ -8,6 +9,7 @@ class NotificationPreferences {
       'notify_favorite_session_finished';
   static const String _favoritePositionPointsAlertsKey =
       'notify_favorite_position_points';
+  static const String _defaultLeadTimeKey = 'notify_default_lead_minutes';
   static const int defaultLeadTimeMinutes = 15;
   static const List<int> leadTimePresets = [5, 15, 60, 1440];
 
@@ -55,9 +57,28 @@ class NotificationPreferences {
     );
     final stored = prefs.getInt(key);
     if (stored == null || !leadTimePresets.contains(stored)) {
-      return defaultLeadTimeMinutes;
+      return _readDefaultLeadTime(prefs);
     }
     return stored;
+  }
+
+  /// Lead time used for a session reminder the user has not set one for.
+  static Future<int> getDefaultLeadTimeMinutes() async {
+    final prefs = await SharedPreferences.getInstance();
+    return _readDefaultLeadTime(prefs);
+  }
+
+  static Future<void> setDefaultLeadTimeMinutes(int minutes) async {
+    if (!leadTimePresets.contains(minutes)) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_defaultLeadTimeKey, minutes);
+  }
+
+  static int _readDefaultLeadTime(SharedPreferences prefs) {
+    final stored = prefs.getInt(_defaultLeadTimeKey);
+    return stored != null && leadTimePresets.contains(stored)
+        ? stored
+        : defaultLeadTimeMinutes;
   }
 
   static Future<void> setSessionLeadTimeMinutes({

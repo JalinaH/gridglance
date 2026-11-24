@@ -52,6 +52,9 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   bool _weekendDigestEnabled = false;
   bool _favoriteSessionFinishedAlertsEnabled = false;
   bool _favoritePositionPointsAlertsEnabled = false;
+
+  /// Lead time for sessions without their own, from Settings.
+  int _defaultLeadMinutes = NotificationPreferences.defaultLeadTimeMinutes;
   bool _loadingNotificationPreferences = true;
   bool _loadingPredictions = true;
   bool _savingPrediction = false;
@@ -98,6 +101,8 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
         await NotificationPreferences.isFavoriteSessionFinishedEnabled();
     final favoritePositionPoints =
         await NotificationPreferences.isFavoritePositionPointsEnabled();
+    final defaultLeadMinutes =
+        await NotificationPreferences.getDefaultLeadTimeMinutes();
 
     if (!mounted) {
       return;
@@ -112,6 +117,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
       _weekendDigestEnabled = weekendDigest;
       _favoriteSessionFinishedAlertsEnabled = favoriteSessionFinished;
       _favoritePositionPointsAlertsEnabled = favoritePositionPoints;
+      _defaultLeadMinutes = defaultLeadMinutes;
       _loadingNotificationPreferences = false;
     });
   }
@@ -576,9 +582,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     final colors = AppColors.of(context);
     final key = _sessionKey(session);
     final reminderEnabled = _sessionReminderEnabled[key] ?? false;
-    final selectedLead =
-        _sessionLeadMinutes[key] ??
-        NotificationPreferences.defaultLeadTimeMinutes;
+    final selectedLead = _sessionLeadMinutes[key] ?? _defaultLeadMinutes;
     final start = session.startDateTime;
     final hasTimedStart =
         start != null && session.time != null && session.time!.isNotEmpty;
@@ -1621,9 +1625,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
   Future<void> _toggleSessionReminder(RaceSession session, bool enabled) async {
     Haptics.selection();
     final key = _sessionKey(session);
-    final leadMinutes =
-        _sessionLeadMinutes[key] ??
-        NotificationPreferences.defaultLeadTimeMinutes;
+    final leadMinutes = _sessionLeadMinutes[key] ?? _defaultLeadMinutes;
     if (enabled) {
       final result = await NotificationService.scheduleSessionNotification(
         race: widget.race,
@@ -1688,9 +1690,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
 
   Future<void> _selectSessionLeadTime(RaceSession session, int minutes) async {
     final key = _sessionKey(session);
-    final previous =
-        _sessionLeadMinutes[key] ??
-        NotificationPreferences.defaultLeadTimeMinutes;
+    final previous = _sessionLeadMinutes[key] ?? _defaultLeadMinutes;
     if (previous == minutes) {
       return;
     }
@@ -1799,16 +1799,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
 
   Future<void> _toggleFavoriteSessionFinishedAlerts(bool enabled) async {
     Haptics.selection();
-    if (enabled) {
-      final allowed = await NotificationService.requestPermissions();
-      if (!allowed) {
-        _showSnackBar('Notification permission denied.');
-        return;
-      }
-    }
-    await NotificationPreferences.setFavoriteSessionFinishedEnabled(enabled);
-    if (enabled) {
-      await FavoriteResultAlertService.checkForUpdates(season: widget.season);
+    final changed = await FavoriteResultAlertService.setAlertEnabled(
+      FavoriteAlertKind.sessionFinished,
+      enabled,
+      season: widget.season,
+    );
+    if (!changed) {
+      _showSnackBar('Notification permission denied.');
+      return;
     }
     if (!mounted) {
       return;
@@ -1825,16 +1823,14 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
 
   Future<void> _toggleFavoritePositionPointsAlerts(bool enabled) async {
     Haptics.selection();
-    if (enabled) {
-      final allowed = await NotificationService.requestPermissions();
-      if (!allowed) {
-        _showSnackBar('Notification permission denied.');
-        return;
-      }
-    }
-    await NotificationPreferences.setFavoritePositionPointsEnabled(enabled);
-    if (enabled) {
-      await FavoriteResultAlertService.checkForUpdates(season: widget.season);
+    final changed = await FavoriteResultAlertService.setAlertEnabled(
+      FavoriteAlertKind.positionPoints,
+      enabled,
+      season: widget.season,
+    );
+    if (!changed) {
+      _showSnackBar('Notification permission denied.');
+      return;
     }
     if (!mounted) {
       return;

@@ -6,16 +6,23 @@ import '../widgets/f1_scaffold.dart';
 import '../services/widget_update_service.dart';
 import 'about_screen.dart';
 import 'home_screen.dart';
+import 'settings_screen.dart';
 import 'widgets_screen.dart';
 
 class MainShell extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
+  final ThemeMode themeMode;
+
+  /// When null, the settings button is hidden.
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
 
   const MainShell({
     super.key,
     required this.isDarkMode,
     required this.onToggleTheme,
+    this.themeMode = ThemeMode.dark,
+    this.onThemeModeChanged,
   });
 
   @override
@@ -87,6 +94,22 @@ class _MainShellState extends State<MainShell> {
               widget.onToggleTheme();
             },
           ),
+          if (widget.onThemeModeChanged != null)
+            IconButton(
+              tooltip: 'Settings',
+              icon: Icon(Icons.settings_outlined, color: colors.f1RedBright),
+              onPressed: () {
+                Haptics.light();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => SettingsScreen(
+                      themeMode: widget.themeMode,
+                      onThemeModeChanged: widget.onThemeModeChanged!,
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
       body: Column(

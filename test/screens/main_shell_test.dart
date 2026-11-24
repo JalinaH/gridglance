@@ -136,4 +136,42 @@ void main() {
       }, (error, stack) => errors.add(error));
     });
   });
+
+  testWidgets('settings button opens Settings', (tester) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('dexterous.com/flutter/local_notifications'),
+          (call) async => true,
+        );
+    // The tabs fire API calls that fail in tests; ignore them as above.
+    await runZonedGuarded(() async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.dark(),
+          home: MainShell(
+            isDarkMode: true,
+            onToggleTheme: () {},
+            themeMode: ThemeMode.system,
+            onThemeModeChanged: (_) {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('APPEARANCE'), findsOneWidget);
+    }, (_, _) {});
+  });
+
+  testWidgets('no settings button without a theme callback', (tester) async {
+    await runZonedGuarded(() async {
+      await tester.pumpWidget(_buildShell());
+      await tester.pump();
+
+      expect(find.byTooltip('Settings'), findsNothing);
+    }, (_, _) {});
+  });
 }

@@ -10,7 +10,36 @@ import 'notification_service.dart';
 import 'notification_target.dart';
 import 'user_preferences.dart';
 
+/// The two kinds of favorite alerts a user can switch on.
+enum FavoriteAlertKind { sessionFinished, positionPoints }
+
 class FavoriteResultAlertService {
+  /// Turns a favorite alert on or off, asking for notification permission
+  /// when turning it on. Returns false, and changes nothing, when the
+  /// permission is denied. Turning an alert on runs a check straight away so
+  /// the baseline is recorded and later changes can alert.
+  static Future<bool> setAlertEnabled(
+    FavoriteAlertKind kind,
+    bool enabled, {
+    String? season,
+  }) async {
+    if (enabled && !await NotificationService.requestPermissions()) {
+      return false;
+    }
+    switch (kind) {
+      case FavoriteAlertKind.sessionFinished:
+        await NotificationPreferences.setFavoriteSessionFinishedEnabled(
+          enabled,
+        );
+      case FavoriteAlertKind.positionPoints:
+        await NotificationPreferences.setFavoritePositionPointsEnabled(enabled);
+    }
+    if (enabled) {
+      await checkForUpdates(season: season);
+    }
+    return true;
+  }
+
   static const Duration _minimumCheckInterval = Duration(minutes: 2);
   static const String _lastCheckAtKey = 'favorite_alert_last_check_at';
   static const String _sessionSeededPrefix = 'favorite_alert_session_seeded';

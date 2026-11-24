@@ -4,7 +4,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'data/api_service.dart';
 import 'firebase_options.dart';
@@ -25,6 +24,7 @@ import 'services/crash_reporting.dart';
 import 'services/favorite_result_alert_service.dart';
 import 'services/notification_service.dart';
 import 'services/notification_target.dart';
+import 'services/theme_preference.dart';
 import 'services/f1_image_service.dart';
 import 'services/user_preferences.dart';
 import 'services/widget_click_router.dart';
@@ -106,7 +106,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  static const String _themeKey = 'theme_mode';
   static const MethodChannel _widgetIntentChannel = MethodChannel(
     'gridglance/widget_intent',
   );
@@ -150,9 +149,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _loadThemeMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_themeKey);
-    final mode = stored == 'light' ? ThemeMode.light : ThemeMode.dark;
+    final mode = await ThemePreference.load();
     if (!mounted) {
       return;
     }
@@ -161,29 +158,37 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     });
   }
 
-  Future<void> _toggleTheme() async {
-    final nextMode = _themeMode == ThemeMode.dark
-        ? ThemeMode.light
-        : ThemeMode.dark;
+  Future<void> _setThemeMode(ThemeMode mode) async {
     if (mounted) {
       setState(() {
-        _themeMode = nextMode;
+        _themeMode = mode;
       });
     }
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _themeKey,
-      nextMode == ThemeMode.dark ? 'dark' : 'light',
-    );
-    unawaited(
-      Analytics.track(
-        'theme_toggled',
-        properties: {'to': nextMode == ThemeMode.dark ? 'dark' : 'light'},
-      ),
-    );
+    await ThemePreference.save(mode);
+    unawaited(Analytics.track('theme_changed', properties: {'to': mode.name}));
   }
 
-  bool get _isDarkMode => _themeMode == ThemeMode.dark;
+  /// The quick toggle flips what is on screen, so in "system" mode it pins
+  /// the opposite of the current system brightness.
+  Future<void> _toggleTheme() =>
+      _setThemeMode(_isDarkMode ? ThemeMode.light : ThemeMode.dark);
+
+  bool get _isDarkMode => switch (_themeMode) {
+    ThemeMode.dark => true,
+    ThemeMode.light => false,
+    ThemeMode.system =>
+      WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark,
+  };
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    // Keeps the toggle icon in step when following the system.
+    if (_themeMode == ThemeMode.system && mounted) {
+      setState(() {});
+    }
+  }
 
   Future<void> _checkForWidgetClick() async {
     Map<dynamic, dynamic>? result;
@@ -448,7 +453,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 }
               },
             )
-          : MainShell(isDarkMode: _isDarkMode, onToggleTheme: _toggleTheme),
+          : MainShell(
+              isDarkMode: _isDarkMode,
+              onToggleTheme: _toggleTheme,
+              themeMode: _themeMode,
+              onThemeModeChanged: _setThemeMode,
+            ),
     );
   }
 }
