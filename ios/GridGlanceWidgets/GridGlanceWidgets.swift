@@ -3,6 +3,35 @@ import WidgetKit
 
 private let widgetAppGroupId = "group.com.gridglance.app"
 
+// MARK: - Tap Destinations
+
+/// URL a widget tap opens the app with. `AppDelegate` turns it into the same
+/// payload Android widget taps produce, so `WidgetClickTarget` routes both.
+private func widgetTapURL(_ type: String, targetId: String? = nil) -> URL {
+  var components = URLComponents()
+  components.scheme = "gridglance"
+  components.host = "widget"
+  var items = [URLQueryItem(name: "type", value: type)]
+  if let targetId, !targetId.isEmpty {
+    items.append(URLQueryItem(name: "targetId", value: targetId))
+  }
+  components.queryItems = items
+  return components.url ?? URL(string: "gridglance://widget")!
+}
+
+private extension View {
+  /// Makes a podium column open that driver or team. Without an id (no
+  /// standings yet) the tap falls through to the widget's own destination.
+  @ViewBuilder
+  func podiumLink(type: String, id: String?) -> some View {
+    if let id, !id.isEmpty {
+      Link(destination: widgetTapURL(type, targetId: id)) { self }
+    } else {
+      self
+    }
+  }
+}
+
 private struct GridGlanceEntry: TimelineEntry {
   let date: Date
   let values: [String: String]
@@ -260,6 +289,7 @@ private struct DriverStandingsWidgetView: View {
             PodiumBlock(position: 2, height: 32)
           }
           .frame(maxWidth: .infinity)
+          .podiumLink(type: "driver_standings", id: entry.values["driver_2_id"])
 
           // 1st place
           VStack(spacing: 3) {
@@ -274,6 +304,7 @@ private struct DriverStandingsWidgetView: View {
             PodiumBlock(position: 1, height: 44)
           }
           .frame(maxWidth: .infinity)
+          .podiumLink(type: "driver_standings", id: entry.values["driver_1_id"])
 
           // 3rd place
           VStack(spacing: 3) {
@@ -288,6 +319,7 @@ private struct DriverStandingsWidgetView: View {
             PodiumBlock(position: 3, height: 22)
           }
           .frame(maxWidth: .infinity)
+          .podiumLink(type: "driver_standings", id: entry.values["driver_3_id"])
         }
       }
       .foregroundColor(.white)
@@ -325,6 +357,7 @@ private struct TeamStandingsWidgetView: View {
             PodiumBlock(position: 2, height: 32)
           }
           .frame(maxWidth: .infinity)
+          .podiumLink(type: "team_standings", id: entry.values["team_2_id"])
 
           // 1st
           VStack(spacing: 3) {
@@ -339,6 +372,7 @@ private struct TeamStandingsWidgetView: View {
             PodiumBlock(position: 1, height: 44)
           }
           .frame(maxWidth: .infinity)
+          .podiumLink(type: "team_standings", id: entry.values["team_1_id"])
 
           // 3rd
           VStack(spacing: 3) {
@@ -353,6 +387,7 @@ private struct TeamStandingsWidgetView: View {
             PodiumBlock(position: 3, height: 22)
           }
           .frame(maxWidth: .infinity)
+          .podiumLink(type: "team_standings", id: entry.values["team_3_id"])
         }
       }
       .foregroundColor(.white)
@@ -804,12 +839,23 @@ private struct RaceWeekendWidgetView: View {
 
 // MARK: - Widget Declarations
 
+/// iOS favorite widgets show the app-wide favorite, set from the Home tab,
+/// so there is no per-widget picker to send an unset widget to. Open the
+/// standings instead, where the user can find a driver or team.
+private func favoriteTapURL(type: String, fallbackType: String, id: String?) -> URL {
+  if let id, !id.isEmpty {
+    return widgetTapURL(type, targetId: id)
+  }
+  return widgetTapURL(fallbackType)
+}
+
 struct GridGlanceDriverStandingsWidget: Widget {
   let kind: String = "GridGlanceDriverStandingsWidget"
 
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
       DriverStandingsWidgetView(entry: entry)
+        .widgetURL(widgetTapURL("driver_standings"))
     }
     .configurationDisplayName("Driver Standings")
     .description("Top 3 Formula 1 drivers on a podium.")
@@ -823,6 +869,7 @@ struct GridGlanceTeamStandingsWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
       TeamStandingsWidgetView(entry: entry)
+        .widgetURL(widgetTapURL("team_standings"))
     }
     .configurationDisplayName("Team Standings")
     .description("Top 3 Formula 1 teams on a podium.")
@@ -836,6 +883,11 @@ struct GridGlanceFavoriteDriverWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
       FavoriteDriverWidgetView(entry: entry)
+        .widgetURL(favoriteTapURL(
+          type: "favorite_driver",
+          fallbackType: "driver_standings",
+          id: entry.values["favorite_driver_default_driverId"]
+        ))
     }
     .configurationDisplayName("Favorite Driver")
     .description("Watch your favorite driver's position and points.")
@@ -849,6 +901,11 @@ struct GridGlanceFavoriteTeamWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
       FavoriteTeamWidgetView(entry: entry)
+        .widgetURL(favoriteTapURL(
+          type: "favorite_team",
+          fallbackType: "team_standings",
+          id: entry.values["favorite_team_default_constructorId"]
+        ))
     }
     .configurationDisplayName("Favorite Team")
     .description("Watch your favorite team's points and drivers.")
@@ -862,6 +919,7 @@ struct GridGlanceRaceWeekendWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: GridGlanceProvider()) { entry in
       RaceWeekendWidgetView(entry: entry)
+        .widgetURL(widgetTapURL("race_weekend"))
     }
     .configurationDisplayName("Race Weekend")
     .description("Full weekend schedule with track layout.")

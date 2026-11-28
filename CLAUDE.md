@@ -29,9 +29,12 @@ No code generation (build_runner, freezed, json_serializable) is used — models
 
 **Widget integration:** Widget data and reloads use the registered `home_widget`
 plugin so foreground and Workmanager engines share the same storage. One custom
-MethodChannel remains for Android widget navigation:
+MethodChannel remains for widget navigation on both platforms:
 
-- `gridglance/widget_intent` — routes widget clicks back to Flutter
+- `gridglance/widget_intent` — routes widget clicks back to Flutter. Android
+  sends intent extras; iOS widgets open `gridglance://widget?type=...&targetId=...`,
+  which `AppDelegate` turns into the same payload. Flutter deep linking is off on
+  iOS (`FlutterDeepLinkingEnabled`) so those URLs never reach the Navigator.
 
 **Navigation:** Standard `Navigator.push()` — no named routes or router packages. `MainShell` provides bottom navigation between Home, Widgets, and About tabs.
 

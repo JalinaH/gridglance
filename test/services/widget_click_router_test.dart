@@ -72,4 +72,33 @@ void main() {
       expect(parse('race_weekend')!.destination, WidgetDestination.raceDetail);
     });
   });
+
+  group('WidgetClickTarget.fromPayload from iOS', () {
+    // AppDelegate.widgetClick sends a native int widgetId (always 0) and only
+    // includes targetId when the tap carried one.
+    test('accepts the payload shape iOS sends', () {
+      final team = WidgetClickTarget.fromPayload({
+        'type': 'favorite_team',
+        'widgetId': 0,
+        'targetId': 'mclaren',
+      })!;
+      expect(team.destination, WidgetDestination.teamDetail);
+      expect(team.targetId, 'mclaren');
+      expect(team.widgetId, 0);
+
+      final race = WidgetClickTarget.fromPayload({
+        'type': 'race_weekend',
+        'widgetId': 0,
+      })!;
+      expect(race.destination, WidgetDestination.raceDetail);
+    });
+
+    test('a podium tap without a target opens the list', () {
+      final list = WidgetClickTarget.fromPayload({
+        'type': 'team_standings',
+        'widgetId': 0,
+      })!;
+      expect(list.destination, WidgetDestination.teamStandings);
+    });
+  });
 }
