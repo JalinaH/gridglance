@@ -59,12 +59,12 @@ class AppUpdateService {
     if (kDebugMode) {
       debugPrint('AppUpdateService: update config problem ($reason) at $uri');
     }
+    // A warning, not an error: it is a publishing problem with the hosted
+    // file, and the app carries on without the update prompt.
     unawaited(
-      CrashReporting.captureException(
-        StateError('App update config unavailable: $reason'),
-        stackTrace: StackTrace.current,
-        hint: 'app_update.config',
-        tags: {'reason': reason},
+      CrashReporting.captureWarning(
+        'App update config unavailable: $reason',
+        tags: {'reason': reason, 'context': 'app_update.config'},
       ),
     );
   }

@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme/app_theme.dart';
+import '../utils/circuit_assets.dart';
 
-/// Draws an F1 circuit layout.
-///
-/// Tries to load an SVG from `lib/assets/circuits/{circuitId}.svg` first.
-/// If no SVG asset exists, shows a placeholder icon.
+/// Draws an F1 circuit layout from the maps in `lib/assets/circuits/`, or a
+/// placeholder when the circuit has none.
 ///
 /// ### Adding circuit SVGs
-/// 1. Download or trace an SVG outline of the circuit (see ASSET_GUIDE.md).
-/// 2. Save it as `lib/assets/circuits/{circuitId}.svg`
-///    (e.g. `monaco.svg`, `silverstone.svg`).
-/// 3. The widget picks it up automatically — no code changes needed.
+/// 1. Save an SVG outline as `lib/assets/circuits/<name>.svg`.
+/// 2. Add `<name>` to [CircuitAssets.bundled], plus an alias there if the
+///    API's `circuitId` differs from the file name.
 class CircuitTrack extends StatelessWidget {
   final String circuitId;
   final double width;
@@ -28,47 +25,30 @@ class CircuitTrack extends StatelessWidget {
     this.color,
   });
 
-  String get _assetPath => 'lib/assets/circuits/$circuitId.svg';
-
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final trackColor = color ?? colors.f1RedBright;
+    final path = CircuitAssets.pathFor(circuitId);
+    final placeholder = _CircuitPlaceholder(
+      color: trackColor,
+      circuitId: circuitId,
+    );
 
     return SizedBox(
       width: width,
       height: height,
-      child: FutureBuilder<bool>(
-        future: _assetExists(_assetPath),
-        builder: (context, snapshot) {
-          if (snapshot.data == true) {
-            return SvgPicture.asset(
-              _assetPath,
+      child: path == null
+          ? placeholder
+          : SvgPicture.asset(
+              path,
               width: width,
               height: height,
               fit: BoxFit.contain,
               colorFilter: ColorFilter.mode(trackColor, BlendMode.srcIn),
-            );
-          }
-          // Placeholder when no SVG exists yet.
-          return _CircuitPlaceholder(color: trackColor, circuitId: circuitId);
-        },
-      ),
+              errorBuilder: (_, _, _) => placeholder,
+            ),
     );
-  }
-
-  static final Map<String, bool> _cache = {};
-
-  static Future<bool> _assetExists(String path) async {
-    if (_cache.containsKey(path)) return _cache[path]!;
-    try {
-      await rootBundle.load(path);
-      _cache[path] = true;
-      return true;
-    } catch (_) {
-      _cache[path] = false;
-      return false;
-    }
   }
 }
 
