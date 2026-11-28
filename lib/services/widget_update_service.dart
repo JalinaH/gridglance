@@ -14,6 +14,7 @@ import '../data/api_service.dart';
 import '../models/constructor_standing.dart';
 import '../models/driver_standing.dart';
 import '../models/race.dart';
+import '../utils/circuit_assets.dart';
 import '../utils/team_colors.dart';
 import 'crash_reporting.dart';
 import 'f1_image_service.dart';
@@ -1189,7 +1190,8 @@ class WidgetUpdateService {
 
   /// Rasterizes a circuit SVG from Flutter assets to a PNG and saves it.
   static Future<void> _saveTrackImage(String imageKey, String circuitId) async {
-    final assetPath = 'lib/assets/circuits/$circuitId.svg';
+    final assetPath = CircuitAssets.pathFor(circuitId);
+    if (assetPath == null) return;
     try {
       final svgString = await rootBundle.loadString(assetPath);
       final pictureInfo = await vg.loadPicture(

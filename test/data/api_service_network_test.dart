@@ -503,4 +503,90 @@ void main() {
       );
     });
   });
+
+  group('ApiService rate limits and fresh cache', () {
+    const schedule = '{"MRData":{"RaceTable":{"Races":[]}}}';
+
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+      ApiService.resetCachePruneForTesting();
+    });
+    tearDown(() => ApiService.freshFor = const Duration(seconds: 30));
+
+    test('retries a 429 after a short Retry-After', () async {
+      var calls = 0;
+      await withClient(
+        () => ApiService().getRaceSchedule(season: '2026'),
+        (_) async => ++calls == 1
+            ? http.Response('slow down', 429, headers: {'retry-after': '0'})
+            : http.Response(schedule, 200),
+      );
+
+      expect(calls, 2);
+    });
+
+    test(
+      'serves the cache instead of waiting out a long Retry-After',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'api_cache_v1|race_schedule|2026|body': schedule,
+          'api_cache_v1|race_schedule|2026|updated_at': DateTime.now()
+              .subtract(const Duration(hours: 1))
+              .millisecondsSinceEpoch,
+        });
+        var calls = 0;
+
+        final snapshot = await withClient(
+          () => ApiService().getRaceScheduleSnapshot(season: '2026'),
+          (_) async {
+            calls++;
+            return http.Response('later', 429, headers: {'retry-after': '120'});
+          },
+        );
+
+        expect(calls, 1);
+        expect(snapshot.isFromCache, isTrue);
+      },
+    );
+
+    test('a recent cached response skips the request', () async {
+      var calls = 0;
+      Future<http.Response> handler(http.Request _) async {
+        calls++;
+        return http.Response(schedule, 200);
+      }
+
+      await withClient(
+        () => ApiService().getRaceSchedule(season: '2026'),
+        handler,
+      );
+      final second = await withClient(
+        () => ApiService().getRaceScheduleSnapshot(season: '2026'),
+        handler,
+      );
+
+      expect(calls, 1);
+      expect(second.isFromCache, isFalse);
+    });
+
+    test('an older cached response is refreshed', () async {
+      SharedPreferences.setMockInitialValues({
+        'api_cache_v1|race_schedule|2026|body': schedule,
+        'api_cache_v1|race_schedule|2026|updated_at': DateTime.now()
+            .subtract(const Duration(minutes: 2))
+            .millisecondsSinceEpoch,
+      });
+      var calls = 0;
+
+      await withClient(() => ApiService().getRaceSchedule(season: '2026'), (
+        _,
+      ) async {
+        calls++;
+        return http.Response(schedule, 200);
+      });
+
+      expect(calls, 1);
+    });
+  });
 }

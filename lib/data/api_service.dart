@@ -71,7 +71,11 @@ class _CachedBody {
 
 class _ApiHttpException implements Exception {
   final int statusCode;
-  const _ApiHttpException(this.statusCode);
+
+  /// From a 429's `Retry-After` header, when it gave a number of seconds.
+  final Duration? retryAfter;
+
+  const _ApiHttpException(this.statusCode, {this.retryAfter});
 
   @override
   String toString() => '_ApiHttpException(statusCode: $statusCode)';
@@ -86,6 +90,17 @@ class ApiService {
   static const Duration _requestTimeout = Duration(seconds: 10);
   static const int _maxRetries = 2;
   static const Duration _retryBaseDelay = Duration(milliseconds: 250);
+
+  /// Longest `Retry-After` worth waiting for on a 429. A longer one means
+  /// the API wants us gone for a while, so we serve the cache instead.
+  static const Duration _maxRetryAfter = Duration(seconds: 5);
+
+  /// A cached response this recent is returned without a request. Home,
+  /// the Widgets tab and the widget refresh all ask for the same data within
+  /// seconds of launch; this keeps that to one request per endpoint, which
+  /// also keeps us under the API's rate limit.
+  @visibleForTesting
+  static Duration freshFor = const Duration(seconds: 30);
 
   /// Jolpica's maximum page size. Its default is 30 rows, which truncates
   /// anything longer unless we ask for more and follow `offset`.
@@ -557,13 +572,19 @@ class ApiService {
     required T Function(Map<String, dynamic>) parse,
     required Set<int> acceptedStatusCodes,
   }) async {
+    final fresh = await _readFreshCache(cacheKey, parse);
+    if (fresh != null) return fresh;
+
     Object? lastError;
     StackTrace? lastStackTrace;
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
         final response = await http.get(uri).timeout(_requestTimeout);
         if (!acceptedStatusCodes.contains(response.statusCode)) {
-          throw _ApiHttpException(response.statusCode);
+          throw _ApiHttpException(
+            response.statusCode,
+            retryAfter: _retryAfter(response),
+          );
         }
         final data = await _decodeJsonMap(response.body);
         final parsed = parse(data);
@@ -578,7 +599,7 @@ class ApiService {
         lastError = error;
         lastStackTrace = stackTrace;
         if (attempt < _maxRetries && _isTransient(error)) {
-          final delay = _retryDelay(attempt);
+          final delay = _delayFor(error, attempt);
           if (kDebugMode) {
             debugPrint(
               'ApiService retry ${attempt + 1}/$_maxRetries '
@@ -619,9 +640,16 @@ class ApiService {
       final canRetry = attempt < _maxRetries;
       try {
         final response = await http.get(uri).timeout(_requestTimeout);
-        if (response.statusCode >= 500 && canRetry) {
-          await Future.delayed(_retryDelay(attempt));
-          continue;
+        if (canRetry) {
+          final status = _ApiHttpException(
+            response.statusCode,
+            retryAfter: _retryAfter(response),
+          );
+          if (status.statusCode >= 500 ||
+              (status.statusCode == 429 && _isTransient(status))) {
+            await Future.delayed(_delayFor(status, attempt));
+            continue;
+          }
         }
         return response;
       } catch (error) {
@@ -637,8 +665,50 @@ class ApiService {
     }
   }
 
+  /// A recent cached response, served without a request. See [freshFor].
+  Future<CachedApiResponse<T>?> _readFreshCache<T>(
+    String cacheKey,
+    T Function(Map<String, dynamic>) parse,
+  ) async {
+    if (freshFor <= Duration.zero) return null;
+    final cached = await _readCachedBody(cacheKey);
+    final updatedAt = cached?.updatedAt;
+    if (cached == null || updatedAt == null) return null;
+    final age = DateTime.now().difference(updatedAt);
+    if (age.isNegative || age > freshFor) return null;
+    try {
+      return CachedApiResponse(
+        data: parse(await _decodeJsonMap(cached.body)),
+        lastUpdated: updatedAt,
+        isFromCache: false,
+      );
+    } catch (_) {
+      return null; // Unreadable cache: fall through to the network.
+    }
+  }
+
+  /// `Retry-After` in seconds; the HTTP-date form is ignored.
+  static Duration? _retryAfter(http.Response response) {
+    if (response.statusCode != 429) return null;
+    final seconds = int.tryParse(response.headers['retry-after']?.trim() ?? '');
+    return seconds == null || seconds < 0 ? null : Duration(seconds: seconds);
+  }
+
+  static Duration _delayFor(Object error, int attempt) {
+    final backoff = _retryDelay(attempt);
+    final retryAfter = error is _ApiHttpException ? error.retryAfter : null;
+    return retryAfter != null && retryAfter > backoff ? retryAfter : backoff;
+  }
+
   static bool _isTransient(Object error) {
-    if (error is _ApiHttpException) return error.statusCode >= 500;
+    if (error is _ApiHttpException) {
+      if (error.statusCode == 429) {
+        // Retry a short wait; for a long one, give up and use the cache.
+        final wait = error.retryAfter;
+        return wait == null || wait <= _maxRetryAfter;
+      }
+      return error.statusCode >= 500;
+    }
     return error is SocketException ||
         error is TimeoutException ||
         error is http.ClientException;
@@ -680,6 +750,8 @@ class ApiService {
   static String _classifyError(Object error) {
     if (error is _ApiHttpException) {
       final code = error.statusCode;
+      // Expected under load and handled by backoff and the cache: not a bug.
+      if (code == 429) return 'rate-limited';
       if (code >= 500) return 'http-5xx';
       if (code >= 400) return 'http-4xx';
       return 'http-$code';

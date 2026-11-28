@@ -74,6 +74,26 @@ class CrashReporting {
     }
   }
 
+  /// Reports something worth knowing about that is not a crash or a bug in
+  /// the app, such as a missing remote config file, at warning level.
+  static Future<void> captureWarning(
+    String message, {
+    Map<String, String>? tags,
+  }) async {
+    if (!isEnabled) return;
+    await Sentry.captureMessage(
+      message,
+      level: SentryLevel.warning,
+      withScope: tags == null
+          ? null
+          : (scope) {
+              for (final entry in tags.entries) {
+                scope.setTag(entry.key, entry.value);
+              }
+            },
+    );
+  }
+
   /// Reports a caught exception with optional context tags.
   static Future<void> captureException(
     Object error, {
